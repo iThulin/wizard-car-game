@@ -1,0 +1,143 @@
+[gd_scene format=3 uid="uid://dgi6v10ltygfn"]
+
+[ext_resource type="Script" uid="uid://c7wh8e46s1af8" path="res://Scripts/Systems/GameManager.cs" id="1_ijhqi"]
+[ext_resource type="Script" uid="uid://cmv52oxovfl16" path="res://Scripts/Cards/CardData.cs" id="1_ya2tu"]
+[ext_resource type="Script" uid="uid://cmy15kdfht3q1" path="res://Scripts/Systems/DeckManager.cs" id="2_ijhqi"]
+[ext_resource type="PackedScene" uid="uid://iuge2orfh1hw" path="res://Scenes/CardUI.tscn" id="3_tpnw0"]
+[ext_resource type="PackedScene" uid="uid://csdmm1n6b4hoe" path="res://Scenes/DropSlot.tscn" id="5_tpnw0"]
+[ext_resource type="Script" uid="uid://c07b4kiher343" path="res://Scripts/UI/DeckUiManager.cs" id="6_ooype"]
+[ext_resource type="Script" uid="uid://dqk28nqqm6ql4" path="res://Scripts/Systems/HexGridManager.cs" id="6_xukim"]
+[ext_resource type="PackedScene" uid="uid://kr82jj8kd6i1" path="res://Scenes/HexTile.tscn" id="7_jf4gb"]
+[ext_resource type="Script" uid="uid://wqtdv0uvn5b3" path="res://Scripts/UI/CameraController.cs" id="8_emk3e"]
+[ext_resource type="Script" uid="uid://7xc312fm8dtm" path="res://Scripts/Cards/CardDropHandler.cs" id="9_22unj"]
+[ext_resource type="Script" uid="uid://cgjk3uj7xgowv" path="res://Scenes/GameRunner.cs" id="18_5hwhw"]
+
+[sub_resource type="Sky" id="Sky_jf4gb"]
+
+[sub_resource type="Environment" id="Environment_jf4gb"]
+background_mode = 2
+sky = SubResource("Sky_jf4gb")
+
+[node name="Main Scene" type="Node3D" unique_id=434588086]
+script = ExtResource("1_ijhqi")
+
+[node name="CardData" type="Node2D" parent="." unique_id=1389179332]
+script = ExtResource("1_ya2tu")
+
+[node name="Player" type="Node2D" parent="." unique_id=73472438]
+
+[node name="DeckManager" type="Node2D" parent="Player" unique_id=308415042]
+script = ExtResource("2_ijhqi")
+MaxHandSize = 25
+
+[node name="DeckUI" type="CanvasLayer" parent="." unique_id=1348508917]
+follow_viewport_enabled = true
+
+[node name="HandUI" type="Control" parent="DeckUI" unique_id=1890802103]
+custom_minimum_size = Vector2(10, 10)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 10.0
+offset_bottom = 10.0
+size_flags_horizontal = 3
+size_flags_vertical = 2
+
+[node name="DeckLabel" type="Label" parent="DeckUI" unique_id=2107762318]
+offset_top = 1011.0
+offset_right = 43.0
+offset_bottom = 1034.0
+text = "Deck:"
+
+[node name="DeckCountLabel" type="Label" parent="DeckUI" unique_id=688479240]
+offset_left = 43.0
+offset_top = 1011.0
+offset_right = 83.0
+offset_bottom = 1034.0
+text = "#"
+
+[node name="HandLabel" type="Label" parent="DeckUI" unique_id=174581602]
+offset_top = 1034.0
+offset_right = 46.0
+offset_bottom = 1057.0
+text = "Hand:"
+
+[node name="HandCountLabel" type="Label" parent="DeckUI" unique_id=1991424751]
+offset_left = 46.0
+offset_top = 1034.0
+offset_right = 86.0
+offset_bottom = 1057.0
+text = "#"
+
+[node name="DiscardLabel" type="Label" parent="DeckUI" unique_id=1160018119]
+offset_top = 1057.0
+offset_right = 63.0
+offset_bottom = 1080.0
+text = "Discard:"
+
+[node name="DiscardCountLabel" type="Label" parent="DeckUI" unique_id=1481814575]
+offset_left = 63.0
+offset_top = 1057.0
+offset_right = 103.0
+offset_bottom = 1080.0
+text = "#"
+
+[node name="DeckUIManager" type="Node2D" parent="DeckUI" unique_id=1949982600]
+position = Vector2(960, 1080)
+script = ExtResource("6_ooype")
+CardUIPackedScene = ExtResource("3_tpnw0")
+DropSlotScene = ExtResource("5_tpnw0")
+
+[node name="DrawButton" type="Button" parent="DeckUI" unique_id=563659168]
+offset_right = 50.0
+offset_bottom = 31.0
+text = "Draw"
+
+[node name="DiscardButton" type="Button" parent="DeckUI" unique_id=1931340658]
+offset_top = 31.0
+offset_right = 67.0
+offset_bottom = 62.0
+text = "Discard"
+
+[node name="ReshuffleButton" type="Button" parent="DeckUI" unique_id=1927374555]
+offset_top = 62.0
+offset_right = 81.0
+offset_bottom = 93.0
+text = "Reshuffle"
+
+[node name="RemoveButton" type="Button" parent="DeckUI" unique_id=376783027]
+offset_top = 93.0
+offset_right = 81.0
+offset_bottom = 124.0
+text = "Remove"
+
+[node name="HexGridManager" type="Node3D" parent="." unique_id=1283187122]
+script = ExtResource("6_xukim")
+HexTileScene3D = ExtResource("7_jf4gb")
+GridWidth = 20
+GridHeight = 10
+HexRadius = 1.025
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=170383794]
+transform = Transform3D(0.866025, -0.5, -2.18557e-08, 0, -4.37114e-08, 1, -0.5, -0.866025, -3.78552e-08, 0, 2.66986, 0)
+shadow_enabled = true
+
+[node name="CameraController" type="Node3D" parent="." unique_id=974354941]
+transform = Transform3D(1.00382, 0, 0, 0, 1.00382, 0, 0, 0, 1.00382, 0, 0, 0)
+script = ExtResource("8_emk3e")
+RotationSpeed = 0.5
+MaxPitch = 87.5
+
+[node name="CameraPivot" type="Node3D" parent="CameraController" unique_id=890489313]
+
+[node name="Camera3D" type="Camera3D" parent="CameraController/CameraPivot" unique_id=2018204839]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 10, 0)
+environment = SubResource("Environment_jf4gb")
+current = true
+
+[node name="RayCast3D" type="RayCast3D" parent="CameraController/CameraPivot/Camera3D" unique_id=2033024139]
+
+[node name="CardDropHandler" type="Node3D" parent="." unique_id=333756922]
+script = ExtResource("9_22unj")
+
+[node name="GameRunner" type="Node3D" parent="." unique_id=1742499247]
+script = ExtResource("18_5hwhw")
