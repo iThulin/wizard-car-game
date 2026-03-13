@@ -1,34 +1,34 @@
-[gd_scene load_steps=5 format=3 uid="uid://kr82jj8kd6i1"]
+[gd_scene format=3 uid="uid://kr82jj8kd6i1"]
 
 [ext_resource type="Script" uid="uid://cwuubbch02nc6" path="res://Scripts/Tiles/HexTile.cs" id="1_y3rtd"]
-[ext_resource type="CylinderMesh" uid="uid://c6txik1r44jjl" path="res://Assets/Hex_mesh.tres" id="2_1spyd"]
+[ext_resource type="CylinderMesh" uid="uid://c6txik1r44jjl" path="res://Assets/UI Asset/Hex_mesh.tres" id="2_1spyd"]
 [ext_resource type="Shape3D" uid="uid://b60tsccwqe5vl" path="res://Scenes/HexTile_collider.tres" id="3_7nvip"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1spyd"]
 albedo_color = Color(0.522904, 0.55825, 0.306631, 1)
 
-[node name="HexTile" type="Node3D"]
+[node name="HexTile" type="Node3D" unique_id=783053476]
 script = ExtResource("1_y3rtd")
 Radius = 50.0
 HoverColor = Color(0.345098, 0.470588, 0.337255, 1)
 
-[node name="HexMesh" type="MeshInstance3D" parent="."]
+[node name="HexMesh" type="MeshInstance3D" parent="." unique_id=858530921]
 transform = Transform3D(0.866025, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866025, 0, 0, 0)
 mesh = ExtResource("2_1spyd")
 surface_material_override/0 = SubResource("StandardMaterial3D_1spyd")
 
-[node name="StaticBody3D" type="StaticBody3D" parent="."]
+[node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=2034632664]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D" unique_id=1112261517]
 shape = ExtResource("3_7nvip")
 
-[node name="CoordLabel" type="Label3D" parent="."]
+[node name="CoordLabel" type="Label3D" parent="." unique_id=1061788109]
 transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0.277201, 0)
 billboard = 1
 text = "Test
 "
 
-[node name="Area3D" type="Area3D" parent="."]
+[node name="Area3D" type="Area3D" parent="." unique_id=962639784]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Area3D"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Area3D" unique_id=1257839623]
 shape = ExtResource("3_7nvip")

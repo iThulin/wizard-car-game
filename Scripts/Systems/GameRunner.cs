@@ -54,7 +54,7 @@ public partial class GameRunner : Node
         State.Bus.OnEvent += OnGameEvent;
         State.OpenPriorityWindow();
 
-        State.Mana[Me] = 1;
+        State.Mana[Me] = 3;
         GD.Print("Keys: [T]=cast top of card 1 | [B]=bottom | [Y]=channel top | [SPACE]=pass | [R]=resolve top");
     }
     private void OnCardDroppedOnTile(CardUi cardUi, bool isTop, HexTile tile)

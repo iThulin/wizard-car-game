@@ -1,0 +1,10 @@
+[gd_resource type="QuadMesh" format=3 uid="uid://7h2ukydtg00s"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_uyple"]
+shading_mode = 0
+albedo_color = Color(0, 0.37150645, 0.37191775, 1)
+billboard_keep_scale = true
+
+[resource]
+material = SubResource("StandardMaterial3D_uyple")
+size = Vector2(1.6, 0.18)

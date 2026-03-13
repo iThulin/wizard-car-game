@@ -20,6 +20,18 @@
 background_mode = 2
 sky = SubResource("Sky_jf4gb")
 
+[sub_resource type="Sky" id="Sky_7jq7h"]
+
+[sub_resource type="Environment" id="Environment_lhd6x"]
+background_mode = 2
+sky = SubResource("Sky_7jq7h")
+ambient_light_source = 3
+ambient_light_energy = 0.6
+tonemap_mode = 3
+tonemap_white = 6.0
+ssao_enabled = true
+ssil_enabled = true
+
 [node name="Main Scene" type="Node3D" unique_id=434588086]
 script = ExtResource("1_ijhqi")
 
@@ -120,7 +132,8 @@ GridHeight = 10
 HexRadius = 1.025
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=170383794]
-transform = Transform3D(0.866025, -0.5, -2.18557e-08, 0, -4.37114e-08, 1, -0.5, -0.866025, -3.78552e-08, 0, 2.66986, 0)
+transform = Transform3D(0.86602503, -0.35355324, 0.35355338, 0, 0.7071065, 0.70710677, -0.4999998, -0.61237216, 0.6123724, 0, 2.66986, 0)
+light_energy = 2.0
 shadow_enabled = true
 
 [node name="CameraController" type="Node3D" parent="." unique_id=974354941]
@@ -145,3 +158,6 @@ script = ExtResource("9_22unj")
 script = ExtResource("18_5hwhw")
 PlayerUnitScene = ExtResource("12_7jq7h")
 DummyUnitScene = ExtResource("13_lhd6x")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=2122826708]
+environment = SubResource("Environment_lhd6x")

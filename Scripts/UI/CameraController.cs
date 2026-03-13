@@ -13,7 +13,7 @@ public partial class CameraController : Node3D
 
     [Export] public float RotationSpeed = 0.3f;
     [Export] public float MinPitch = 0f;
-    [Export] public float MaxPitch = 75f;
+    [Export] public float MaxPitch = 50f;
 
     private float yaw = 0f;
     private float pitch = 20f;

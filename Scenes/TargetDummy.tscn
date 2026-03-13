@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://chfd280du8r83"]
 
 [ext_resource type="Script" uid="uid://c2y54abonms36" path="res://Scripts/Systems/Unit.cs" id="1_owrha"]
-[ext_resource type="CapsuleMesh" uid="uid://bf8buxdiicvt5" path="res://Scenes/TargetDummy.tres" id="2_igtwy"]
+[ext_resource type="CapsuleMesh" uid="uid://bf8buxdiicvt5" path="res://Assets/Enemy Asset/TargetDummy.tres" id="2_igtwy"]
 [ext_resource type="Script" uid="uid://djuc7k1qe7t7n" path="res://Scripts/UI/HealthBarRoot.cs" id="3_h7n8s"]
 [ext_resource type="Theme" uid="uid://dis8c6sg16dc4" path="res://Scripts/UI/HealthBarTheme.tres" id="4_ssr3o"]
 
@@ -20,8 +20,6 @@ mesh = ExtResource("2_igtwy")
 [node name="HealthBarRoot" type="Node3D" parent="." unique_id=1349401647]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 script = ExtResource("3_h7n8s")
-BarPath = NodePath("SubViewport/UI/VBoxContainer/HealthBar")
-ManaBarPath = NodePath("SubViewport/UI/VBoxContainer/ManaBar")
 
 [node name="SubViewport" type="SubViewport" parent="HealthBarRoot" unique_id=2143337166]
 disable_3d = true
