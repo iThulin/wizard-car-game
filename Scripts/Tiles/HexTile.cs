@@ -46,6 +46,24 @@ public partial class HexTile : Node3D
             material.AlbedoColor = baseColor;
     }
 
+    public void SetMaterial(Material newMaterial)
+    {
+        if (meshInstance == null || newMaterial == null)
+            return;
+
+        if (newMaterial is StandardMaterial3D stdMat)
+        {
+            material = (StandardMaterial3D)stdMat.Duplicate();
+            meshInstance.SetSurfaceOverrideMaterial(0, material);
+            baseColor = material.AlbedoColor;
+        }
+        else
+        {
+            meshInstance.SetSurfaceOverrideMaterial(0, newMaterial);
+            material = null;
+        }
+    }
+
     public void SetHeight(int height)
     {
         var pos = Position;

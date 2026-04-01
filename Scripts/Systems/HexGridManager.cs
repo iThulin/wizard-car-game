@@ -19,6 +19,20 @@ public partial class HexGridManager : Node3D
     [Export] public int ReservedSpawnRadius = 1;
     [Export] public MapTheme Theme = MapTheme.ArcaneMeadow;
 
+    // Tile Materials
+    [Export] public Material GrassMaterial;
+    [Export] public Material ForestMaterial;
+    [Export] public Material StoneMaterial;
+    [Export] public Material WaterMaterial;
+    [Export] public Material ArcaneMaterial;
+    [Export] public Material IceMaterial;
+    [Export] public Material LavaMaterial;
+
+    // Prop import
+    [Export] public PackedScene GrassTuftScene;
+    [Export] public PackedScene GrassTuftSceneAlt;
+    [Export] public Node3D PropParent;
+
     public Vector3 GridBoundsMin { get; private set; }
     public Vector3 GridBoundsMax { get; private set; }
     private readonly HashSet<Vector2I> ReservedTiles = new();
@@ -75,8 +89,10 @@ public partial class HexGridManager : Node3D
         ApplyTileVisuals();
         ApplyTileHeights();
         RefreshAllTileLabels();
-        SpawnObstacleVisuals();
 
+
+        SpawnObstacleVisuals();
+        SpawnTerrainProps();
         
     }
 
@@ -337,6 +353,29 @@ public partial class HexGridManager : Node3D
         }
     }
 
+    private void SpawnTerrainProps()
+    {
+        ClearTerrainProps();
+
+        foreach (var tile in Tiles.Values)
+        {
+            if (tile.TileView == null)
+                continue;
+
+            if (tile.IsBlocked)
+                continue;
+
+            if (tile.TerrainType == TileTerrainType.Grass)
+            {
+                SpawnGrassOnTile(tile, 0.65f, 1, 3);
+            }
+            else if (tile.TerrainType == TileTerrainType.Forest)
+            {
+                SpawnGrassOnTile(tile, 0.9f, 2, 4);
+            }
+        }
+    }
+
     private void ApplyTileVisuals()
     {
         foreach (var kvp in Tiles)
@@ -349,51 +388,73 @@ public partial class HexGridManager : Node3D
         }
     }
 
-    private void ApplyVisualToTile(TileData tile)
+private void ApplyVisualToTile(TileData tile)
+{
+    if (tile.TileView == null)
+        return;
+
+    Material terrainMaterial = null;
+    Color color = Colors.White;
+
+    switch (tile.TerrainType)
     {
-        Color color = Colors.White;
+        case TileTerrainType.Grass:
+            terrainMaterial = GrassMaterial;
+            color = new Color(0.45f, 0.75f, 0.45f);
+            break;
 
-        switch (tile.TerrainType)
-        {
-            case TileTerrainType.Grass:
-                color = new Color(0.45f, 0.75f, 0.45f);
-                break;
-            case TileTerrainType.Water:
-                color = new Color(0.2f, 0.45f, 0.85f);
-                break;
-            case TileTerrainType.Lava:
-                color = new Color(0.9f, 0.3f, 0.1f);
-                break;
-            case TileTerrainType.Forest:
-                color = new Color(0.2f, 0.5f, 0.2f);
-                break;
-            case TileTerrainType.Stone:
-                color = new Color(0.5f, 0.5f, 0.55f);
-                break;
-            case TileTerrainType.Arcane:
-                color = new Color(0.55f, 0.25f, 0.8f);
-                break;
-            case TileTerrainType.Ice:
-                color = new Color(0.7f, 0.9f, 1.0f);
-                break;
-        }
+        case TileTerrainType.Forest:
+            terrainMaterial = ForestMaterial != null ? ForestMaterial : GrassMaterial;
+            color = new Color(0.2f, 0.5f, 0.2f);
+            break;
 
-        // element overlay tint
-        switch (tile.ElementType)
-        {
-            case TileElementType.Fire:
-                color = color.Lerp(new Color(1f, 0.3f, 0.1f), 0.4f);
-                break;
-            case TileElementType.Arcane:
-                color = color.Lerp(new Color(0.7f, 0.2f, 1f), 0.4f);
-                break;
-            case TileElementType.Frost:
-                color = color.Lerp(new Color(0.8f, 0.95f, 1f), 0.4f);
-                break;
-        }
+        case TileTerrainType.Stone:
+            terrainMaterial = StoneMaterial;
+            color = new Color(0.5f, 0.5f, 0.55f);
+            break;
 
-        tile.TileView.SetBaseColor(color);
+        case TileTerrainType.Water:
+            terrainMaterial = WaterMaterial;
+            color = new Color(0.2f, 0.45f, 0.85f);
+            break;
+
+        case TileTerrainType.Lava:
+            terrainMaterial = LavaMaterial;
+            color = new Color(0.9f, 0.3f, 0.1f);
+            break;
+
+        case TileTerrainType.Arcane:
+            terrainMaterial = ArcaneMaterial;
+            color = new Color(0.55f, 0.25f, 0.8f);
+            break;
+
+        case TileTerrainType.Ice:
+            terrainMaterial = IceMaterial;
+            color = new Color(0.7f, 0.9f, 1.0f);
+            break;
     }
+
+    // ✅ APPLY ELEMENT TINT HERE (inside method)
+    switch (tile.ElementType)
+    {
+        case TileElementType.Fire:
+            color = color.Lerp(new Color(1f, 0.3f, 0.1f), 0.4f);
+            break;
+
+        case TileElementType.Arcane:
+            color = color.Lerp(new Color(0.7f, 0.2f, 1f), 0.4f);
+            break;
+
+        case TileElementType.Frost:
+            color = color.Lerp(new Color(0.8f, 0.95f, 1f), 0.4f);
+            break;
+    }
+
+    if (terrainMaterial != null)
+        tile.TileView.SetMaterial(terrainMaterial);
+
+    tile.TileView.SetBaseColor(color);
+}
 
     private void RefreshAllTileLabels()
     {
@@ -1115,6 +1176,57 @@ public partial class HexGridManager : Node3D
                 continue;
 
             applyToTile(tile);
+        }
+    }
+
+    private void ClearTerrainProps()
+    {
+        Node parent = PropParent ?? this;
+
+        foreach (Node child in parent.GetChildren())
+        {
+            if (child.IsInGroup("generated_prop"))
+                child.QueueFree();
+        }
+    }
+
+    private void SpawnGrassOnTile(TileData tile, float spawnChance, int minCount, int maxCount)
+    {
+        if (GD.Randf() > spawnChance)
+            return;
+
+        int count = minCount + (int)(GD.Randi() % (uint)(maxCount - minCount + 1));
+
+        for (int i = 0; i < count; i++)
+        {
+            PackedScene scene = GrassTuftScene;
+
+            if (GrassTuftSceneAlt != null && GD.Randf() < 0.35f)
+                scene = GrassTuftSceneAlt;
+
+            if (scene == null)
+                continue;
+
+            var tuft = scene.Instantiate<Node3D>();
+
+            Node parent = PropParent ?? this;
+            parent.AddChild(tuft);
+
+            Vector3 basePos = tile.TileView.GlobalPosition;
+
+            float xOffset = (float)GD.RandRange(-0.35f, 0.35f);
+            float zOffset = (float)GD.RandRange(-0.35f, 0.35f);
+
+            tuft.GlobalPosition = basePos + new Vector3(xOffset, 0.05f, zOffset);
+
+            Vector3 rot = tuft.RotationDegrees;
+            rot.Y = (float)GD.RandRange(0f, 360f);
+            tuft.RotationDegrees = rot;
+
+            float scale = (float)GD.RandRange(0.85f, 1.2f);
+            tuft.Scale = new Vector3(scale, scale, scale);
+
+            tuft.AddToGroup("generated_prop");
         }
     }
 
