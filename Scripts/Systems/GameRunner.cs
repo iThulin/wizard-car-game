@@ -152,75 +152,71 @@ public partial class GameRunner : Node
 
     private void SpawnTestUnits()
     {
-    grid = GetNodeOrNull<HexGridManager>(GridPath);
-    if (grid == null)
-    {
-        GD.PrintErr($"HexGridManager not found at GridPath: {GridPath}");
-        return;
-    }
+        grid = GetNodeOrNull<HexGridManager>(GridPath);
+        if (grid == null)
+        {
+            GD.PrintErr($"HexGridManager not found at GridPath: {GridPath}");
+            return;
+        }
 
-    // Pick two tiles (change coords to fit your grid size)
-    var playerTile = grid.GetTile(new Vector2I(1, 1));
-    var dummyTile  = grid.GetTile(new Vector2I(4, 2));
+        if (PlayerUnitScene == null || DummyUnitScene == null)
+        {
+            GD.PrintErr("Assign PlayerUnitScene and DummyUnitScene in the Inspector.");
+            return;
+        }
 
-    if (playerTile == null || dummyTile == null)
-    {
-        GD.PrintErr("Could not find spawn tiles. Check axial coords and GridWidth/GridHeight.");
-        return;
-    }
+        var playerSlot = grid.ClaimNextSpawnSlot(HexGridManager.SpawnSide.Player);
+        var enemySlot  = grid.ClaimNextSpawnSlot(HexGridManager.SpawnSide.Enemy);
 
-    if (PlayerUnitScene == null || DummyUnitScene == null)
-    {
-        GD.PrintErr("Assign PlayerUnitScene and DummyUnitScene in the Inspector.");
-        return;
-    }
+        var playerTile = grid.GetTileAtSpawnSlot(playerSlot);
+        var dummyTile  = grid.GetTileAtSpawnSlot(enemySlot);
 
-    // Spawn player
-    playerUnit = PlayerUnitScene.Instantiate<Unit>();
-    AddChild(playerUnit);
-    playerUnit.IsPlayerControlled = true;
-    playerUnit.TeamId = 0;
+        if (playerTile == null || dummyTile == null)
+        {
+            GD.PrintErr("Could not find valid spawn slots for player/enemy.");
+            return;
+        }
 
-    // Optionally set stats here (or via inspector Start* fields)
-    playerUnit.StartMaxHealth = 20;
-    playerUnit.StartHealth = 20;
-    playerUnit.StartBaseSpeed = 3;
-    playerUnit.StartMaxMana = 0;
-    playerUnit.StartMana = 0;
+        // Spawn player
+        playerUnit = PlayerUnitScene.Instantiate<Unit>();
+        AddChild(playerUnit);
+        playerUnit.IsPlayerControlled = true;
+        playerUnit.TeamId = 0;
 
-    // Force stats to apply immediately if you need it before _Ready() runs
-    // (usually not required, but safe)
-    // playerUnit._Ready();
+        playerUnit.StartMaxHealth = 20;
+        playerUnit.StartHealth = 20;
+        playerUnit.StartBaseSpeed = 3;
+        playerUnit.StartMaxMana = 0;
+        playerUnit.StartMana = 0;
 
-    playerUnit.PlaceOnTile(playerTile);
+        playerUnit.PlaceOnTile(playerTile);
 
-    // Spawn dummy
-    dummyUnit = DummyUnitScene.Instantiate<Unit>();
-    AddChild(dummyUnit);
-    dummyUnit.IsPlayerControlled = false;
-    dummyUnit.TeamId = 1;
+        // Spawn dummy
+        dummyUnit = DummyUnitScene.Instantiate<Unit>();
+        AddChild(dummyUnit);
+        dummyUnit.IsPlayerControlled = false;
+        dummyUnit.TeamId = 1;
 
-    dummyUnit.StartMaxHealth = 50;
-    dummyUnit.StartHealth = 50;
-    dummyUnit.StartArmor = 0;
-    dummyUnit.StartShield = 0;
-    dummyUnit.StartBaseSpeed = 0;
-    dummyUnit.StartMaxMana = 0;
-    dummyUnit.StartMana = 0;
+        dummyUnit.StartMaxHealth = 50;
+        dummyUnit.StartHealth = 50;
+        dummyUnit.StartArmor = 0;
+        dummyUnit.StartShield = 0;
+        dummyUnit.StartBaseSpeed = 0;
+        dummyUnit.StartMaxMana = 0;
+        dummyUnit.StartMana = 0;
 
-    dummyUnit.PlaceOnTile(dummyTile);
+        dummyUnit.PlaceOnTile(dummyTile);
 
-    GD.Print($"Spawned Player at {playerTile.Axial}, Dummy at {dummyTile.Axial}");
+        GD.Print($"Spawned Player at {playerTile.Axial}, Dummy at {dummyTile.Axial}");
 
-    // Register into rules state (optional but recommended)
-    State.Grid = grid;
-    State.PlayerUnit = playerUnit;
-    State.EnemyUnit = dummyUnit;
-    State.UnitsInPlay.Clear();
-    State.UnitsInPlay.Add(playerUnit);
-    State.UnitsInPlay.Add(dummyUnit);
+        State.Grid = grid;
+        State.PlayerUnit = playerUnit;
+        State.EnemyUnit = dummyUnit;
+        State.UnitsInPlay.Clear();
+        State.UnitsInPlay.Add(playerUnit);
+        State.UnitsInPlay.Add(dummyUnit);
 
-    playerUnit.Name = "Player";
-    dummyUnit.Name = "Dummy";   
+        playerUnit.Name = "Player";
+        dummyUnit.Name = "Dummy";
     }
 }
