@@ -70,6 +70,13 @@ public partial class DeckUiManager : Node2D
 		PositionHandCards();
 
 		GD.Print($"PositionHandCards done. Child count in container: {handUIContainer.GetChildCount()}");
+		GD.Print($"Card global positions after layout:");
+		foreach (Node child in handUIContainer.GetChildren())
+		{
+			if (child is Control c)
+				GD.Print($"  {c.Name}: GlobalPos={c.GlobalPosition}, Size={c.Size}, Visible={c.Visible}");
+		}
+
 	}
 
 	public void SafeRefreshUI()
@@ -83,9 +90,10 @@ public partial class DeckUiManager : Node2D
 		if (count == 0) return;
 
 		Vector2 screenSize = GetViewport().GetVisibleRect().Size;
-		float radius = screenSize.Y * 4f;
 
-		Vector2 arcCenter = new Vector2(screenSize.X / 2f, screenSize.Y + radius * .95f);
+		// After:
+		float radius = screenSize.Y * 2.5f;
+		Vector2 arcCenter = new Vector2(screenSize.X / 2f, screenSize.Y + radius * 0.6f);
 
 		float maxArcSpanDeg = 40f;
 		float minArcSpanDeg = .5f;
