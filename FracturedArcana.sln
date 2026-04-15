@@ -1,6 +1,6 @@
 ﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wizard Card Game", "Wizard Card Game.csproj", "{23B5854E-7077-4714-874C-130E6F746CCE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FracturedArcana", "FracturedArcana.csproj", "{23B5854E-7077-4714-874C-130E6F746CCE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
