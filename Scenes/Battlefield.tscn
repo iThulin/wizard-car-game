@@ -16,22 +16,44 @@
 [ext_resource type="PackedScene" uid="uid://p86b1f6aanue" path="res://Scenes/CombatUI.tscn" id="16_d0vbo"]
 [ext_resource type="Script" uid="uid://cgjk3uj7xgowv" path="res://Scripts/Systems/GameRunner.cs" id="18_5hwhw"]
 
-[sub_resource type="Sky" id="Sky_jf4gb"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_h4djk"]
+albedo_color = Color(0.7723388, 0.694361, 0.5995313, 1)
+roughness = 0.95
 
-[sub_resource type="Environment" id="Environment_jf4gb"]
-background_mode = 2
-sky = SubResource("Sky_jf4gb")
+[sub_resource type="PlaneMesh" id="PlaneMesh_d0vbo"]
+lightmap_size_hint = Vector2i(602, 602)
+material = SubResource("StandardMaterial3D_h4djk")
+size = Vector2(120, 120)
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_h4djk"]
+sky_top_color = Color(0.6358456, 0.8766528, 1.1731088, 1)
+sky_horizon_color = Color(1.1515225, 1.2414947, 1.3414514, 1)
+sky_curve = 0.09
+ground_bottom_color = Color(0.694361, 0.6342527, 0.5657284, 1)
+ground_horizon_color = Color(0.99115646, 0.9639762, 0.9063318, 1)
+sun_curve = 0.18
 
 [sub_resource type="Sky" id="Sky_7jq7h"]
+sky_material = SubResource("ProceduralSkyMaterial_h4djk")
 
 [sub_resource type="Environment" id="Environment_lhd6x"]
 background_mode = 2
 sky = SubResource("Sky_7jq7h")
 ambient_light_source = 3
-ambient_light_energy = 0.6
-tonemap_mode = 3
+ambient_light_color = Color(1.2610514, 1.2414947, 1.2010896, 1)
+ambient_light_energy = 0.5
+tonemap_mode = 1
+tonemap_exposure = 1.1
 tonemap_white = 6.0
 ssao_enabled = true
+fog_enabled = true
+fog_light_color = Color(1.201778, 1.2414947, 1.2927707, 1)
+fog_light_energy = 0.3
+fog_density = 0.008
+fog_sky_affect = 0.3
+volumetric_fog_density = 0.008
+volumetric_fog_albedo = Color(0.886004, 0.91627353, 0.95468724, 1)
+volumetric_fog_sky_affect = 0.3
 
 [node name="Main Scene" type="Node3D" unique_id=434588086]
 
@@ -149,15 +171,19 @@ HexTileScene3D = ExtResource("7_jf4gb")
 RockObstacleScene = ExtResource("9_h4djk")
 CrystalObstacleScene = ExtResource("10_d0vbo")
 
+[node name="GroundMesh" type="MeshInstance3D" parent="." unique_id=1378590758]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.3, 0)
+mesh = SubResource("PlaneMesh_d0vbo")
+
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=170383794]
 transform = Transform3D(0.86602503, -0.35355324, 0.35355338, 0, 0.7071065, 0.70710677, -0.4999998, -0.61237216, 0.6123724, 0, 2.66986, 0)
-light_energy = 2.0
+light_color = Color(1.353256, 1.323478, 1.2610514, 1)
+light_energy = 1.4
 shadow_enabled = true
 
 [node name="CameraController" type="Node3D" parent="." unique_id=974354941]
 transform = Transform3D(1.00382, 0, 0, 0, 1.00382, 0, 0, 0, 1.00382, 0, 0, 0)
 script = ExtResource("8_emk3e")
-MaxZoom = 30.0
 RotationSpeed = 0.5
 MaxPitch = 87.5
 
@@ -165,7 +191,6 @@ MaxPitch = 87.5
 
 [node name="Camera3D" type="Camera3D" parent="CameraController/CameraPivot" unique_id=2018204839]
 transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 8, 0)
-environment = SubResource("Environment_jf4gb")
 current = true
 
 [node name="RayCast3D" type="RayCast3D" parent="CameraController/CameraPivot/Camera3D" unique_id=2033024139]

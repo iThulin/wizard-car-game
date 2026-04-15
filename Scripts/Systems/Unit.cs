@@ -22,10 +22,13 @@ public sealed class Stats
 
 public partial class Unit : Node3D
 {
+    // Basic unit properties
     [Export] public bool IsPlayerControlled = false;
     [Export] public int TeamId = 0;
+    [Export] public string DisplayName = "";
+    private Label3D _nameLabel;
 
-    // ✅ Inspector-tweakable starting values
+    // Starting stats (can be overridden in the editor for different unit types)
     [Export] public int StartMaxHealth = 10;
     [Export] public int StartHealth = 10;
     [Export] public int StartArmor = 0;
@@ -43,6 +46,9 @@ public partial class Unit : Node3D
     private MeshInstance3D _selectionRing;
     private StandardMaterial3D _selectionMat;
     private bool _isSelected = false;
+    private MeshInstance3D _hoverRing;
+    private StandardMaterial3D _hoverMat;
+    private bool _isHovered = false;
 
     public override void _Ready()
     {
@@ -65,13 +71,18 @@ public partial class Unit : Node3D
 
         CreateSelectionRing();
         SetSelected(false);
+
+        CreateHoverRing();
+        CreateNameLabel();
     }
 
     public void StartTurn()
     {
+        if (!IsInstanceValid(this)) return;
+
         Stats.MovePoints = Stats.BaseSpeed;
-        Stats.HasMoved = false;
-        Stats.HasActed = false;
+        Stats.HasMoved   = false;
+        Stats.HasActed   = false;
 
         Stats.Mana = Stats.MaxMana;
         _healthBar?.SetMana(Stats.Mana, Stats.MaxMana);
@@ -214,10 +225,73 @@ public partial class Unit : Node3D
     {
         _isSelected = selected;
 
-        if (_selectionRing == null)
-            CreateSelectionRing();
+        if (_selectionRing == null) CreateSelectionRing();
+        if (_selectionRing != null) _selectionRing.Visible = selected;
 
-        if (_selectionRing != null)
-            _selectionRing.Visible = selected;
+        // Hide hover ring while selected to avoid visual overlap
+        if (_hoverRing != null && selected)
+            _hoverRing.Visible = false;
     }
+
+    private void CreateHoverRing()
+    {
+        var ring = new MeshInstance3D();
+        var mesh = new CylinderMesh
+        {
+            TopRadius    = 0.75f,
+            BottomRadius = 0.75f,
+            Height       = 0.05f,
+            RadialSegments = 24
+        };
+        ring.Mesh = mesh;
+        ring.Position = new Vector3(0f, 0.03f, 0f);
+
+        _hoverMat = new StandardMaterial3D
+        {
+            AlbedoColor  = new Color(1.0f, 0.8f, 0.1f, 0.7f), // gold
+            Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+            ShadingMode  = BaseMaterial3D.ShadingModeEnum.Unshaded,
+            NoDepthTest  = true
+        };
+        ring.SetSurfaceOverrideMaterial(0, _hoverMat);
+        ring.Visible = false;
+        AddChild(ring);
+        _hoverRing = ring;
+    }
+
+    public void SetHovered(bool hovered)
+    {
+        _isHovered = hovered;
+        if (_hoverRing != null)
+            _hoverRing.Visible = hovered && !_isSelected;
+    }
+
+    private void CreateNameLabel()
+    {
+        _nameLabel = new Label3D
+        {
+            Text       = DisplayName.Length > 0 ? DisplayName : Name,
+            Billboard  = BaseMaterial3D.BillboardModeEnum.Enabled,
+            FontSize   = 18,
+            Modulate   = new Color(1f, 0.85f, 0.85f, 1f),
+            Position   = new Vector3(0f, 2.4f, 0f),
+            OutlineSize = 6,
+            OutlineModulate = Colors.Black
+        };
+        AddChild(_nameLabel);
+    }
+
+    public void RefreshNameLabel()
+    {
+        if (_nameLabel != null)
+            _nameLabel.Text = DisplayName.Length > 0 ? DisplayName : Name;
+    }
+
+    public void SetBodyColor(Color color)
+    {
+        var mesh = GetNodeOrNull<MeshInstance3D>("MeshInstance3D");
+        if (mesh == null) return;
+        var mat = new StandardMaterial3D { AlbedoColor = color };
+        mesh.SetSurfaceOverrideMaterial(0, mat);
+}
 }

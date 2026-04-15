@@ -37,8 +37,9 @@ public partial class GameRunner : Node3D
 
     // ── Selection state ─────────────────────────────────────────────────────
     private Unit               selectedUnit       = null;
-    private Unit               inspectedEnemyUnit = null;   // NEW – enemy inspected via click
+    private Unit               inspectedEnemyUnit = null;   
     private HashSet<Vector2I>  currentMoveTiles   = new();
+    private Unit _hoveredUnit = null;
 
     // ── Phase ───────────────────────────────────────────────────────────────
     public enum CombatPhase { Deployment, PlayerTurn, EnemyTurn, Victory, Defeat }
@@ -111,6 +112,39 @@ public partial class GameRunner : Node3D
 
         RefreshPhaseUI();
         RefreshSelectedUnitUI();
+    }
+
+    public override void _Process(double delta)
+    {
+        if (currentPhase == CombatPhase.EnemyTurn) return;
+
+        var camera = GetViewport().GetCamera3D();
+        if (camera == null) return;
+
+        Vector2 mousePos = GetViewport().GetMousePosition();
+        Vector3 from = camera.ProjectRayOrigin(mousePos);
+        Vector3 to   = from + camera.ProjectRayNormal(mousePos) * 1000f;
+
+        var result = GetWorld3D().DirectSpaceState
+            .IntersectRay(PhysicsRayQueryParameters3D.Create(from, to));
+
+        Unit hitUnit = null;
+        if (result.Count > 0 && result.TryGetValue("collider", out var cv))
+        {
+            Node current = cv.AsGodotObject() as Node;
+            while (current != null)
+            {
+                if (current is Unit u) { hitUnit = u; break; }
+                current = current.GetParent();
+            }
+        }
+
+        if (hitUnit != _hoveredUnit)
+        {
+            _hoveredUnit?.SetHovered(false);
+            _hoveredUnit = hitUnit;
+            _hoveredUnit?.SetHovered(true);
+        }
     }
 
     private void SyncDeckManagerToState()
@@ -231,11 +265,13 @@ public partial class GameRunner : Node3D
         var enemy = enemyUnits[index];
         if (enemy == null || !enemy.Stats.IsAlive) return;
 
-        // Deselect player unit visually when peeking at an enemy
+        if (inspectedEnemyUnit != null)
+            inspectedEnemyUnit.SetSelected(false);  // ← ADD THIS
         if (selectedUnit != null)
             selectedUnit.SetSelected(false);
         selectedUnit        = null;
         inspectedEnemyUnit  = enemy;
+        inspectedEnemyUnit.SetSelected(true);       // ← ADD THIS
         ClearMoveTiles();
         RefreshSelectedUnitUI();
         RefreshPlayerUnitBar();
@@ -328,11 +364,15 @@ public partial class GameRunner : Node3D
     {
         if (enemy == null || !enemy.Stats.IsAlive) return;
 
-        // Clear player selection visual
+        // Clear previous inspected enemy ring
+        if (inspectedEnemyUnit != null)
+            inspectedEnemyUnit.SetSelected(false);
+
         if (selectedUnit != null)
             selectedUnit.SetSelected(false);
         selectedUnit       = null;
         inspectedEnemyUnit = enemy;
+        inspectedEnemyUnit.SetSelected(true);   // ← ADD THIS
         ClearMoveTiles();
 
         RefreshSelectedUnitUI();
@@ -375,6 +415,11 @@ public partial class GameRunner : Node3D
         if (unit == null || !unit.IsPlayerControlled) return;
 
         if (selectedUnit != null) selectedUnit.SetSelected(false);
+        if (inspectedEnemyUnit != null)               
+        {                                             
+            inspectedEnemyUnit.SetSelected(false);    
+            inspectedEnemyUnit = null;                
+        } 
 
         selectedUnit       = unit;
         inspectedEnemyUnit = null;    // clear any enemy inspection
@@ -437,7 +482,11 @@ public partial class GameRunner : Node3D
         enemyPhaseRunning = false;
 
         foreach (var unit in playerUnits)
+        {
+            if (unit == null || !IsInstanceValid(unit) || !unit.Stats.IsAlive)
+                continue;
             unit.StartTurn();
+        }
 
         selectedUnit       = null;
         inspectedEnemyUnit = null;
@@ -490,6 +539,8 @@ public partial class GameRunner : Node3D
         RefreshSelectedUnitUI();
 
         await RunEnemyTurn();
+
+        PruneDeadUnits();   // ← ADD THIS before CheckCombatEnd
 
         if (CheckCombatEnd()) return;
 
@@ -781,6 +832,21 @@ public partial class GameRunner : Node3D
             return;
         }
 
+        // Distinct colors for each enemy so they're visually differentiable
+        var enemyColors = new Color[]
+        {
+            new Color(1.0f, 0.25f, 0.25f), // red
+            new Color(1.0f, 0.55f, 0.1f),  // orange
+            new Color(0.8f, 0.2f, 0.9f),   // purple
+            new Color(0.2f, 0.8f, 0.9f),   // cyan
+            new Color(0.9f, 0.9f, 0.1f),   // yellow
+        };
+        for (int i = 0; i < enemyUnits.Count; i++)
+        {
+            enemyUnits[i].SetBodyColor(enemyColors[i % enemyColors.Length]);
+            enemyUnits[i].RefreshNameLabel();
+        }
+
         playerUnit = playerUnits[0];
         dummyUnit  = enemyUnits[0];
 
@@ -812,7 +878,6 @@ public partial class GameRunner : Node3D
         if (tile == null) { GD.PrintErr($"Spawn slot had no valid tile for side: {side}"); return null; }
 
         var unit = scene.Instantiate<Unit>();
-        AddChild(unit);
 
         unit.IsPlayerControlled = isPlayerControlled;
         unit.TeamId             = teamId;
@@ -824,6 +889,7 @@ public partial class GameRunner : Node3D
         unit.StartArmor         = armor;
         unit.StartShield        = shield;
 
+        AddChild(unit);
         unit.PlaceOnTile(tile);
 
         if (side == HexGridManager.SpawnSide.Player)

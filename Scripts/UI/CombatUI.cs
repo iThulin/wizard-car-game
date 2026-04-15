@@ -105,11 +105,10 @@ public partial class CombatUI : CanvasLayer
 		if (_confirmDeploymentButton == null) GD.PrintErr("CombatUI: ConfirmDeploymentButton not found");
 		if (_endTurnButton     == null) GD.PrintErr("CombatUI: EndTurnButton not found");
 
-		// Optional new panels – just inform, don't error
-		if (_enemyRosterBox == null) GD.Print("CombatUI: EnemyRosterPanel not in scene yet – add it to enable enemy roster.");
-		if (_playerUnitBar  == null) GD.Print("CombatUI: PlayerUnitBar not in scene yet – add it to enable unit bar.");
-		if (_actionLogLabel == null) GD.Print("CombatUI: ActionLogPanel not in scene yet – add it to enable action log.");
-		if (_deckButton     == null) GD.Print("CombatUI: DeckGravePanel not in scene yet – add it to enable deck/grave counters.");
+		// Suppress the built-in % text — labels already show the values
+		if (_healthBar != null) _healthBar.ShowPercentage = false;
+		if (_moveBar   != null) _moveBar.ShowPercentage   = false;
+		if (_manaBar   != null) _manaBar.ShowPercentage   = false;
 	}
 
 	private void WireButtons()
