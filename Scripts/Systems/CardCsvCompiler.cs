@@ -9,6 +9,13 @@ public static class CardCsvCompiler
         var card = new Card { CardName = row.Top.Name };
         card.TopHalf    = CompileHalf(row.Top, card);
         card.BottomHalf = CompileHalf(row.Bottom, card);
+        
+        // Parse rarity
+        if (Enum.TryParse<CardRarity>(row.Rarity, ignoreCase: true, out var rarity))
+            card.Rarity = rarity;
+        else
+            card.Rarity = CardRarity.Common;
+        
         return card;
     }
 
@@ -21,7 +28,7 @@ static CardHalf CompileHalf(HalfCsvData src, Card owner)
     if (!Enum.TryParse<CardSchool>(rawClass, ignoreCase: true, out var school))
     {
         GD.PrintErr($"Unknown Class '{src.Class}' (normalized '{rawClass}') for card '{src.Name}'. Defaulting to Engineer.");
-        school = CardSchool.Engineer;
+        school = CardSchool.Tinker;
     }
 
     var k1 = Canon.Kw(src.Keyword1);

@@ -12,7 +12,7 @@ script = ExtResource("1_y3rtd")
 HoverColor = Color(0.345098, 0.470588, 0.337255, 1)
 
 [node name="HexMesh" type="MeshInstance3D" parent="." unique_id=858530921]
-transform = Transform3D(0.866025, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866025, 0, 0, 0)
+transform = Transform3D(0.86602527, 0, 0.50000024, 0, 3, 0, -0.50000024, 0, 0.86602527, 0, -0.25, 0)
 mesh = ExtResource("2_1spyd")
 surface_material_override/0 = SubResource("StandardMaterial3D_1spyd")
 
@@ -23,6 +23,7 @@ shape = ExtResource("3_7nvip")
 
 [node name="CoordLabel" type="Label3D" parent="." unique_id=1061788109]
 transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0.277201, 0)
+visible = false
 billboard = 1
 text = "Test
 "

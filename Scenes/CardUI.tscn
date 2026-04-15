@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3 uid="uid://iuge2orfh1hw"]
+[gd_scene format=3 uid="uid://iuge2orfh1hw"]
 
 [ext_resource type="Script" uid="uid://birxykmprpeas" path="res://Scripts/Cards/CardUi.cs" id="1_huidv"]
 
@@ -49,227 +49,7 @@ bg_color = Color(0.0588235, 0.733333, 0.733333, 1)
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6si4d"]
 bg_color = Color(0.666667, 0.509804, 0.886275, 1)
 
-[sub_resource type="Animation" id="Animation_547ju"]
-length = 0.01
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath(".:scale")
-tracks/0/interp = 2
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0.05),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [Vector2(1, 1)]
-}
-tracks/1/type = "value"
-tracks/1/imported = false
-tracks/1/enabled = true
-tracks/1/path = NodePath(".:z_index")
-tracks/1/interp = 0
-tracks/1/loop_wrap = true
-tracks/1/keys = {
-"times": PackedFloat32Array(0.05),
-"transitions": PackedFloat32Array(1),
-"update": 1,
-"values": [0]
-}
-tracks/2/type = "value"
-tracks/2/imported = false
-tracks/2/enabled = true
-tracks/2/path = NodePath("CardVisual/VBoxContainer/TopCardPanel:modulate")
-tracks/2/interp = 0
-tracks/2/loop_wrap = true
-tracks/2/keys = {
-"times": PackedFloat32Array(0.01),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [Color(1, 1, 1, 1)]
-}
-tracks/3/type = "value"
-tracks/3/imported = false
-tracks/3/enabled = true
-tracks/3/path = NodePath("CardVisual/VBoxContainer/BottomCardPanel:modulate")
-tracks/3/interp = 0
-tracks/3/loop_wrap = true
-tracks/3/keys = {
-"times": PackedFloat32Array(0.01),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [Color(1, 1, 1, 1)]
-}
-
-[sub_resource type="Animation" id="Animation_obeoo"]
-resource_name = "hover_enter_bottom"
-length = 0.25
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = false
-tracks/0/path = NodePath(".:scale")
-tracks/0/interp = 2
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0, 0.25),
-"transitions": PackedFloat32Array(1, 1),
-"update": 0,
-"values": [Vector2(1, 1), Vector2(1.1, 1.1)]
-}
-tracks/1/type = "value"
-tracks/1/imported = false
-tracks/1/enabled = true
-tracks/1/path = NodePath(".:z_index")
-tracks/1/interp = 2
-tracks/1/loop_wrap = true
-tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.05),
-"transitions": PackedFloat32Array(1, 0.1),
-"update": 1,
-"values": [0, 100]
-}
-tracks/2/type = "value"
-tracks/2/imported = false
-tracks/2/enabled = true
-tracks/2/path = NodePath("CardVisual/VBoxContainer/TopCardPanel:modulate")
-tracks/2/interp = 2
-tracks/2/loop_wrap = true
-tracks/2/keys = {
-"times": PackedFloat32Array(0, 0.25),
-"transitions": PackedFloat32Array(1, 1),
-"update": 0,
-"values": [Color(1, 1, 1, 1), Color(0.361575, 0.361575, 0.361575, 1)]
-}
-
-[sub_resource type="Animation" id="Animation_vypdv"]
-resource_name = "hover_enter_top"
-length = 0.25
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = false
-tracks/0/path = NodePath(".:scale")
-tracks/0/interp = 2
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0, 0.25),
-"transitions": PackedFloat32Array(1, 1),
-"update": 0,
-"values": [Vector2(1, 1), Vector2(1.1, 1.1)]
-}
-tracks/1/type = "value"
-tracks/1/imported = false
-tracks/1/enabled = true
-tracks/1/path = NodePath(".:z_index")
-tracks/1/interp = 2
-tracks/1/loop_wrap = true
-tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.05),
-"transitions": PackedFloat32Array(1, 0.1),
-"update": 1,
-"values": [0, 100]
-}
-tracks/2/type = "value"
-tracks/2/imported = false
-tracks/2/enabled = true
-tracks/2/path = NodePath("CardVisual/VBoxContainer/BottomCardPanel:modulate")
-tracks/2/interp = 2
-tracks/2/loop_wrap = true
-tracks/2/keys = {
-"times": PackedFloat32Array(0, 0.25),
-"transitions": PackedFloat32Array(1, 1),
-"update": 0,
-"values": [Color(1, 1, 1, 1), Color(0.360784, 0.360784, 0.360784, 1)]
-}
-
-[sub_resource type="Animation" id="Animation_hcufj"]
-resource_name = "hover_exit_bottom"
-length = 0.25
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = false
-tracks/0/path = NodePath(".:scale")
-tracks/0/interp = 2
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0, 0.25),
-"transitions": PackedFloat32Array(1, 1),
-"update": 0,
-"values": [Vector2(1.1, 1.1), Vector2(1, 1)]
-}
-tracks/1/type = "value"
-tracks/1/imported = false
-tracks/1/enabled = true
-tracks/1/path = NodePath(".:z_index")
-tracks/1/interp = 2
-tracks/1/loop_wrap = true
-tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.05),
-"transitions": PackedFloat32Array(1, 1),
-"update": 1,
-"values": [100, 0]
-}
-tracks/2/type = "value"
-tracks/2/imported = false
-tracks/2/enabled = true
-tracks/2/path = NodePath("CardVisual/VBoxContainer/TopCardPanel:modulate")
-tracks/2/interp = 2
-tracks/2/loop_wrap = true
-tracks/2/keys = {
-"times": PackedFloat32Array(0, 0.05),
-"transitions": PackedFloat32Array(1, 1),
-"update": 0,
-"values": [Color(0.360784, 0.360784, 0.360784, 1), Color(1, 1, 1, 1)]
-}
-
-[sub_resource type="Animation" id="Animation_af8jv"]
-resource_name = "hover_exit_top"
-length = 0.25
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = false
-tracks/0/path = NodePath(".:scale")
-tracks/0/interp = 2
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0, 0.25),
-"transitions": PackedFloat32Array(1, 1),
-"update": 0,
-"values": [Vector2(1.1, 1.1), Vector2(1, 1)]
-}
-tracks/1/type = "value"
-tracks/1/imported = false
-tracks/1/enabled = true
-tracks/1/path = NodePath(".:z_index")
-tracks/1/interp = 2
-tracks/1/loop_wrap = true
-tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.05),
-"transitions": PackedFloat32Array(1, 1),
-"update": 1,
-"values": [100, 0]
-}
-tracks/2/type = "value"
-tracks/2/imported = false
-tracks/2/enabled = true
-tracks/2/path = NodePath("CardVisual/VBoxContainer/BottomCardPanel:modulate")
-tracks/2/interp = 2
-tracks/2/loop_wrap = true
-tracks/2/keys = {
-"times": PackedFloat32Array(0, 0.05),
-"transitions": PackedFloat32Array(1, 1),
-"update": 0,
-"values": [Color(0.360784, 0.360784, 0.360784, 1), Color(1, 1, 1, 1)]
-}
-
-[sub_resource type="AnimationLibrary" id="AnimationLibrary_af8jv"]
-_data = {
-&"RESET": SubResource("Animation_547ju"),
-&"hover_enter_bottom": SubResource("Animation_obeoo"),
-&"hover_enter_top": SubResource("Animation_vypdv"),
-&"hover_exit_bottom": SubResource("Animation_hcufj"),
-&"hover_exit_top": SubResource("Animation_af8jv")
-}
-
-[node name="CardUi" type="Control"]
+[node name="CardUi" type="Control" unique_id=1075145592]
 z_index = 100
 clip_contents = true
 custom_minimum_size = Vector2(200, 300)
@@ -289,69 +69,68 @@ focus_mode = 2
 mouse_default_cursor_shape = 5
 script = ExtResource("1_huidv")
 
-[node name="CardVisual" type="Control" parent="."]
+[node name="CardVisual" type="Control" parent="." unique_id=103932224]
 custom_minimum_size = Vector2(200, 300)
 anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
 mouse_filter = 2
 
-[node name="Transition" type="Panel" parent="CardVisual"]
+[node name="Transition" type="Panel" parent="CardVisual" unique_id=765467469]
 visible = false
 z_index = 1
 custom_minimum_size = Vector2(200, 10)
-layout_mode = 2
+layout_mode = 0
 offset_top = 145.0
 offset_right = 200.0
 offset_bottom = 155.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxTexture_547ju")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CardVisual"]
+[node name="VBoxContainer" type="VBoxContainer" parent="CardVisual" unique_id=1015762943]
 custom_minimum_size = Vector2(200, 300)
-layout_mode = 2
+layout_mode = 0
 offset_right = 200.0
 offset_bottom = 300.0
 size_flags_vertical = 0
 mouse_filter = 2
 theme_override_constants/separation = 4
 
-[node name="TopCardPanel" type="Panel" parent="CardVisual/VBoxContainer"]
+[node name="TopCardPanel" type="Panel" parent="CardVisual/VBoxContainer" unique_id=1053366609]
 custom_minimum_size = Vector2(200, 148)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_hcufj")
 
-[node name="TopCardControl" type="Control" parent="CardVisual/VBoxContainer/TopCardPanel"]
+[node name="TopCardControl" type="Control" parent="CardVisual/VBoxContainer/TopCardPanel" unique_id=533240400]
 custom_minimum_size = Vector2(200, 148)
-layout_mode = 2
 anchors_preset = 0
 offset_right = 200.0
 offset_bottom = 148.0
 mouse_filter = 1
 mouse_default_cursor_shape = 2
 
-[node name="TopSpellContainer" type="VBoxContainer" parent="CardVisual/VBoxContainer/TopCardPanel/TopCardControl"]
+[node name="TopSpellContainer" type="VBoxContainer" parent="CardVisual/VBoxContainer/TopCardPanel/TopCardControl" unique_id=814765038]
 custom_minimum_size = Vector2(190, 140)
-layout_mode = 2
+layout_mode = 0
 offset_left = 5.0
 offset_top = 5.0
 offset_right = 195.0
 offset_bottom = 145.0
 mouse_filter = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="CardVisual/VBoxContainer/TopCardPanel/TopCardControl/TopSpellContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="CardVisual/VBoxContainer/TopCardPanel/TopCardControl/TopSpellContainer" unique_id=701928792]
 custom_minimum_size = Vector2(180, 0)
 layout_mode = 2
 
-[node name="ManaPanel" type="Panel" parent="CardVisual/VBoxContainer/TopCardPanel/TopCardControl/TopSpellContainer/HBoxContainer"]
+[node name="ManaPanel" type="Panel" parent="CardVisual/VBoxContainer/TopCardPanel/TopCardControl/TopSpellContainer/HBoxContainer" unique_id=221779401]
 custom_minimum_size = Vector2(25, 30)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_obeoo")
 
-[node name="ManaLabel" type="Label" parent="CardVisual/VBoxContainer/TopCardPanel/TopCardControl/TopSpellContainer/HBoxContainer/ManaPanel"]
+[node name="ManaLabel" type="Label" parent="CardVisual/VBoxContainer/TopCardPanel/TopCardControl/TopSpellContainer/HBoxContainer/ManaPanel" unique_id=1471797546]
 custom_minimum_size = Vector2(25, 30)
-layout_mode = 2
+layout_mode = 0
 offset_right = 25.0
 offset_bottom = 30.0
 size_flags_vertical = 0
@@ -362,20 +141,19 @@ horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 3
 
-[node name="NameLabel" type="Label" parent="CardVisual/VBoxContainer/TopCardPanel/TopCardControl/TopSpellContainer/HBoxContainer"]
+[node name="NameLabel" type="Label" parent="CardVisual/VBoxContainer/TopCardPanel/TopCardControl/TopSpellContainer/HBoxContainer" unique_id=645395134]
 custom_minimum_size = Vector2(160, 30)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 0
 theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 18
 text = "Spell Name"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 3
 
-[node name="DescriptionLabel" type="RichTextLabel" parent="CardVisual/VBoxContainer/TopCardPanel/TopCardControl/TopSpellContainer"]
+[node name="DescriptionLabel" type="RichTextLabel" parent="CardVisual/VBoxContainer/TopCardPanel/TopCardControl/TopSpellContainer" unique_id=699756659]
 custom_minimum_size = Vector2(160, 30)
 layout_mode = 2
 size_flags_vertical = 3
@@ -386,15 +164,15 @@ text = "Description"
 scroll_active = false
 vertical_alignment = 1
 
-[node name="ChannelPanel" type="Panel" parent="CardVisual/VBoxContainer/TopCardPanel/TopCardControl/TopSpellContainer"]
+[node name="ChannelPanel" type="Panel" parent="CardVisual/VBoxContainer/TopCardPanel/TopCardControl/TopSpellContainer" unique_id=934179396]
 custom_minimum_size = Vector2(160, 30)
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_af8jv")
 
-[node name="ChannelLabel" type="RichTextLabel" parent="CardVisual/VBoxContainer/TopCardPanel/TopCardControl/TopSpellContainer/ChannelPanel"]
+[node name="ChannelLabel" type="RichTextLabel" parent="CardVisual/VBoxContainer/TopCardPanel/TopCardControl/TopSpellContainer/ChannelPanel" unique_id=720314057]
 custom_minimum_size = Vector2(160, 30)
-layout_mode = 2
+layout_mode = 0
 offset_right = 190.0
 offset_bottom = 30.0
 size_flags_vertical = 3
@@ -407,41 +185,40 @@ fit_content = true
 scroll_active = false
 vertical_alignment = 1
 
-[node name="BottomCardPanel" type="Panel" parent="CardVisual/VBoxContainer"]
+[node name="BottomCardPanel" type="Panel" parent="CardVisual/VBoxContainer" unique_id=350482926]
 custom_minimum_size = Vector2(200, 148)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_547ju")
 
-[node name="BottomCardControl" type="Control" parent="CardVisual/VBoxContainer/BottomCardPanel"]
+[node name="BottomCardControl" type="Control" parent="CardVisual/VBoxContainer/BottomCardPanel" unique_id=1530767553]
 custom_minimum_size = Vector2(200, 148)
-layout_mode = 2
 anchors_preset = 0
 offset_right = 200.0
 offset_bottom = 148.0
 mouse_filter = 1
 mouse_default_cursor_shape = 2
 
-[node name="BottomSpellContainer" type="VBoxContainer" parent="CardVisual/VBoxContainer/BottomCardPanel/BottomCardControl"]
+[node name="BottomSpellContainer" type="VBoxContainer" parent="CardVisual/VBoxContainer/BottomCardPanel/BottomCardControl" unique_id=358788456]
 custom_minimum_size = Vector2(190, 140)
-layout_mode = 2
+layout_mode = 0
 offset_left = 5.0
 offset_top = 2.0
 offset_right = 196.0
 offset_bottom = 142.0
 mouse_filter = 2
 
-[node name="NameHBoxContainer" type="HBoxContainer" parent="CardVisual/VBoxContainer/BottomCardPanel/BottomCardControl/BottomSpellContainer"]
+[node name="NameHBoxContainer" type="HBoxContainer" parent="CardVisual/VBoxContainer/BottomCardPanel/BottomCardControl/BottomSpellContainer" unique_id=1858304413]
 layout_mode = 2
 
-[node name="ManaPanel" type="Panel" parent="CardVisual/VBoxContainer/BottomCardPanel/BottomCardControl/BottomSpellContainer/NameHBoxContainer"]
+[node name="ManaPanel" type="Panel" parent="CardVisual/VBoxContainer/BottomCardPanel/BottomCardControl/BottomSpellContainer/NameHBoxContainer" unique_id=1962823531]
 custom_minimum_size = Vector2(25, 25)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_vypdv")
 
-[node name="ManaLabel" type="Label" parent="CardVisual/VBoxContainer/BottomCardPanel/BottomCardControl/BottomSpellContainer/NameHBoxContainer/ManaPanel"]
+[node name="ManaLabel" type="Label" parent="CardVisual/VBoxContainer/BottomCardPanel/BottomCardControl/BottomSpellContainer/NameHBoxContainer/ManaPanel" unique_id=2033298157]
 custom_minimum_size = Vector2(25, 25)
-layout_mode = 2
+layout_mode = 0
 offset_right = 25.0
 offset_bottom = 30.0
 size_flags_vertical = 8
@@ -452,19 +229,18 @@ horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 3
 
-[node name="NameLabel" type="Label" parent="CardVisual/VBoxContainer/BottomCardPanel/BottomCardControl/BottomSpellContainer/NameHBoxContainer"]
+[node name="NameLabel" type="Label" parent="CardVisual/VBoxContainer/BottomCardPanel/BottomCardControl/BottomSpellContainer/NameHBoxContainer" unique_id=1962293129]
 custom_minimum_size = Vector2(160, 30)
 layout_mode = 2
 size_flags_vertical = 0
 theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 18
 text = "Spell Name"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 3
 
-[node name="DescriptionLabel" type="RichTextLabel" parent="CardVisual/VBoxContainer/BottomCardPanel/BottomCardControl/BottomSpellContainer"]
+[node name="DescriptionLabel" type="RichTextLabel" parent="CardVisual/VBoxContainer/BottomCardPanel/BottomCardControl/BottomSpellContainer" unique_id=1494641096]
 custom_minimum_size = Vector2(160, 30)
 layout_mode = 2
 size_flags_vertical = 3
@@ -475,14 +251,14 @@ text = "Description"
 scroll_active = false
 vertical_alignment = 1
 
-[node name="ChannelPanel" type="Panel" parent="CardVisual/VBoxContainer/BottomCardPanel/BottomCardControl/BottomSpellContainer"]
+[node name="ChannelPanel" type="Panel" parent="CardVisual/VBoxContainer/BottomCardPanel/BottomCardControl/BottomSpellContainer" unique_id=148595662]
 custom_minimum_size = Vector2(190, 50)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_6si4d")
 
-[node name="ChannelLabel" type="RichTextLabel" parent="CardVisual/VBoxContainer/BottomCardPanel/BottomCardControl/BottomSpellContainer/ChannelPanel"]
+[node name="ChannelLabel" type="RichTextLabel" parent="CardVisual/VBoxContainer/BottomCardPanel/BottomCardControl/BottomSpellContainer/ChannelPanel" unique_id=1712263855]
 custom_minimum_size = Vector2(160, 30)
-layout_mode = 2
+layout_mode = 0
 offset_right = 190.0
 offset_bottom = 50.0
 size_flags_vertical = 3
@@ -494,9 +270,3 @@ text = "description
 "
 scroll_active = false
 vertical_alignment = 1
-
-[node name="HoverAnimator" type="AnimationPlayer" parent="."]
-libraries = {
-&"": SubResource("AnimationLibrary_af8jv")
-}
-blend_times = [&"hover_enter_bottom", &"hover_enter_bottom", 0.25, &"hover_enter_bottom", &"hover_enter_top", 0.25, &"hover_enter_bottom", &"hover_exit_bottom", 0.25, &"hover_enter_bottom", &"hover_exit_top", 0.25]

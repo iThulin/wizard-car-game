@@ -11,6 +11,9 @@ public partial class DeckUiManager : Node2D
 	private DeckManager deckManager;
 	private Control handUIContainer;
 
+	private bool _isRefreshing = false;
+	private bool _refreshPending = false;
+
 	private Label deckCountLabel;
 	private Label handCountLabel;
 	private Label discardCountLabel;
@@ -45,43 +48,111 @@ public partial class DeckUiManager : Node2D
 
 	public async Task RefreshUI()
 	{
-		// Clear UI
-		foreach (Node child in handUIContainer.GetChildren())
+		_isRefreshing = true;
+		_refreshPending = false;
+
+		try
 		{
-			if (child is CardUi cardUi)
-				cardUi.QueueFree();
+			// Snapshot hand RIGHT NOW for diffing
+			var targetHand = new List<Card>(deckManager.Hand);
+
+			// Find existing UI nodes
+			var currentUiCards = new List<CardUi>();
+			foreach (Node child in handUIContainer.GetChildren())
+				if (child is CardUi c) currentUiCards.Add(c);
+
+			// Cards whose UI node should be removed
+			var toRemove = new List<CardUi>();
+			foreach (var cardUi in currentUiCards)
+				if (!targetHand.Contains(cardUi.CardInstance))
+					toRemove.Add(cardUi);
+
+			// Cards that need a new UI node
+			var existingCards = new HashSet<Card>();
+			foreach (var cardUi in currentUiCards)
+				existingCards.Add(cardUi.CardInstance);
+
+			// Animate out discarded cards
+			foreach (var cardUi in toRemove)
+				PlayDiscardAnimation(cardUi);
+
+			// Add UI nodes for new cards immediately
+			foreach (var card in targetHand)
+			{
+				if (!existingCards.Contains(card))
+				{
+					var cardUi = CardUIPackedScene.Instantiate<CardUi>();
+					cardUi.SetCard(card);
+					cardUi.SetDeckUiManager(this);
+					cardUi.CardDropped += () => PositionHandCards();
+					handUIContainer.AddChild(cardUi);
+				}
+			}
+
+			// Wait one frame for layout
+			await ToSignal(GetTree().CreateTimer(0.0f), "timeout");
+
+			// Wait for discard anims if any
+			if (toRemove.Count > 0)
+				await ToSignal(GetTree().CreateTimer(0.30f), "timeout");
+
+			// --- RE-DIFF HERE against current hand, not the old snapshot ---
+			// Hand may have changed during the await (draw, reshuffle, etc.)
+			var finalHand = new HashSet<Card>(deckManager.Hand);
+
+			// Remove any UI nodes that are still not in the final hand
+			var allUiCards = new List<CardUi>();
+			foreach (Node child in handUIContainer.GetChildren())
+				if (child is CardUi c) allUiCards.Add(c);
+
+			foreach (var cardUi in allUiCards)
+			{
+				if (!finalHand.Contains(cardUi.CardInstance))
+				{
+					if (cardUi.GetParent() == handUIContainer)
+						handUIContainer.RemoveChild(cardUi);
+					if (IsInstanceValid(cardUi))
+						cardUi.QueueFree();
+				}
+			}
+
+			// Add any UI nodes still missing after awaits
+			var presentCards = new HashSet<Card>();
+			foreach (Node child in handUIContainer.GetChildren())
+				if (child is CardUi c) presentCards.Add(c.CardInstance);
+
+			foreach (var card in deckManager.Hand)
+			{
+				if (!presentCards.Contains(card))
+				{
+					var cardUi = CardUIPackedScene.Instantiate<CardUi>();
+					cardUi.SetCard(card);
+					cardUi.SetDeckUiManager(this);
+					cardUi.CardDropped += () => PositionHandCards();
+					handUIContainer.AddChild(cardUi);
+				}
+			}
+
+			PositionHandCards();
+			RefreshAffordability();
 		}
-
-		GD.Print($"RefreshUI called. Hand count: {deckManager.Hand.Count}, Container: {handUIContainer?.Name}, Container visible: {handUIContainer?.Visible}");
-
-		// Rebuild UI from deck manager state
-		foreach (var card in deckManager.Hand)
+		finally
 		{
-			var cardUi = CardUIPackedScene.Instantiate<CardUi>();
-			cardUi.SetCard(card);
-			cardUi.CardDropped += () => PositionHandCards();
-			handUIContainer.AddChild(cardUi);
-
-			GD.Print($"  Added card to UI: {card.CardName} | CardUi visible: {cardUi.Visible} | CardUi size: {cardUi.Size}");
+			_isRefreshing = false;
+			if (_refreshPending)
+				SafeRefreshUI();
 		}
-
-		await ToSignal(GetTree().CreateTimer(0.0f), "timeout");
-
-		PositionHandCards();
-
-		GD.Print($"PositionHandCards done. Child count in container: {handUIContainer.GetChildCount()}");
-		GD.Print($"Card global positions after layout:");
-		foreach (Node child in handUIContainer.GetChildren())
-		{
-			if (child is Control c)
-				GD.Print($"  {c.Name}: GlobalPos={c.GlobalPosition}, Size={c.Size}, Visible={c.Visible}");
-		}
-
 	}
 
 	public void SafeRefreshUI()
 	{
-		_ = RefreshUI(); // fire-and-forget; doesn't block
+		if (_isRefreshing)
+		{
+			// Queue one pending refresh to run after current finishes
+			_refreshPending = true;
+			return;
+		}
+		_ = RefreshUI();
 	}
 
 	private void PositionHandCards()
@@ -91,13 +162,12 @@ public partial class DeckUiManager : Node2D
 
 		Vector2 screenSize = GetViewport().GetVisibleRect().Size;
 
-		// After:
-		float radius = screenSize.Y * 2.5f;
+		float radius = screenSize.Y * 2.3f;
 		Vector2 arcCenter = new Vector2(screenSize.X / 2f, screenSize.Y + radius * 0.6f);
 
-		float maxArcSpanDeg = 40f;
-		float minArcSpanDeg = .5f;
-		float stepPerCard = 2f;
+		float maxArcSpanDeg = 30f;
+		float minArcSpanDeg = 1f;
+		float stepPerCard = 5f;
 		float arcSpanDeg = Mathf.Min(maxArcSpanDeg, stepPerCard * (count - 1));
 
 		arcSpanDeg = Mathf.Max(minArcSpanDeg, arcSpanDeg);
@@ -119,7 +189,10 @@ public partial class DeckUiManager : Node2D
 
 				Vector2 localPos = arcCenter + arcOffset;
 				card.Position = localPos - (card.Size / 2f);
-				card.Rotation = angle * 1f;
+				card.Rotation = angle;
+
+				if (card is CardUi cardUi)
+    				cardUi.SetRestTransform(card.Position, card.Rotation);
 			}
 		}
 		UpdateCardCounts();
@@ -146,4 +219,59 @@ public partial class DeckUiManager : Node2D
 		deckManager.Hand.RemoveAt(deckManager.Hand.Count - 1);
 		deckManager.DiscardPile.Add(card);
 	}
+
+	private void PlayDiscardAnimation(CardUi cardUi)
+	{
+		Vector2 screenSize = GetViewport().GetVisibleRect().Size;
+
+		var tween = cardUi.CreateTween().SetParallel(true);
+		tween.SetEase(Tween.EaseType.In).SetTrans(Tween.TransitionType.Cubic);
+		tween.TweenProperty(cardUi, "position",
+			cardUi.Position + new Vector2(0, screenSize.Y * 0.3f), 0.28f);
+		tween.TweenProperty(cardUi, "modulate",
+			new Color(1, 1, 1, 0f), 0.22f);
+		tween.TweenProperty(cardUi, "scale",
+			new Vector2(0.85f, 0.85f), 0.28f);
+	}
+
+	private Func<int> _getMana;
+
+	public void SetManaProvider(Func<int> provider)
+	{
+		_getMana = provider;
+	}
+
+	public void RefreshAffordability()
+	{
+		int mana = _getMana?.Invoke() ?? 999;
+		foreach (Node child in handUIContainer.GetChildren())
+		{
+			if (child is CardUi cardUi)
+				cardUi.RefreshAffordability(mana);
+		}
+	}
+
+	public void OnCardHoverChanged(CardUi hoveredCard, bool isEntering)
+	{
+		int count = handUIContainer.GetChildCount();
+		int hoveredIndex = hoveredCard.GetIndex();
+
+		for (int i = 0; i < count; i++)
+		{
+			if (handUIContainer.GetChild(i) is not CardUi neighbor) continue;
+			if (neighbor == hoveredCard) continue;
+
+			int dist = i - hoveredIndex;
+			// Push neighbors outward by up to 18px, falling off with distance
+			float push = isEntering ? 18f / Mathf.Abs(dist) * Mathf.Sign(dist) : 0f;
+
+			var tween = neighbor.CreateTween();
+			tween.SetEase(Tween.EaseType.Out).SetTrans(Tween.TransitionType.Cubic);
+			// Shift along the arc tangent — approximate with X offset
+			tween.TweenProperty(neighbor, "position",
+				neighbor._restPosition + new Vector2(push, 0), 0.15f);
+		}
+	}
+
+	
 }

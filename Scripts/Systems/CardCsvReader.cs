@@ -11,7 +11,11 @@ public sealed class HalfCsvData {
     public string Keyword2="", Target2="", Type2=""; public float Amount2=0;
     public string ChannelKeyword="", ChannelTarget="", ChannelType=""; public float ChannelAmount=0;
 }
-public sealed class RowCsvData { public HalfCsvData Top=new(); public HalfCsvData Bottom=new(); }
+public sealed class RowCsvData { 
+    public HalfCsvData Top=new(); 
+    public HalfCsvData Bottom=new(); 
+    public string Rarity="Common";  // <-- NEW
+}
 
 public static class CardCsvReader {
     public static List<RowCsvData> Load(string path, out List<string> diags){
@@ -47,6 +51,9 @@ public static class CardCsvReader {
             r.Bottom.ChannelTarget  = Get(f,idx,"Channel Target [30]");
             r.Bottom.ChannelType    = Get(f,idx,"Channel Type [31]");
             r.Bottom.ChannelAmount  = GetF(f,idx,"Channel Amount [32]");
+
+            r.Rarity = Get(f, idx, "Rarity [33]");
+            if (string.IsNullOrWhiteSpace(r.Rarity)) r.Rarity = "Common"; // default
 
             rows.Add(r);
         }

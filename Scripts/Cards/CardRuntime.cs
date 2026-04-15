@@ -8,6 +8,7 @@ public sealed class Card
     public Guid InstanceId = Guid.NewGuid();
     public CardHalf TopHalf;
     public CardHalf BottomHalf;
+    public CardRarity Rarity;
 }
 
 public abstract class Ability

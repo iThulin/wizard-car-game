@@ -13,6 +13,7 @@ height = 1.055
 
 [node name="Unit" type="Node3D" unique_id=1319964224]
 script = ExtResource("1_qk68r")
+StartMana = 0
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=815456347]
 transform = Transform3D(0.75, 0, 0, 0, 0.75, 0, 0, 0, 0.75, 0, 0.5692696, 0)

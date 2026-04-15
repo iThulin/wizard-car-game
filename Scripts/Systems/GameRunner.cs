@@ -9,6 +9,7 @@ public partial class GameRunner : Node3D
     [Export] public PackedScene DummyUnitScene;
     [Export] public NodePath GridPath = "../HexGridManager";
     [Export] public NodePath CombatUIPath = "../CombatUI";
+    private DeckUiManager deckUiManager;
 
     // Core game state and references
 
@@ -52,9 +53,17 @@ public partial class GameRunner : Node3D
     private CombatPhase currentPhase = CombatPhase.Deployment;
     private int roundNumber = 1;
     private bool enemyPhaseRunning = false;
+    private bool _endTurnPendingConfirmation = false;
 
     public override void _Ready()
     {
+        if (PlayerSession.DebugMode)
+        {
+            GD.Print("=== DEBUG MODE ENABLED ===");
+            EnableDeploymentPhase = false;  // skip straight to player turn
+            State.Mana[Me] = 99;            // unlimited mana
+        }
+
         if (CardDatabase.Blueprints.Count == 0)
             CardDatabase.LoadFromCsv("res://Data/cards.csv");
 
@@ -73,7 +82,7 @@ public partial class GameRunner : Node3D
         else
         {
             // Build deck and draw opening hand through DeckManager only
-            var startingDeck = deckManager.GenerateStartingDeck(CardSchool.Generic, 4);
+            var startingDeck = deckManager.GenerateStartingDeck(PlayerSession.SelectedSchool, 10);
             deckManager.InitializeDeck(startingDeck);
             deckManager.DrawCards(3);
 
@@ -81,6 +90,10 @@ public partial class GameRunner : Node3D
             State.HandA = deckManager.Hand;
             GD.Print($"Deck initialized. Hand count: {deckManager.Hand.Count}");
         }
+
+        deckUiManager = GetNodeOrNull<DeckUiManager>("../DeckUI/DeckUIManager");
+        deckUiManager?.SetManaProvider(() => State.Mana.ContainsKey(Me) ? State.Mana[Me] : 0);
+        
 
         dropper = GetNodeOrNull<CardDropHandler>("../CardDropHandler");
         if (dropper == null)
@@ -126,15 +139,18 @@ public partial class GameRunner : Node3D
         var half = isTop ? cardUi.TopHalf : cardUi.BottomHalf;
         if (half == null) { State.Log("Dropped half was null."); return; }
 
-        GD.Print($"Attempt cast {half.Name} cost? {(half.Costs.Length > 0 ? half.Costs[0].GetType().Name : "none")} mana={State.Mana[Me]}");
-
         var targets = new TargetSet();
         targets.Items.Add(tile);
 
         var ok = Rules.TryCastWithTargets(half, State, Me, targets, cardUi.CardInstance);
-        GD.Print($"Cast result={ok} manaNow={State.Mana[Me]}");
+        
         if (ok)
         {
+            // Auto-resolve the stack immediately after casting
+            // (manual R key resolution remains available for future stack interaction)
+            while (!State.Stack.IsEmpty)
+                State.Resolver.ResolveTop(State);
+
             if (selectedUnit != null)
             {
                 selectedUnit.Stats.HasActed = true;
@@ -221,13 +237,13 @@ public partial class GameRunner : Node3D
 
     private void RefreshSelectedUnitUI()
     {
-        if (combatUI == null)
-            return;
+        if (combatUI == null) return;
 
         int mana = State.Mana.ContainsKey(Me) ? State.Mana[Me] : 0;
-
         Unit unitToShow = isInDeploymentPhase ? selectedDeployUnit : selectedUnit;
         combatUI.ShowSelectedUnit(unitToShow, mana);
+
+        deckUiManager?.RefreshAffordability(); // ← lightweight, no animation
     }
 
     void Pass()
@@ -434,7 +450,6 @@ public partial class GameRunner : Node3D
         currentPhase = CombatPhase.Deployment;
         RefreshPhaseUI();
         RefreshSelectedUnitUI();
-
     }
 
     private void EndDeploymentPhase()
@@ -638,6 +653,7 @@ public partial class GameRunner : Node3D
     {
         currentPhase = CombatPhase.PlayerTurn;
         enemyPhaseRunning = false;
+        _endTurnPendingConfirmation = false;
 
         foreach (var unit in playerUnits)
             unit.StartTurn();
@@ -648,13 +664,18 @@ public partial class GameRunner : Node3D
         playerUnit.SyncManaToBar();
     }
 
-        selectedUnit = null;
-        ClearMoveTiles();
+    selectedUnit = null;
+    ClearMoveTiles();
 
-        GD.Print($"=== Round {roundNumber}: Player Turn ===");
+    GD.Print($"=== Round {roundNumber}: Player Turn ===");
 
-        RefreshPhaseUI();
-        RefreshSelectedUnitUI();
+    // Draw up to hand size at start of turn
+    int cardsToDraw = deckManager.MaxHandSize - deckManager.Hand.Count;
+    if (cardsToDraw > 0)
+        deckManager.DrawCards(cardsToDraw);
+
+    RefreshPhaseUI();
+    RefreshSelectedUnitUI();
     }
 
     private void EndPlayerTurn()
@@ -882,6 +903,10 @@ public partial class GameRunner : Node3D
         if (selectedUnit != null)
             selectedUnit.SetSelected(false);
 
+        _endTurnPendingConfirmation = false;
+        combatUI.SetHintText("Select a unit, move, cast, then end turn."); // ← reset hint text
+
+
         selectedUnit = unit;
         selectedUnit.SetSelected(true);
 
@@ -1017,6 +1042,28 @@ public partial class GameRunner : Node3D
         if (currentPhase != CombatPhase.PlayerTurn)
             return;
 
+        // Check if any player unit still has actions remaining
+        bool anyUnfinished = false;
+        foreach (var unit in playerUnits)
+        {
+            if (unit == null || !unit.Stats.IsAlive) continue;
+            if (unit.Stats.MovePoints > 0 || !unit.Stats.HasActed)
+            {
+                anyUnfinished = true;
+                break;
+            }
+        }
+
+        if (anyUnfinished && !_endTurnPendingConfirmation)
+        {
+            // First press — warn the player
+            _endTurnPendingConfirmation = true;
+            combatUI.SetHintText("Some units haven't acted. Click End Turn again to confirm.");
+            return;
+        }
+
+        // Second press or all units finished — end the turn
+        _endTurnPendingConfirmation = false;
         EndPlayerTurn();
     }
 

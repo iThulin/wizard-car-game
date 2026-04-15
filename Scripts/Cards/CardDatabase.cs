@@ -7,6 +7,7 @@ public sealed class CardBlueprint
 {
     public string Id;
     public CardSchool School;
+    public CardRarity Rarity;
     public RowCsvData Row;
 }
 
@@ -29,7 +30,7 @@ public static class CardDatabase
         Blueprints.Clear();
         foreach (var r in rows)
         {
-            // ✅ normalize (trim + strip BOM) BEFORE parsing
+            // Normalize (trim + strip BOM) BEFORE parsing
             var rawClass = (r.Top.Class ?? "").Trim().Trim('\uFEFF');
 
             if (!Enum.TryParse<CardSchool>(rawClass, ignoreCase: true, out var school))
@@ -38,15 +39,18 @@ public static class CardDatabase
                 continue;
             }
 
+            if (!Enum.TryParse<CardRarity>(r.Rarity, ignoreCase: true, out var rarity))
+                rarity = CardRarity.Common;
+
             Blueprints.Add(new CardBlueprint
             {
                 Id = $"{rawClass}:{r.Top.Name}|{r.Bottom.Name}",
                 School = school,
+                Rarity = rarity,  // <-- NEW
                 Row = r
             });
         }
 
-        // ✅ PLACE THE COUNTS BLOCK HERE (after Blueprints are built)
         var counts = Blueprints
             .GroupBy(b => b.School)
             .Select(g => $"{g.Key}:{g.Count()}")
@@ -89,5 +93,107 @@ public static class CardDatabase
 
         var pick = pool[rng.Next(pool.Count)];
         return Instantiate(pick);
+    }
+
+    public static List<Card> BuildWeightedDeck(CardSchool school, int count, int? seed = null)
+    {
+        var rng = seed.HasValue ? new Random(seed.Value) : new Random();
+        var pool = Blueprints.Where(b => b.School == school).ToList();
+        
+        // Weight: Common=4, Uncommon=3, Rare=2, Legendary=1
+        var weighted = new List<CardBlueprint>();
+        foreach (var bp in pool)
+        {
+            int weight = bp.Rarity switch {
+                CardRarity.Common => 4,
+                CardRarity.Uncommon => 3,
+                CardRarity.Rare => 2,
+                CardRarity.Legendary => 1,
+                _ => 4
+            };
+            for (int i = 0; i < weight; i++)
+                weighted.Add(bp);
+        }
+        
+        // Shuffle weighted pool and pick unique blueprints
+        var picked = new HashSet<string>();
+        var result = new List<Card>();
+        
+        for (int i = weighted.Count - 1; i > 0; i--)
+        {
+            int j = rng.Next(i + 1);
+            (weighted[i], weighted[j]) = (weighted[j], weighted[i]);
+        }
+        
+        foreach (var bp in weighted)
+        {
+            if (picked.Contains(bp.Id)) continue;
+            picked.Add(bp.Id);
+            result.Add(Instantiate(bp));
+            if (result.Count >= count) break;
+        }
+        
+        return result;
+    }
+
+    public static List<Card> GetDraftChoices(CardSchool school, int choices = 3, int? seed = null)
+    {
+        var rng = seed.HasValue ? new Random(seed.Value) : new Random();
+        var pool = Blueprints.Where(b => b.School == school).ToList();
+        
+        // Roll rarity for each choice: 50% Common, 30% Uncommon, 15% Rare, 5% Legendary
+        var result = new List<Card>();
+        for (int i = 0; i < choices; i++)
+        {
+            double roll = rng.NextDouble();
+            CardRarity target = roll < 0.50 ? CardRarity.Common
+                            : roll < 0.80 ? CardRarity.Uncommon
+                            : roll < 0.95 ? CardRarity.Rare
+                            : CardRarity.Legendary;
+            
+            var candidates = pool.Where(b => b.Rarity == target).ToList();
+            if (candidates.Count == 0) candidates = pool; // fallback
+            
+            var pick = candidates[rng.Next(candidates.Count)];
+            result.Add(Instantiate(pick));
+        }
+        
+        return result;
+    }
+
+    public static List<Card> GetShopInventory(CardSchool school, int size = 5, int? seed = null)
+    {
+        var rng = seed.HasValue ? new Random(seed.Value) : new Random();
+        var pool = Blueprints.Where(b => b.School == school).ToList();
+        
+        // Shop always has: 2 Common, 1 Uncommon, 1 Rare, 1 random (weighted toward Uncommon+)
+        var result = new List<Card>();
+        var used = new HashSet<string>();
+        
+        void AddFromRarity(CardRarity r, int count)
+        {
+            var candidates = pool.Where(b => b.Rarity == r && !used.Contains(b.Id)).ToList();
+            for (int i = 0; i < count && candidates.Count > 0; i++)
+            {
+                int idx = rng.Next(candidates.Count);
+                used.Add(candidates[idx].Id);
+                result.Add(Instantiate(candidates[idx]));
+                candidates.RemoveAt(idx);
+            }
+        }
+        
+        AddFromRarity(CardRarity.Common, 2);
+        AddFromRarity(CardRarity.Uncommon, 1);
+        AddFromRarity(CardRarity.Rare, 1);
+        
+        // Last slot: weighted random
+        double roll = rng.NextDouble();
+        CardRarity bonus = roll < 0.30 ? CardRarity.Common
+                        : roll < 0.65 ? CardRarity.Uncommon
+                        : roll < 0.90 ? CardRarity.Rare
+                        : CardRarity.Legendary;
+        AddFromRarity(bonus, 1);
+        
+        return result;
     }
 }
