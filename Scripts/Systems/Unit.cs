@@ -201,7 +201,7 @@ public partial class Unit : Node3D
             AlbedoColor = new Color(0.2f, 1.0f, 0.2f, 0.85f),
             Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
             ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
-            NoDepthTest = false
+            NoDepthTest = true
         };
 
         ring.SetSurfaceOverrideMaterial(0, _selectionMat);
@@ -213,6 +213,9 @@ public partial class Unit : Node3D
     public void SetSelected(bool selected)
     {
         _isSelected = selected;
+
+        if (_selectionRing == null)
+            CreateSelectionRing();
 
         if (_selectionRing != null)
             _selectionRing.Visible = selected;

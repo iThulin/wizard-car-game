@@ -52,13 +52,6 @@ public partial class GameRunner : Node3D
 
     public override void _Ready()
     {
-        if (PlayerSession.DebugMode)
-        {
-            GD.Print("=== DEBUG MODE ENABLED ===");
-            EnableDeploymentPhase = false;  // skip straight to player turn
-            State.Mana[Me] = 99;            // unlimited mana
-        }
-
         if (CardDatabase.Blueprints.Count == 0)
             CardDatabase.LoadFromCsv("res://Data/cards.csv");
 
@@ -66,12 +59,22 @@ public partial class GameRunner : Node3D
         Me = State.PlayerA;
         Opp = State.PlayerB;
 
+        if (PlayerSession.DebugMode)
+        {
+            GD.Print("=== DEBUG MODE ENABLED ===");
+            EnableDeploymentPhase = false;  // skip straight to player turn
+            State.Mana[Me] = 99;            // unlimited mana
+        }
+
         SpawnTestUnits();
 
         // Wire up helper nodes
         deckManager = GetNodeOrNull<DeckManager>("../Player/DeckManager");
         if (deckManager == null)
             GD.PrintErr("DeckManager not found. Fix the node path in GameRunner.");
+
+        if (deckManager != null)
+            CallDeferred(nameof(SyncDeckManagerToState));
 
         dropper = GetNodeOrNull<CardDropHandler>("../CardDropHandler");
         if (dropper == null)
@@ -110,9 +113,26 @@ public partial class GameRunner : Node3D
         RefreshSelectedUnitUI();
     }
 
+    private void SyncDeckManagerToState()
+    {
+        if (deckManager == null) return;
+
+        State.LibraryA.Clear();
+        State.HandA.Clear();
+
+        foreach (var card in deckManager.DrawPile)
+            State.LibraryA.Add(card);
+        foreach (var card in deckManager.Hand)
+            State.HandA.Add(card);
+
+        GD.Print($"Synced DeckManager → State: {State.HandA.Count} in hand, {State.LibraryA.Count} in library");
+        RefreshDeckCounts();
+    }
+
     // ═══════════════════════════════════════════════════════════════════════
     // Central UI refresh – call this whenever state changes
     // ═══════════════════════════════════════════════════════════════════════
+
     private void RefreshAllUI()
     {
         RefreshPhaseUI();
@@ -219,6 +239,7 @@ public partial class GameRunner : Node3D
     // ═══════════════════════════════════════════════════════════════════════
     // Input handling
     // ═══════════════════════════════════════════════════════════════════════
+
     public override void _UnhandledInput(InputEvent e)
     {
         if (isInDeploymentPhase)
@@ -241,7 +262,7 @@ public partial class GameRunner : Node3D
         }
     }
 
-        private void TryHandleMainPhaseClick()
+    private void TryHandleMainPhaseClick()
     {
         GD.Print($"TryHandleMainPhaseClick phase={currentPhase}");
 
@@ -679,7 +700,6 @@ public partial class GameRunner : Node3D
         selectedDeployUnit = null;
         RefreshSelectedUnitUI();
     }
-
 
     private void ResetDeploymentPositions()
     {

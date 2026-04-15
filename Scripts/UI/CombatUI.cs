@@ -51,6 +51,11 @@ public partial class CombatUI : CanvasLayer
 	public override void _Ready()
 	{
 		CacheNodes();
+
+		GD.Print($"ActionLogLabel found: {_actionLogLabel}");
+		GD.Print($"DeckButton found: {_deckButton != null}");
+		GD.Print($"GraveButton found: {_graveButton != null}");
+
 		WireButtons();
 	}
 
@@ -130,7 +135,7 @@ public partial class CombatUI : CanvasLayer
 	private void OnDeckButtonPressed()
 	{
 		if (_deckPopup == null) return;
-		_deckPopup.Popup();
+		_deckPopup.PopupCentered();
 	}
 
 	private void OnGraveButtonPressed()
