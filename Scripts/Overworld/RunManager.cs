@@ -11,11 +11,11 @@ public partial class RunManager : Node2D
     [Export] public int ExhaustionDamagePerStep = 10;
     [Export] public int MaxHP = 100;
 
-    // ── Runtime state ───────────────────────────────────────────────────
-    public int StepsRemaining { get; private set; }
-    public int CurrentHP { get; private set; }
-    public int GoldEarned { get; private set; }
-    public int EncountersWon { get; private set; }
+    // ── Runtime state (public for save/restore) ─────────────────────────
+    public int StepsRemaining { get; set; }
+    public int CurrentHP { get; set; }
+    public int GoldEarned { get; set; }
+    public int EncountersWon { get; set; }
     public bool RunComplete { get; private set; }
 
     // ── Node references ─────────────────────────────────────────────────
@@ -23,7 +23,6 @@ public partial class RunManager : Node2D
     private FogOfWarManager _fog;
     private OverworldPartyToken _party;
     private Camera2D _camera;
-	private EncounterRouter _encounterRouter;
 
     // ── UI ───────────────────────────────────────────────────────────────
     private Label _stepLabel;
@@ -32,17 +31,21 @@ public partial class RunManager : Node2D
     private Label _objectiveLabel;
 
     [Signal] public delegate void RunEndedEventHandler(bool reachedObjective);
-    [Signal] public delegate void CombatTriggeredEventHandler(Vector2I hexCoord);
+
+    // ── Accessors for EncounterRouter ───────────────────────────────────
+    public Vector2I GetPartyCoord() => _party.CurrentCoord;
+    public OverworldHexGrid GetGrid() => _grid;
 
     public override void _Ready()
     {
         // ── Build the scene tree ────────────────────────────────────────
+
         // Grid
         _grid = new OverworldHexGrid { Name = "HexGrid" };
         AddChild(_grid);
 
-		// Place encounters
-		POIGenerator.Generate(_grid, combatCount: 7, restCount: 3);
+        // Place encounters
+        POIGenerator.Generate(_grid, combatCount: 7, restCount: 3);
 
         // Fog manager (child of grid)
         _fog = new FogOfWarManager { Name = "FogOfWar" };
@@ -63,10 +66,8 @@ public partial class RunManager : Node2D
         AddChild(_camera);
         _camera.CallDeferred("make_current");
 
-		// Encounter router 
-        _encounterRouter = new EncounterRouter { Name = "EncounterRouter" };
-        _encounterRouter.CombatScenePath = "res://Scenes/Combat/Battlefield.tscn";
-        AddChild(_encounterRouter);
+        // ── Ensure EncounterRouter exists (persistent across scenes) ────
+        EnsureEncounterRouter();
 
         // ── UI Layer ────────────────────────────────────────────────────
         var canvas = new CanvasLayer { Name = "UI" };
@@ -85,42 +86,149 @@ public partial class RunManager : Node2D
         _infoLabel.Modulate = new Color(1f, 1f, 0.7f);
         canvas.AddChild(_infoLabel);
 
-        // ── Initialize run ──────────────────────────────────────────────
+        // ── Initialize run state ────────────────────────────────────────
         StepsRemaining = StepBudget;
         CurrentHP = MaxHP;
         GoldEarned = 0;
         EncountersWon = 0;
         RunComplete = false;
 
-        _party.Initialize(_grid, _fog, _grid.EntryCoord);
-        CenterCamera();
+        // ── Check if we're returning from combat ────────────────────────
+        var router = EncounterRouter.Instance;
+        if (router != null && router.HasPendingReturn)
+        {
+            RestoreFromCombat(router);
+        }
+        else
+        {
+            // Fresh run — place party at entry
+            _party.Initialize(_grid, _fog, _grid.EntryCoord);
+            ShowInfo("Explore the map. Reach the golden objective marker.");
+        }
 
         // ── Wire signals ────────────────────────────────────────────────
         _grid.HexClicked += OnHexClicked;
         _party.PartyMoved += OnPartyMoved;
         _party.PartyArrived += OnPartyArrived;
 
+        CenterCamera();
         UpdateUI();
-        ShowInfo("Explore the map. Reach the golden objective marker.");
+    }
+
+    /// <summary>
+    /// Restore overworld state after returning from a combat encounter.
+    /// </summary>
+    private void RestoreFromCombat(EncounterRouter router)
+    {
+        GD.Print("RunManager: Restoring state from combat...");
+
+        // Restore run state
+        StepsRemaining = router.SavedStepsRemaining;
+        CurrentHP = router.SavedCurrentHP;
+        GoldEarned = router.SavedGoldEarned;
+        EncountersWon = router.SavedEncountersWon;
+
+        // Restore fog state
+        foreach (var kvp in router.SavedFogStates)
+        {
+            if (_grid.Hexes.TryGetValue(kvp.Key, out var hex))
+            {
+                hex.Fog = kvp.Value;
+            }
+        }
+
+        // Restore POI consumed state
+        foreach (var kvp in router.SavedPOIConsumed)
+        {
+            if (_grid.Hexes.TryGetValue(kvp.Key, out var hex))
+            {
+                hex.POIConsumed = kvp.Value;
+            }
+        }
+
+        // Refresh all hex visuals after restoring state
+        foreach (var hex in _grid.Hexes.Values)
+            hex.RefreshVisuals();
+
+        // Place party at saved position
+        _party.Initialize(_grid, _fog, router.SavedPartyCoord);
+
+        // Apply combat results
+        var combatHex = router.SavedCombatHexCoord;
+        if (router.CombatWon)
+        {
+            GoldEarned += router.GoldReward;
+            EncountersWon++;
+
+            // Mark the combat POI as consumed
+            if (_grid.Hexes.TryGetValue(combatHex, out var hex))
+            {
+                hex.POIConsumed = true;
+                hex.RefreshVisuals();
+            }
+
+            ShowInfo($"Victory! Earned {router.GoldReward} gold.");
+        }
+        else
+        {
+            CurrentHP -= router.DamageTaken;
+
+            // Mark consumed even on defeat
+            if (_grid.Hexes.TryGetValue(combatHex, out var hex))
+            {
+                hex.POIConsumed = true;
+                hex.RefreshVisuals();
+            }
+
+            if (CurrentHP <= 0)
+            {
+                CurrentHP = 0;
+                ShowInfo("Defeated! Run over.");
+                EndRun(false);
+                UpdateUI();
+                return;
+            }
+            ShowInfo($"Defeated... Lost {router.DamageTaken} HP.");
+        }
+
+        // Clear the pending return flag
+        router.HasPendingReturn = false;
+
+        GD.Print($"RunManager: Restored. Party at {router.SavedPartyCoord}, " +
+                 $"Steps: {StepsRemaining}, HP: {CurrentHP}, Gold: {GoldEarned}");
+    }
+
+    /// <summary>
+    /// Make sure the EncounterRouter singleton exists in the tree.
+    /// It lives on the root so it survives scene changes.
+    /// </summary>
+    private void EnsureEncounterRouter()
+    {
+        if (EncounterRouter.Instance != null) return;
+
+        var router = new EncounterRouter { Name = "EncounterRouter" };
+        router.CombatScenePath = "res://Scenes/Combat/Battlefield.tscn";
+        router.OverworldScenePath = "res://Scenes/Overworld/OverworldScene.tscn";
+
+        // Defer the add since the tree is busy during _Ready()
+        GetTree().Root.CallDeferred("add_child", router);
+        GD.Print("RunManager: Created EncounterRouter on tree root (deferred).");
     }
 
     private void OnHexClicked(Vector2I axial)
     {
         if (RunComplete) return;
-
         _party.TryMoveTo(axial);
     }
 
     private void OnPartyMoved(Vector2I newCoord, Vector2I oldCoord)
     {
-        // Spend a step (all terrain costs 1 in Phase 1)
         if (StepsRemaining > 0)
         {
             StepsRemaining--;
         }
         else
         {
-            // Exhaustion — take damage for moving past the budget
             CurrentHP -= ExhaustionDamagePerStep;
             if (CurrentHP <= 0)
             {
@@ -130,7 +238,6 @@ public partial class RunManager : Node2D
             }
         }
 
-        // Camera follow
         CenterCamera();
         UpdateUI();
     }
@@ -139,12 +246,10 @@ public partial class RunManager : Node2D
     {
         if (RunComplete) return;
 
-        // Check what's on this hex
         if (!_grid.Hexes.TryGetValue(coord, out var hex)) return;
 
-        if (hex.POI == OverworldHex.POIType.None || hex.POIConsumed) 
+        if (hex.POI == OverworldHex.POIType.None || hex.POIConsumed)
         {
-            // Empty hex or already consumed — check for step budget warning
             if (StepsRemaining <= 5 && StepsRemaining > 0)
                 ShowInfo($"Low on steps! {StepsRemaining} remaining.");
             return;
@@ -153,19 +258,17 @@ public partial class RunManager : Node2D
         switch (hex.POI)
         {
             case OverworldHex.POIType.Combat:
-                ShowInfo("Combat encounter! (Press SPACE to fight, ESC to skip for now)");
-                // Store the pending combat hex — we'll resolve it on keypress
+                ShowInfo("Combat encounter! (Press SPACE to fight, ESC to skip)");
                 _pendingCombatHex = coord;
                 break;
 
             case OverworldHex.POIType.Rest:
-                // Simple rest: heal and mark consumed
                 int healAmount = MaxHP / 4;
                 CurrentHP = Mathf.Min(CurrentHP + healAmount, MaxHP);
                 hex.POIConsumed = true;
                 hex.RefreshVisuals();
                 ShowInfo($"Rest site. Recovered {healAmount} HP.");
-                GoldEarned += 15; // small gold bonus for discovery
+                GoldEarned += 15;
                 UpdateUI();
                 break;
 
@@ -183,10 +286,9 @@ public partial class RunManager : Node2D
     {
         if (@event is InputEventKey key && key.Pressed)
         {
-            // Combat confirmation
             if (_pendingCombatHex.HasValue && key.Keycode == Key.Space)
             {
-                ResolveCombat(_pendingCombatHex.Value);
+                StartRealCombat(_pendingCombatHex.Value);
                 _pendingCombatHex = null;
             }
             else if (_pendingCombatHex.HasValue && key.Keycode == Key.Escape)
@@ -198,60 +300,19 @@ public partial class RunManager : Node2D
     }
 
     /// <summary>
-    /// Phase 1 combat: simulated coin-flip. 
-    /// Phase 2 will swap this for EncounterRouter → GameRunner.
+    /// Save state and swap to the combat scene.
     /// </summary>
-    private void ResolveCombat(Vector2I hexCoord)
+    private void StartRealCombat(Vector2I hexCoord)
     {
-        if (!_grid.Hexes.TryGetValue(hexCoord, out var hex)) return;
-
-        var context = new EncounterContext
+        var router = EncounterRouter.Instance;
+        if (router == null)
         {
-            SourcePOI = hex.POI,
-            SourceTerrain = hex.Terrain,
-            EnemyCount = 3,
-            PlayerCount = 2
-        };
+            GD.PrintErr("RunManager: EncounterRouter not found!");
+            return;
+        }
 
         ShowInfo("Entering combat...");
-
-        _encounterRouter.StartCombat(this, context, (result) =>
-        {
-            // This runs after combat ends and we're back on the overworld
-            OnCombatReturned(hexCoord, result);
-        });
-    }
-
-	private void OnCombatReturned(Vector2I hexCoord, EncounterContext result)
-    {
-        if (!_grid.Hexes.TryGetValue(hexCoord, out var hex)) return;
-
-        if (result.PlayerWon)
-        {
-            GoldEarned += result.GoldReward;
-            EncountersWon++;
-            hex.POIConsumed = true;
-            hex.RefreshVisuals();
-            ShowInfo($"Victory! Earned {result.GoldReward} gold.");
-        }
-        else
-        {
-            CurrentHP -= result.DamageTaken;
-            hex.POIConsumed = true;
-            hex.RefreshVisuals();
-
-            if (CurrentHP <= 0)
-            {
-                CurrentHP = 0;
-                ShowInfo("Defeated! Run over.");
-                EndRun(false);
-                UpdateUI();
-                return;
-            }
-            ShowInfo($"Defeated... Lost {result.DamageTaken} HP.");
-        }
-
-        UpdateUI();
+        router.StartCombat(this, hexCoord);
     }
 
     private void EndRun(bool reachedObjective)
@@ -266,7 +327,6 @@ public partial class RunManager : Node2D
     {
         if (@event is InputEventKey key && key.Pressed && key.Keycode == Key.R && RunComplete)
         {
-            // Return to campus (Phase 1: just reload the scene to start a new run)
             GetTree().ReloadCurrentScene();
         }
     }
@@ -275,15 +335,14 @@ public partial class RunManager : Node2D
 
     private void UpdateUI()
     {
-        string stepColor = StepsRemaining > 5 ? "white" : "red";
         _stepLabel.Text = $"Steps: {StepsRemaining} / {StepBudget}";
-        _stepLabel.Modulate = StepsRemaining > 5 
-            ? Colors.White 
+        _stepLabel.Modulate = StepsRemaining > 5
+            ? Colors.White
             : new Color(1f, 0.4f, 0.4f);
 
         _hpLabel.Text = $"HP: {CurrentHP} / {MaxHP}";
-        _hpLabel.Modulate = CurrentHP > MaxHP / 3 
-            ? Colors.White 
+        _hpLabel.Modulate = CurrentHP > MaxHP / 3
+            ? Colors.White
             : new Color(1f, 0.4f, 0.4f);
 
         int dist = _grid.Distance(_party.CurrentCoord, _grid.ObjectiveCoord);

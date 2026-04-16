@@ -43,7 +43,8 @@ public partial class CameraController : Node3D
     public override void _Ready()
     {
         EnsureCameraNodes();
-        _cardDropHandler = GetNodeOrNull<CardDropHandler>("/root/Main Scene/CardDropHandler");
+        _cardDropHandler = GetParent()?.GetNodeOrNull<CardDropHandler>("../CardDropHandler") 
+            ?? GetNodeOrNull<CardDropHandler>("/root/Main Scene/CardDropHandler");
 
         if (_pivot != null)
             _pivot.RotationDegrees = new Vector3(_pitch, _yaw, 0f);

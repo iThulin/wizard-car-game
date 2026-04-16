@@ -115,6 +115,12 @@ public partial class GameRunner : Node3D
 
         RefreshPhaseUI();
         RefreshSelectedUnitUI();
+
+        if (EncounterRouter.Instance != null)
+        {
+            CombatCompleted += (bool won) => EncounterRouter.Instance.OnCombatFinished(won);
+            GD.Print("GameRunner: Wired CombatCompleted to EncounterRouter.");
+        }
     }
 
     public override void _Process(double delta)
