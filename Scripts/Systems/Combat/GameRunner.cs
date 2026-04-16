@@ -469,7 +469,7 @@ public partial class GameRunner : Node3D
 
     private void ShowMoveTiles(HashSet<Vector2I> coords)
     {
-        ClearMoveTiles();
+        // Don't call ClearMoveTiles here — just apply highlights
         foreach (var coord in coords)
             grid.GetTileView(coord)?.SetMoveHighlight(true);
     }
@@ -946,10 +946,21 @@ public partial class GameRunner : Node3D
 
         var ok = Rules.TryCastWithTargets(half, State, Me, targets, cardUi.CardInstance);
         GD.Print($"Cast result={ok} manaNow={State.Mana[Me]}");
-        if (ok && playerUnit != null)
+
+        if (ok)
         {
-            playerUnit.Stats.Mana = State.Mana[Me];
-            playerUnit.SyncManaToBar();
+            // Discard the card immediately on successful cast
+            if (deckManager != null && cardUi.CardInstance != null)
+            {
+                deckManager.DiscardCard(cardUi.CardInstance);
+                GD.Print($"Discarded: {cardUi.CardInstance.CardName}");
+            }
+
+            if (playerUnit != null)
+            {
+                playerUnit.Stats.Mana = State.Mana[Me];
+                playerUnit.SyncManaToBar();
+            }
             RefreshSelectedUnitUI();
             RefreshDeckCounts();
         }
