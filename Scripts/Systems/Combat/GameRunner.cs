@@ -949,6 +949,11 @@ public partial class GameRunner : Node3D
 
         if (ok)
         {
+            while (!State.Stack.IsEmpty)
+                State.Resolver.ResolveTop(State);
+            
+            RefreshEnemyRoster();
+
             // Discard the card immediately on successful cast
             if (deckManager != null && cardUi.CardInstance != null)
             {
