@@ -29,8 +29,7 @@ public partial class CampusScreen : Control
     public override void _Ready()
     {
         // Make sure card database is loaded for school descriptions
-        if (CardDatabase.Blueprints.Count == 0)
-            CardDatabase.LoadFromCsv("res://Data/cards.csv");
+        CardLoaderV2.LoadCardsFromJson("res://Data/Cards");
 
         // ── Layout ──────────────────────────────────────────────────────
         _layout = new VBoxContainer

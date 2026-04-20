@@ -22,9 +22,8 @@ public partial class ClassSelectUi : Control
 
     public override void _Ready()
     {
-
-		if (CardDatabase.Blueprints.Count == 0)
-    		CardDatabase.LoadFromCsv("res://Data/cards.csv");
+        // Ensure card database is loaded for school descriptions and deck generation
+        CardLoaderV2.LoadCardsFromJson("res://Data/Cards");
 
         _schoolPicker   = GetNode<OptionButton>("MarginContainer/VBox/SchoolPicker");
         _descriptionLabel = GetNode<Label>("MarginContainer/VBox/DescriptionLabel");

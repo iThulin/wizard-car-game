@@ -1,23 +1,15 @@
 using Godot;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text.Json;
 
 // ============================================================
 // JSON Card Loader.
 //
-// This is the modding entry point. Every effect and predicate
-// type registers a string key and a factory. Loading a card is
-// just walking the JSON tree and calling factories.
-//
-// To add a new effect mechanically:
-//   1. Write the effect class (inherits EffectBase).
-//   2. Call Registry.RegisterEffect("my_key", json => new MyEffect(...)).
-//   3. Use "type": "my_key" in JSON. Done.
-//
-// Modders never rebuild your C#. They only write JSON that
-// references keys you (or other modders) have registered.
+// Uses Godot's DirAccess + FileAccess so res:// paths work both
+// in-editor and in exported builds. Raw System.IO calls DO NOT
+// understand res:// and will fail in builds even if they work
+// in-editor on some platforms.
 // ============================================================
 
 public static class CardScriptRegistry
@@ -71,7 +63,6 @@ public static class CardScriptRegistry
         return factory(node);
     }
 
-    // Call once at game startup, before loading any cards.
     public static void RegisterBuiltins()
     {
         // --- Composite effects ---
@@ -96,7 +87,7 @@ public static class CardScriptRegistry
 
         RegisterEffect("empty", _ => new EmptyEffect());
 
-        // --- Leaf effects (your existing ones). Wrap them here. ---
+        // --- Leaf effects ---
         RegisterEffect("damage", n =>
             new DealDamageEffect(n.GetProperty("amount").GetInt32()).WithTag("Damage"));
 
@@ -144,7 +135,7 @@ public static class CardScriptRegistry
                 n.GetProperty("at_least").GetInt32()));
         RegisterPredicate("is_channeled", _ => new IsChanneled());
 
-        // --- Targeters (reuse your existing ones) ---
+        // --- Targeters ---
         RegisterTargeter("unit", n =>
         {
             int range = n.TryGetProperty("range", out var r) ? r.GetInt32() : 6;
@@ -178,28 +169,65 @@ public static class JsonCardLoader
     public static List<Card> LoadAll(string directory)
     {
         var cards = new List<Card>();
-        if (!Directory.Exists(directory))
+
+        // Godot's DirAccess understands res:// — System.IO does not.
+        using var dir = DirAccess.Open(directory);
+        if (dir == null)
         {
-            GD.PrintErr($"[JsonCardLoader] Directory not found: {directory}");
+            GD.PrintErr($"[JsonCardLoader] Could not open directory: {directory}. " +
+                        $"DirAccess error: {DirAccess.GetOpenError()}");
             return cards;
         }
 
-        foreach (var path in Directory.GetFiles(directory, "*.json"))
+        dir.ListDirBegin();
+        string fileName;
+        while (!string.IsNullOrEmpty(fileName = dir.GetNext()))
         {
+            if (dir.CurrentIsDir()) continue;
+
+            // Godot may also show '.import' metadata files — skip everything
+            // that isn't a .json. Check both extensions because Godot's
+            // file listing sometimes shows compiled resource names.
+            if (!fileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            // Combine directory + filename, preserving the res:// prefix.
+            var fullPath = directory.TrimEnd('/') + "/" + fileName;
+
             try
             {
-                var text = File.ReadAllText(path);
+                var text = ReadFileAsText(fullPath);
+                if (string.IsNullOrEmpty(text))
+                {
+                    GD.PrintErr($"[JsonCardLoader] Empty or unreadable: {fullPath}");
+                    continue;
+                }
+
                 var doc = JsonDocument.Parse(text);
                 cards.Add(BuildCard(doc.RootElement));
+                GD.Print($"[JsonCardLoader] Loaded {fullPath}");
             }
             catch (Exception e)
             {
-                GD.PrintErr($"[JsonCardLoader] Failed to load {path}: {e.Message}");
+                GD.PrintErr($"[JsonCardLoader] Failed to load {fullPath}: {e.Message}");
             }
         }
+        dir.ListDirEnd();
 
         GD.Print($"[JsonCardLoader] Loaded {cards.Count} cards from {directory}");
         return cards;
+    }
+
+    private static string ReadFileAsText(string path)
+    {
+        using var f = Godot.FileAccess.Open(path, Godot.FileAccess.ModeFlags.Read);
+        if (f == null)
+        {
+            GD.PrintErr($"[JsonCardLoader] FileAccess.Open failed: {path}. " +
+                        $"Error: {Godot.FileAccess.GetOpenError()}");
+            return null;
+        }
+        return f.GetAsText();
     }
 
     private static Card BuildCard(JsonElement root)

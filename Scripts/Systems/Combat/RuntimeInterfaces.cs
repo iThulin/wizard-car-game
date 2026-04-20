@@ -20,9 +20,3 @@ public sealed class EffectSnapshot { }
 
 public interface ITargetSelector { bool Select(GameState s, Entity caster, out TargetSet targets); }
 
-public interface IEffect
-{
-    string[] Tags { get; }
-    IEffect WithTag(string tag);
-    void Resolve(GameState s, Entity caster, TargetSet targets, EffectSnapshot snap);
-}

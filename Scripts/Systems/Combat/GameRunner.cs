@@ -56,8 +56,8 @@ public partial class GameRunner : Node3D
 
     public override void _Ready()
     {
-        if (CardDatabase.Blueprints.Count == 0)
-            CardDatabase.LoadFromCsv("res://Data/cards.csv");
+        // Ensure card database is loaded before any gameplay logic that relies on it.
+        CardLoaderV2.LoadCardsFromJson("res://Data/Cards");
 
         State = new GameState();
         Me = State.PlayerA;

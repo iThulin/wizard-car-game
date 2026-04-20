@@ -4,7 +4,7 @@ public partial class GameBootstrap : Node
 {
     public override void _Ready()
     {
-        if (CardDatabase.Blueprints.Count == 0)
-            CardDatabase.LoadFromCsv("res://Data/cards.csv");
+        // Ensure card database is loaded before any gameplay scenes that rely on it.
+        CardLoaderV2.LoadCardsFromJson("res://Data/Cards");
     }
 }
