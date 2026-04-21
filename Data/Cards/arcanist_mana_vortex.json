@@ -1,0 +1,71 @@
+{
+  "id": "arcanist_mana_vortex",
+  "name": "Mana Vortex",
+  "school": "Arcanist",
+  "rarity": "Uncommon",
+  "top": {
+    "name": "Mana Vortex",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Imbue tile within 2: enemies on this tile have spells cost +1. Allies on it gain +2 damage. Lasts 2 turns.",
+    "targeting": {
+      "type": "tile",
+      "range": 4
+    },
+    "effect": {
+      "type": "empty"
+    },
+    "channel": {
+      "name": "Mana Vortex (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: Lasts 3 turns and also grants +1 charge per spell cast on it",
+      "targeting": {
+        "type": "tile",
+        "range": 4
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Chain Catalyst",
+    "mana": 1,
+    "speed": "Sorcery",
+    "rules_text": "Deal 4 damage. If this kills or you have 4+ charges this spell chains to nearest enemy for 2.",
+    "targeting": {
+      "type": "unit",
+      "range": 6,
+      "los": true,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "damage",
+          "amount": 4
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Chain Catalyst (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Chains to 2 additional enemies",
+      "targeting": {
+        "type": "unit",
+        "range": 6,
+        "los": false,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

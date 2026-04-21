@@ -1,0 +1,80 @@
+{
+  "id": "enchanter_charm_drift",
+  "name": "Charm Drift",
+  "school": "Enchanter",
+  "rarity": "Common",
+  "top": {
+    "name": "Charm Drift",
+    "mana": 1,
+    "speed": "Instant",
+    "rules_text": "Push an enemy 2 tiles in a direction you choose. If they land on a prepared tile trigger it.",
+    "targeting": {
+      "type": "unit",
+      "range": 6,
+      "los": false,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "move",
+          "tiles": 2
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Charm Drift (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Push 3 tiles",
+      "targeting": {
+        "type": "unit",
+        "range": 6,
+        "los": false,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "move",
+        "tiles": 3
+      }
+    }
+  },
+  "bottom": {
+    "name": "Ward Stone",
+    "mana": 1,
+    "speed": "Instant",
+    "rules_text": "Prepare on tile: allies on this tile gain +4 armor. Lasts 3 turns.",
+    "targeting": {
+      "type": "tile",
+      "range": 4
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Ward Stone (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Also grants +2 shield",
+      "targeting": {
+        "type": "tile",
+        "range": 4
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

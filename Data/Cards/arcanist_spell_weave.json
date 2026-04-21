@@ -1,0 +1,75 @@
+{
+  "id": "arcanist_spell_weave",
+  "name": "Spell Weave",
+  "school": "Arcanist",
+  "rarity": "Common",
+  "top": {
+    "name": "Spell Weave",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Deal 5 damage. Next spell this turn costs 1 less and gains +2 damage.",
+    "targeting": {
+      "type": "unit",
+      "range": 6,
+      "los": true,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "damage",
+          "amount": 5
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Spell Weave (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: +3 damage instead",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Arcane Slide",
+    "mana": 1,
+    "speed": "Instant",
+    "rules_text": "Move 2. Gain 1 charge.",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "move",
+          "tiles": 2
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Arcane Slide (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Gain 2 charges instead",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

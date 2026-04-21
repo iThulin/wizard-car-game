@@ -1,0 +1,74 @@
+{
+  "id": "enchanter_runic_trap",
+  "name": "Runic Trap",
+  "school": "Enchanter",
+  "rarity": "Common",
+  "top": {
+    "name": "Runic Trap",
+    "mana": 1,
+    "speed": "Sorcery",
+    "rules_text": "Prepare on tile within 2: when enemy enters deal 5 damage.",
+    "targeting": {
+      "type": "tile",
+      "range": 4
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "damage",
+          "amount": 5
+        }
+      ]
+    },
+    "channel": {
+      "name": "Runic Trap (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Trap is invisible to opponent",
+      "targeting": {
+        "type": "tile",
+        "range": 4
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Arcane Slide",
+    "mana": 1,
+    "speed": "Instant",
+    "rules_text": "Move 2. Leave a prepared glyph on origin: next ally to step on it gains 2 shield.",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "move",
+          "tiles": 2
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Arcane Slide (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Glyph also grants +2 damage for 1 turn",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

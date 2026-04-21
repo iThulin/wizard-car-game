@@ -1,0 +1,71 @@
+{
+  "id": "chronomancer_time_walk",
+  "name": "Time Walk",
+  "school": "Chronomancer",
+  "rarity": "Uncommon",
+  "top": {
+    "name": "Time Walk",
+    "mana": 3,
+    "speed": "Sorcery",
+    "rules_text": "Choose a target tile within range 3. At the end of each of the next 3 turns deal 4 damage to whatever unit is on that tile.",
+    "targeting": {
+      "type": "tile",
+      "range": 4
+    },
+    "effect": {
+      "type": "damage",
+      "amount": 4
+    },
+    "channel": {
+      "name": "Time Walk (Channel)",
+      "mana": 3,
+      "speed": "Reaction",
+      "rules_text": "Channel: Also slow the target each time",
+      "targeting": {
+        "type": "unit",
+        "range": 6,
+        "los": false,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Chrono Anchor Field",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Imbue 3 tiles in range 2: enemies that enter are slowed and their next spell is delayed 1 turn.",
+    "targeting": {
+      "type": "aoe",
+      "radius": 2,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Chrono Anchor Field (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: Field lasts 3 turns instead of 2",
+      "targeting": {
+        "type": "aoe",
+        "radius": 2,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

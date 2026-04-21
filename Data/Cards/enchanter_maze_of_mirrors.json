@@ -1,0 +1,42 @@
+{
+  "id": "enchanter_maze_of_mirrors",
+  "name": "Maze of Mirrors",
+  "school": "Enchanter",
+  "rarity": "Legendary",
+  "top": {
+    "name": "Maze of Mirrors",
+    "mana": 4,
+    "speed": "Sorcery",
+    "rules_text": "Create 4 illusory copies of your wizard on prepared tiles. Enemies must guess which is real (random targeting). Copies have 2HP and trigger their tile's glyph when destroyed. Lasts 3 turns.",
+    "effect": {
+      "type": "empty"
+    },
+    "channel": {
+      "name": "Maze of Mirrors (Channel)",
+      "mana": 4,
+      "speed": "Reaction",
+      "rules_text": "Channel: Copies have 6HP and dealing damage to a copy reflects it back",
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Web of Fate",
+    "mana": 3,
+    "speed": "Sorcery",
+    "rules_text": "Link ALL prepared tiles on the board into a network. Triggering any one tile triggers ALL of them in sequence with +1 cumulative damage each.",
+    "effect": {
+      "type": "empty"
+    },
+    "channel": {
+      "name": "Web of Fate (Channel)",
+      "mana": 3,
+      "speed": "Reaction",
+      "rules_text": "Channel: Network persists after triggering (can be triggered again next turn)",
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

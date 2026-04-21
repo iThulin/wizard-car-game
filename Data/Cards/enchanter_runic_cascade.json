@@ -1,0 +1,66 @@
+{
+  "id": "enchanter_runic_cascade",
+  "name": "Runic Cascade",
+  "school": "Enchanter",
+  "rarity": "Uncommon",
+  "top": {
+    "name": "Runic Cascade",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Prepare on tile: when triggered it also prepares a copy of itself on 2 adjacent tiles.",
+    "targeting": {
+      "type": "tile",
+      "range": 4
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Runic Cascade (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: Copies trigger immediately on creation",
+      "targeting": {
+        "type": "tile",
+        "range": 4
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Glyph Warp",
+    "mana": 1,
+    "speed": "Instant",
+    "rules_text": "Swap positions of 2 prepared tiles (effects move with them).",
+    "targeting": {
+      "type": "tile",
+      "range": 4
+    },
+    "effect": {
+      "type": "empty"
+    },
+    "channel": {
+      "name": "Glyph Warp (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Also trigger both tiles after swap",
+      "targeting": {
+        "type": "tile",
+        "range": 4
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

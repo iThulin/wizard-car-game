@@ -1,0 +1,79 @@
+{
+  "id": "elementalist_lava_flow",
+  "name": "Lava Flow",
+  "school": "Elementalist",
+  "rarity": "Common",
+  "top": {
+    "name": "Lava Flow",
+    "mana": 1,
+    "speed": "Instant",
+    "rules_text": "Imbue 2 adjacent tiles in a line with Fire. Push enemies on those tiles 1 tile sideways.",
+    "targeting": {
+      "type": "unit",
+      "range": 6,
+      "los": false,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "move",
+          "tiles": 1
+        }
+      ]
+    },
+    "channel": {
+      "name": "Lava Flow (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Line is 3 tiles",
+      "targeting": {
+        "type": "unit",
+        "range": 6,
+        "los": false,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Earth Anchor",
+    "mana": 1,
+    "speed": "Instant",
+    "rules_text": "Root yourself: gain 7 armor and immobilize self for 1 turn. While rooted spells deal +3 damage.",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "shield",
+          "amount": 7
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Earth Anchor (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Gain 11 armor instead",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "shield",
+        "amount": 11
+      }
+    }
+  }
+}

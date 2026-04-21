@@ -1,0 +1,69 @@
+{
+  "id": "arcanist_eldritch_catalyst",
+  "name": "Eldritch Catalyst",
+  "school": "Arcanist",
+  "rarity": "Common",
+  "top": {
+    "name": "Eldritch Catalyst",
+    "mana": 0,
+    "speed": "Sorcery",
+    "rules_text": "Next spell targets 1 additional enemy (closest within 2 tiles).",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "empty"
+    },
+    "channel": {
+      "name": "Eldritch Catalyst (Channel)",
+      "mana": 0,
+      "speed": "Reaction",
+      "rules_text": "Channel: Additional target takes full damage instead of half",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Charge Siphon",
+    "mana": 1,
+    "speed": "Sorcery",
+    "rules_text": "Deal 4 damage. Gain charges equal to buffs on target (min 1).",
+    "targeting": {
+      "type": "unit",
+      "range": 6,
+      "los": true,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "damage",
+          "amount": 4
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Charge Siphon (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Also remove 1 buff",
+      "targeting": {
+        "type": "unit",
+        "range": 6,
+        "los": false,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "id": "elementalist_storm_lord",
+  "name": "Storm Lord",
+  "school": "Elementalist",
+  "rarity": "Rare",
+  "top": {
+    "name": "Storm Lord",
+    "mana": 3,
+    "speed": "Sorcery",
+    "rules_text": "Imbue all tiles within range 2 of you with Storm. Each Storm tile strikes the nearest enemy for 1 damage at end of each turn. Lasts 3 turns.",
+    "targeting": {
+      "type": "aoe",
+      "radius": 2,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "damage",
+          "amount": 2
+        }
+      ]
+    },
+    "channel": {
+      "name": "Storm Lord (Channel)",
+      "mana": 3,
+      "speed": "Reaction",
+      "rules_text": "Channel: Storm tiles also slow enemies crossing them",
+      "targeting": {
+        "type": "unit",
+        "range": 6,
+        "los": false,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Caldera",
+    "mana": 3,
+    "speed": "Sorcery",
+    "rules_text": "Create a ring of Fire tiles at range 2 from target point. Enemies inside the ring take 4 damage and are trapped (must cross Fire to escape).",
+    "targeting": {
+      "type": "aoe",
+      "radius": 2,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "damage",
+          "amount": 5
+        }
+      ]
+    },
+    "channel": {
+      "name": "Caldera (Channel)",
+      "mana": 3,
+      "speed": "Reaction",
+      "rules_text": "Channel: Fire ring also deals 4 damage to enemies crossing it",
+      "targeting": {
+        "type": "unit",
+        "range": 6,
+        "los": false,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "damage",
+        "amount": 4
+      }
+    }
+  }
+}

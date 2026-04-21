@@ -1,0 +1,50 @@
+{
+  "id": "chronomancer_rewind",
+  "name": "Rewind",
+  "school": "Chronomancer",
+  "rarity": "Common",
+  "top": {
+    "name": "Rewind",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Return the last resolved spell to the stack. It resolves again with original targets.",
+    "effect": {
+      "type": "empty"
+    },
+    "channel": {
+      "name": "Rewind (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: You may choose new targets for the rewound spell",
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Temporal Shield",
+    "mana": 2,
+    "speed": "Instant",
+    "rules_text": "Gain 7 shield. When shield breaks rewind: restore HP to what it was when shield was applied.",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "shield",
+      "amount": 7
+    },
+    "channel": {
+      "name": "Temporal Shield (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: Also restore mana",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "shield",
+        "amount": 7
+      }
+    }
+  }
+}

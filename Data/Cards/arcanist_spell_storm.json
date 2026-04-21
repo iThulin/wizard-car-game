@@ -1,0 +1,48 @@
+{
+  "id": "arcanist_spell_storm",
+  "name": "Spell Storm",
+  "school": "Arcanist",
+  "rarity": "Rare",
+  "top": {
+    "name": "Spell Storm",
+    "mana": 3,
+    "speed": "Sorcery",
+    "rules_text": "Cast the top 3 cards of your deck (top halves only) for free targeting enemies of your choice. Then discard them.",
+    "effect": {
+      "type": "empty"
+    },
+    "channel": {
+      "name": "Spell Storm (Channel)",
+      "mana": 3,
+      "speed": "Reaction",
+      "rules_text": "Channel: Cast top 5 instead",
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Arcane Convergence",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "For this turn only: every spell you cast also casts the top half of the next card in your deck for free.",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "empty"
+    },
+    "channel": {
+      "name": "Arcane Convergence (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: Also casts bottom half",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

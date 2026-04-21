@@ -1,0 +1,54 @@
+{
+  "id": "chronomancer_time_lord",
+  "name": "Time Lord",
+  "school": "Chronomancer",
+  "rarity": "Legendary",
+  "top": {
+    "name": "Time Lord",
+    "mana": 4,
+    "speed": "Instant",
+    "rules_text": "Permanent: at the start of each turn you may rewind OR fast-forward any one event (spell resolution unit death unit movement). Rewind undoes it. Fast-forward makes it resolve immediately.",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "empty"
+    },
+    "channel": {
+      "name": "Time Lord (Channel)",
+      "mana": 4,
+      "speed": "Reaction",
+      "rules_text": "Channel: May rewind OR fast-forward 2 events per turn",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Entropy",
+    "mana": 3,
+    "speed": "Sorcery",
+    "rules_text": "Imbue every tile on the board with Temporal Decay: all units (including allies) lose 4HP per turn. Your spells gain +2 damage for each turn this has been active. Lasts rest of fight.",
+    "targeting": {
+      "type": "none"
+    },
+    "effect": {
+      "type": "empty"
+    },
+    "channel": {
+      "name": "Entropy (Channel)",
+      "mana": 3,
+      "speed": "Reaction",
+      "rules_text": "Channel: Only enemies take Temporal Decay damage",
+      "targeting": {
+        "type": "none"
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

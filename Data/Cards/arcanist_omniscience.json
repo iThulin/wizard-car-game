@@ -1,0 +1,63 @@
+{
+  "id": "arcanist_omniscience",
+  "name": "Omniscience",
+  "school": "Arcanist",
+  "rarity": "Legendary",
+  "top": {
+    "name": "Omniscience",
+    "mana": 5,
+    "speed": "Sorcery",
+    "rules_text": "Draw your entire deck. For this turn all spells cost 0. At end of turn discard your hand and exile 3 random cards from your discard.",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "draw",
+          "count": 99
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Omniscience (Channel)",
+      "mana": 5,
+      "speed": "Reaction",
+      "rules_text": "Channel: Exile 1 card instead of 3",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Arcane Apotheosis",
+    "mana": 3,
+    "speed": "Sorcery",
+    "rules_text": "Permanent: gain +1 charge per spell cast. Your Replicate copies now also copy the bottom half. Spells that cost 3+ gain Reaction speed.",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "empty"
+    },
+    "channel": {
+      "name": "Arcane Apotheosis (Channel)",
+      "mana": 3,
+      "speed": "Reaction",
+      "rules_text": "Channel: All spells gain Reaction speed",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

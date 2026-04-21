@@ -1,0 +1,67 @@
+{
+  "id": "elementalist_avatar_of_elements",
+  "name": "Avatar of Elements",
+  "school": "Elementalist",
+  "rarity": "Legendary",
+  "top": {
+    "name": "Avatar of Elements",
+    "mana": 4,
+    "speed": "Instant",
+    "rules_text": "Transform: gain 7 armor and for 3 turns all your spells imbue their target tile with a random element AND deal +3 damage. You leave elemental terrain on every tile you walk across.",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "shield",
+          "amount": 7
+        }
+      ]
+    },
+    "channel": {
+      "name": "Avatar of Elements (Channel)",
+      "mana": 4,
+      "speed": "Reaction",
+      "rules_text": "Channel: Duration is 5 turns and you also gain +2 speed",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Maelstrom",
+    "mana": 3,
+    "speed": "Sorcery",
+    "rules_text": "Create a 3-tile radius storm centered on target point. Every turn it rotates dealing 2 damage and pushing all enemies 1 tile clockwise. Imbues all tiles it touches with Storm. Lasts 3 turns.",
+    "targeting": {
+      "type": "aoe",
+      "radius": 3,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "empty"
+    },
+    "channel": {
+      "name": "Maelstrom (Channel)",
+      "mana": 3,
+      "speed": "Reaction",
+      "rules_text": "Channel: Radius is 4 and it also freezes enemies hit",
+      "targeting": {
+        "type": "aoe",
+        "radius": 4,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

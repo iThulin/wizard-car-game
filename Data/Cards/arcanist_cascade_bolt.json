@@ -1,0 +1,79 @@
+{
+  "id": "arcanist_cascade_bolt",
+  "name": "Cascade Bolt",
+  "school": "Arcanist",
+  "rarity": "Common",
+  "top": {
+    "name": "Cascade Bolt",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Deal 7 damage. Gain 1 charge. If 3+ charges this chains to second target for 3 damage.",
+    "targeting": {
+      "type": "unit",
+      "range": 6,
+      "los": true,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "damage",
+          "amount": 7
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Cascade Bolt (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: Chains at 2+ charges",
+      "targeting": {
+        "type": "unit",
+        "range": 6,
+        "los": true,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "damage",
+        "amount": 5
+      }
+    }
+  },
+  "bottom": {
+    "name": "Arcane Recall",
+    "mana": 1,
+    "speed": "Sorcery",
+    "rules_text": "Spend 1 charge. Return card from discard to hand.",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Arcane Recall (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Also draw 1 card",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "draw",
+        "count": 1
+      }
+    }
+  }
+}

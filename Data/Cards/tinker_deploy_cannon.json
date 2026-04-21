@@ -1,0 +1,70 @@
+{
+  "id": "tinker_deploy_cannon",
+  "name": "Deploy Cannon",
+  "school": "Tinker",
+  "rarity": "Common",
+  "top": {
+    "name": "Deploy Cannon",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Deploy a Cannon on target tile within 2 (8HP 8DMG Range 5). Cannon has 1 turn setup before it can fire. Immobile.",
+    "targeting": {
+      "type": "aoe",
+      "radius": 2,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "summon",
+      "unit": "Cannon",
+      "count": 1
+    },
+    "channel": {
+      "name": "Deploy Cannon (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: No setup turn required",
+      "targeting": {
+        "type": "aoe",
+        "radius": 2,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "summon",
+        "unit": "Cannon",
+        "count": 1
+      }
+    }
+  },
+  "bottom": {
+    "name": "Mobile Barrier",
+    "mana": 1,
+    "speed": "Instant",
+    "rules_text": "Deploy a Shield Wall on tile within 1 (8HP). Blocks LOS and movement. You can push it 1 tile per turn as a free action.",
+    "targeting": {
+      "type": "aoe",
+      "radius": 1,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "summon",
+      "unit": "Shield_Wall",
+      "count": 1
+    },
+    "channel": {
+      "name": "Mobile Barrier (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Shield Wall has 6HP",
+      "targeting": {
+        "type": "aoe",
+        "radius": 1,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "summon",
+        "unit": "Shield_Wall",
+        "count": 1
+      }
+    }
+  }
+}

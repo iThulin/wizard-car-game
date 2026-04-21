@@ -1,0 +1,65 @@
+{
+  "id": "arcanist_spell_stitch",
+  "name": "Spell Stitch",
+  "school": "Arcanist",
+  "rarity": "Common",
+  "top": {
+    "name": "Spell Stitch",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Bind: play both halves of the next card. Top resolves then bottom immediately after.",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "empty"
+    },
+    "channel": {
+      "name": "Spell Stitch (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: Bottom half costs 0 when bound",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Arcane Drift",
+    "mana": 1,
+    "speed": "Instant",
+    "rules_text": "Move 1 tile per spell cast this turn (max 4). Gain 2 armor per tile moved.",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "move",
+          "tiles": 1
+        },
+        {
+          "type": "shield",
+          "amount": 2
+        }
+      ]
+    },
+    "channel": {
+      "name": "Arcane Drift (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Also gain 2 shield per tile",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "shield",
+        "amount": 2
+      }
+    }
+  }
+}

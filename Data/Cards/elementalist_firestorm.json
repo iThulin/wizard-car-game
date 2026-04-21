@@ -1,0 +1,76 @@
+{
+  "id": "elementalist_firestorm",
+  "name": "Firestorm",
+  "school": "Elementalist",
+  "rarity": "Rare",
+  "top": {
+    "name": "Firestorm",
+    "mana": 3,
+    "speed": "Sorcery",
+    "rules_text": "Deal 4 damage to all enemies on or adjacent to Fire tiles. Imbue all tiles in range 2 with Fire.",
+    "targeting": {
+      "type": "aoe",
+      "radius": 2,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "damage",
+          "amount": 4
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Firestorm (Channel)",
+      "mana": 3,
+      "speed": "Reaction",
+      "rules_text": "Channel: Deal 7 damage instead",
+      "targeting": {
+        "type": "aoe",
+        "radius": 2,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "damage",
+        "amount": 7
+      }
+    }
+  },
+  "bottom": {
+    "name": "Blizzard",
+    "mana": 3,
+    "speed": "Sorcery",
+    "rules_text": "Freeze all enemies standing on Ice tiles for 2 turns. All Ice tiles deal 4 damage to enemies on them.",
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "damage",
+          "amount": 4
+        }
+      ]
+    },
+    "channel": {
+      "name": "Blizzard (Channel)",
+      "mana": 3,
+      "speed": "Reaction",
+      "rules_text": "Channel: Also create Ice on all tiles adjacent to existing Ice tiles",
+      "targeting": {
+        "type": "aoe",
+        "radius": 1,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

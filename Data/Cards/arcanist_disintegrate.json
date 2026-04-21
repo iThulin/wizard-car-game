@@ -1,0 +1,62 @@
+{
+  "id": "arcanist_disintegrate",
+  "name": "Disintegrate",
+  "school": "Arcanist",
+  "rarity": "Rare",
+  "top": {
+    "name": "Disintegrate",
+    "mana": 3,
+    "speed": "Sorcery",
+    "rules_text": "Spend 3 charges. Deal 14 damage. If lethal exile the card (cant be resurrected).",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "empty"
+    },
+    "channel": {
+      "name": "Disintegrate (Channel)",
+      "mana": 3,
+      "speed": "Reaction",
+      "rules_text": "Channel: Deal 10 instead",
+      "targeting": {
+        "type": "unit",
+        "range": 6,
+        "los": true,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "damage",
+        "amount": 18
+      }
+    }
+  },
+  "bottom": {
+    "name": "Arcane Nexus",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Create Nexus on tile (10HP). While Nexus exists you gain 1 charge at start of each turn and your spells within range 2 of Nexus cost 1 less.",
+    "targeting": {
+      "type": "aoe",
+      "radius": 2,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "empty"
+    },
+    "channel": {
+      "name": "Arcane Nexus (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: Nexus has 16HP and range is 3",
+      "targeting": {
+        "type": "aoe",
+        "radius": 3,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

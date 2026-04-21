@@ -1,0 +1,68 @@
+{
+  "id": "arcanist_spell_prism",
+  "name": "Spell Prism",
+  "school": "Arcanist",
+  "rarity": "Rare",
+  "top": {
+    "name": "Spell Prism",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Create a Prism on target tile within 2 (8HP). When a spell passes through Prism's LOS it splits: resolve once on original target and once on nearest enemy within 2 of Prism.",
+    "targeting": {
+      "type": "aoe",
+      "radius": 2,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "empty"
+    },
+    "channel": {
+      "name": "Spell Prism (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: Prism has 12HP and split range is 3",
+      "targeting": {
+        "type": "aoe",
+        "radius": 2,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Charged Conduit",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Imbue tile: the next spell cast from this tile gains +2 damage per charge you have (then consume all charges).",
+    "targeting": {
+      "type": "tile",
+      "range": 4
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Charged Conduit (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: Only consume half charges (round up)",
+      "targeting": {
+        "type": "tile",
+        "range": 4
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

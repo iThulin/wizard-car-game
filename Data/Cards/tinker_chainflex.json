@@ -1,0 +1,69 @@
+{
+  "id": "tinker_chainflex",
+  "name": "Chainflex",
+  "school": "Tinker",
+  "rarity": "Uncommon",
+  "top": {
+    "name": "Chainflex",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Create a Sympathy Link between 2 of your constructs within range 4 of each other. Linked constructs share HP (damage to one is split). Enemies crossing the link line take 3 damage.",
+    "targeting": {
+      "type": "tile",
+      "range": 4
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "damage",
+          "amount": 4
+        }
+      ]
+    },
+    "channel": {
+      "name": "Chainflex (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: Link also grants both constructs +2 damage",
+      "targeting": {
+        "type": "tile",
+        "range": 4
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Redeploy",
+    "mana": 1,
+    "speed": "Instant",
+    "rules_text": "Move a construct you control up to 3 tiles. It cannot act this turn.",
+    "targeting": {
+      "type": "tile",
+      "range": 4
+    },
+    "effect": {
+      "type": "move",
+      "tiles": 3
+    },
+    "channel": {
+      "name": "Redeploy (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Construct can still act",
+      "targeting": {
+        "type": "tile",
+        "range": 4
+      },
+      "effect": {
+        "type": "move",
+        "tiles": 3
+      }
+    }
+  }
+}

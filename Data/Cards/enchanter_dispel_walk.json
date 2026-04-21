@@ -1,0 +1,58 @@
+{
+  "id": "enchanter_dispel_walk",
+  "name": "Dispel Walk",
+  "school": "Enchanter",
+  "rarity": "Common",
+  "top": {
+    "name": "Dispel Walk",
+    "mana": 1,
+    "speed": "Instant",
+    "rules_text": "Move 2. Remove 1 buff from each enemy you pass adjacent to.",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "move",
+          "tiles": 2
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Dispel Walk (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Also steal 1 buff (applies to you)",
+      "targeting": {
+        "type": "unit",
+        "range": 6,
+        "los": false,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Glyph Bolt",
+    "mana": 1,
+    "speed": "Sorcery",
+    "rules_text": "Deal 4 damage. If you have 2+ prepared tiles on the board deal 4 instead.",
+    "targeting": {
+      "type": "unit",
+      "range": 6,
+      "los": true,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "damage",
+      "amount": 4
+    }
+  }
+}

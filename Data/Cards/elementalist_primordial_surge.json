@@ -1,0 +1,78 @@
+{
+  "id": "elementalist_primordial_surge",
+  "name": "Primordial Surge",
+  "school": "Elementalist",
+  "rarity": "Rare",
+  "top": {
+    "name": "Primordial Surge",
+    "mana": 4,
+    "speed": "Sorcery",
+    "rules_text": "Imbue ALL tiles on the board with a random element. Deal 4 damage to every enemy for each unique element they are adjacent to.",
+    "targeting": {
+      "type": "none"
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "damage",
+          "amount": 4
+        }
+      ]
+    },
+    "channel": {
+      "name": "Primordial Surge (Channel)",
+      "mana": 4,
+      "speed": "Reaction",
+      "rules_text": "Channel: You choose which element each tile gets instead of random",
+      "targeting": {
+        "type": "none"
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Cataclysm",
+    "mana": 3,
+    "speed": "Sorcery",
+    "rules_text": "Destroy ALL imbued tiles on the board. Deal 2 damage to all enemies per tile destroyed. Draw 1 card per 3 tiles destroyed.",
+    "targeting": {
+      "type": "aoe",
+      "radius": 1,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "damage",
+          "amount": 2
+        },
+        {
+          "type": "draw",
+          "count": 1
+        }
+      ]
+    },
+    "channel": {
+      "name": "Cataclysm (Channel)",
+      "mana": 3,
+      "speed": "Reaction",
+      "rules_text": "Channel: Deal 4 damage per tile instead",
+      "targeting": {
+        "type": "aoe",
+        "radius": 1,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "damage",
+        "amount": 4
+      }
+    }
+  }
+}

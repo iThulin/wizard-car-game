@@ -1,0 +1,79 @@
+{
+  "id": "enchanter_fate_weaver",
+  "name": "Fate Weaver",
+  "school": "Enchanter",
+  "rarity": "Rare",
+  "top": {
+    "name": "Fate Weaver",
+    "mana": 3,
+    "speed": "Sorcery",
+    "rules_text": "Prepare on tile: whenever any spell is cast within 3 tiles of this glyph you draw 1 card. Lasts 3 turns.",
+    "targeting": {
+      "type": "tile",
+      "range": 4
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "draw",
+          "count": 1
+        }
+      ]
+    },
+    "channel": {
+      "name": "Fate Weaver (Channel)",
+      "mana": 3,
+      "speed": "Reaction",
+      "rules_text": "Channel: Also gain 1 mana per trigger",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Glyph Storm",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Create a prepared glyph on every unoccupied tile within 2 of your wizard. Each glyph deals 2 damage when triggered.",
+    "targeting": {
+      "type": "aoe",
+      "radius": 2,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "damage",
+          "amount": 2
+        }
+      ]
+    },
+    "channel": {
+      "name": "Glyph Storm (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: Damage is 2 per glyph",
+      "targeting": {
+        "type": "unit",
+        "range": 6,
+        "los": false,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "damage",
+        "amount": 4
+      }
+    }
+  }
+}

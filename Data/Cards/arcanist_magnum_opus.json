@@ -1,0 +1,58 @@
+{
+  "id": "arcanist_magnum_opus",
+  "name": "Magnum Opus",
+  "school": "Arcanist",
+  "rarity": "Legendary",
+  "top": {
+    "name": "Magnum Opus",
+    "mana": 4,
+    "speed": "Sorcery",
+    "rules_text": "Choose a card in your hand. It becomes Perfected for the rest of the fight: both halves cost 0 and gain +3 to all damage/healing values. Perfected cards are not discarded after use.",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "empty"
+    },
+    "channel": {
+      "name": "Magnum Opus (Channel)",
+      "mana": 4,
+      "speed": "Reaction",
+      "rules_text": "Channel: Perfect 2 cards instead",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Arcane Singularity",
+    "mana": 3,
+    "speed": "Sorcery",
+    "rules_text": "Create Singularity Crystal on tile (20HP). All spells by any player within range 3 also resolve on the Singularity's tile. You gain 1 charge per spell that hits it.",
+    "targeting": {
+      "type": "aoe",
+      "radius": 2,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "empty"
+    },
+    "channel": {
+      "name": "Arcane Singularity (Channel)",
+      "mana": 3,
+      "speed": "Reaction",
+      "rules_text": "Channel: Range is 5 and gain 2 charges per hit",
+      "targeting": {
+        "type": "aoe",
+        "radius": 5,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

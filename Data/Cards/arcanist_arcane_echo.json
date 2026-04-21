@@ -1,0 +1,64 @@
+{
+  "id": "arcanist_arcane_echo",
+  "name": "Arcane Echo",
+  "school": "Arcanist",
+  "rarity": "Common",
+  "top": {
+    "name": "Arcane Echo",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Deal 7 damage. If you cast a spell last turn that dealt 4+ damage this costs 0.",
+    "targeting": {
+      "type": "unit",
+      "range": 6,
+      "los": true,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "damage",
+      "amount": 7
+    },
+    "channel": {
+      "name": "Arcane Echo (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: Threshold is 3+ instead",
+      "targeting": {
+        "type": "unit",
+        "range": 6,
+        "los": true,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "damage",
+        "amount": 7
+      }
+    }
+  },
+  "bottom": {
+    "name": "Resonance Field",
+    "mana": 1,
+    "speed": "Sorcery",
+    "rules_text": "Imbue tile: spells cast by allies here gain +2 damage and cost 1 less. Lasts 2 turns.",
+    "targeting": {
+      "type": "tile",
+      "range": 4
+    },
+    "effect": {
+      "type": "empty"
+    },
+    "channel": {
+      "name": "Resonance Field (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Lasts 3 turns",
+      "targeting": {
+        "type": "tile",
+        "range": 4
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

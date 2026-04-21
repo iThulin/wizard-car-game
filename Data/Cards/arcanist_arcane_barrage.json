@@ -1,0 +1,82 @@
+{
+  "id": "arcanist_arcane_barrage",
+  "name": "Arcane Barrage",
+  "school": "Arcanist",
+  "rarity": "Uncommon",
+  "top": {
+    "name": "Arcane Barrage",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Spend X charges. Deal 4 damage X times to targets of your choice (may split between enemies).",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "damage",
+          "amount": 4
+        }
+      ]
+    },
+    "channel": {
+      "name": "Arcane Barrage (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: Deal 5 damage per charge instead",
+      "targeting": {
+        "type": "unit",
+        "range": 6,
+        "los": true,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "damage",
+        "amount": 5
+      }
+    }
+  },
+  "bottom": {
+    "name": "Power Siphon",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Deal 5 damage. Steal 1 mana from target. Gain 1 charge.",
+    "targeting": {
+      "type": "unit",
+      "range": 6,
+      "los": true,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "damage",
+          "amount": 5
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Power Siphon (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: Steal 2 mana",
+      "targeting": {
+        "type": "unit",
+        "range": 6,
+        "los": false,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "id": "enchanter_the_grand_design",
+  "name": "The Grand Design",
+  "school": "Enchanter",
+  "rarity": "Legendary",
+  "top": {
+    "name": "The Grand Design",
+    "mana": 4,
+    "speed": "Sorcery",
+    "rules_text": "For the rest of the fight: whenever you Prepare a glyph it also automatically Prepares on all tiles within 1 of the target. All your glyphs trigger twice.",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "empty"
+    },
+    "channel": {
+      "name": "The Grand Design (Channel)",
+      "mana": 4,
+      "speed": "Reaction",
+      "rules_text": "Channel: Glyphs cost 1 less to prepare",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Absolute Territory",
+    "mana": 3,
+    "speed": "Instant",
+    "rules_text": "Prepare on every tile within 3 of your wizard: your prepared effects. Enemies in this zone deal half damage take 2 damage per tile moved and cannot teleport. Lasts 2 turns.",
+    "targeting": {
+      "type": "aoe",
+      "radius": 3,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "empty"
+    },
+    "channel": {
+      "name": "Absolute Territory (Channel)",
+      "mana": 3,
+      "speed": "Reaction",
+      "rules_text": "Channel: Lasts 3 turns and zone extends to range 4",
+      "targeting": {
+        "type": "aoe",
+        "radius": 4,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

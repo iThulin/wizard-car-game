@@ -1,0 +1,73 @@
+{
+  "id": "elementalist_tectonic_shatter",
+  "name": "Tectonic Shatter",
+  "school": "Elementalist",
+  "rarity": "Uncommon",
+  "top": {
+    "name": "Tectonic Shatter",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Destroy all Stone pillars and rubble you control. For each destroyed deal 5 damage to nearest enemy and create difficult terrain.",
+    "targeting": {
+      "type": "unit",
+      "range": 6,
+      "los": true,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "damage",
+          "amount": 5
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Tectonic Shatter (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: Deal 9 damage per destroyed instead",
+      "targeting": {
+        "type": "unit",
+        "range": 6,
+        "los": true,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "damage",
+        "amount": 9
+      }
+    }
+  },
+  "bottom": {
+    "name": "Elemental Cycle",
+    "mana": 1,
+    "speed": "Sorcery",
+    "rules_text": "Gain 1 imbued tile of each element (Fire Ice Storm) on tiles adjacent to you.",
+    "targeting": {
+      "type": "aoe",
+      "radius": 1,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "empty"
+    },
+    "channel": {
+      "name": "Elemental Cycle (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Also gain 4 armor per tile imbued",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "shield",
+        "amount": 4
+      }
+    }
+  }
+}

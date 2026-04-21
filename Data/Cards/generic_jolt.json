@@ -1,0 +1,80 @@
+{
+  "id": "generic_jolt",
+  "name": "Jolt",
+  "school": "Generic",
+  "rarity": "Uncommon",
+  "top": {
+    "name": "Jolt",
+    "mana": 1,
+    "speed": "Instant",
+    "rules_text": "Deal 4 damage. Push target 1 tile away from you.",
+    "targeting": {
+      "type": "unit",
+      "range": 6,
+      "los": true,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "damage",
+          "amount": 4
+        },
+        {
+          "type": "move",
+          "tiles": 1
+        }
+      ]
+    },
+    "channel": {
+      "name": "Jolt (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Push 2 tiles",
+      "targeting": {
+        "type": "unit",
+        "range": 6,
+        "los": false,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "move",
+        "tiles": 2
+      }
+    }
+  },
+  "bottom": {
+    "name": "Hunker",
+    "mana": 1,
+    "speed": "Instant",
+    "rules_text": "Gain 5 armor. Immobilize self for 1 turn. While immobilized your spells deal +2 damage.",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "shield",
+          "amount": 5
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Hunker (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: +3 damage instead",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

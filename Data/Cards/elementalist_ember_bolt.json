@@ -1,0 +1,43 @@
+{
+  "id": "elementalist_ember_bolt",
+  "name": "Ember Bolt",
+  "school": "Elementalist",
+  "rarity": "Common",
+  "top": {
+    "name": "Ember Bolt",
+    "mana": 1,
+    "speed": "Sorcery",
+    "rules_text": "Deal 4 damage. Imbue target tile with Fire.",
+    "targeting": {
+      "type": "unit",
+      "range": 6,
+      "los": true,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "damage",
+          "amount": 4
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    }
+  },
+  "bottom": {
+    "name": "Stone Skin",
+    "mana": 1,
+    "speed": "Instant",
+    "rules_text": "Gain 5 armor. If standing on Stone terrain gain 5 instead.",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "shield",
+      "amount": 5
+    }
+  }
+}

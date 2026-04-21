@@ -1,0 +1,72 @@
+{
+  "id": "tinker_arc_bolt",
+  "name": "Arc Bolt",
+  "school": "Tinker",
+  "rarity": "Common",
+  "top": {
+    "name": "Arc Bolt",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Deal 5 damage. Damage arcs through Sympathy Links: if target is within range 2 of a linked construct deal 2 bonus damage.",
+    "targeting": {
+      "type": "unit",
+      "range": 6,
+      "los": true,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "damage",
+      "amount": 5
+    },
+    "channel": {
+      "name": "Arc Bolt (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: Arc hits all enemies adjacent to the construct too",
+      "targeting": {
+        "type": "aoe",
+        "radius": 1,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "damage",
+        "amount": 4
+      }
+    }
+  },
+  "bottom": {
+    "name": "Kinetic Plate",
+    "mana": 1,
+    "speed": "Instant",
+    "rules_text": "Gain 4 armor. If you have a Sympathy Link active gain 4 shield as well.",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "shield",
+          "amount": 4
+        },
+        {
+          "type": "shield",
+          "amount": 4
+        }
+      ]
+    },
+    "channel": {
+      "name": "Kinetic Plate (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Also gain 2 armor per construct on the board",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "shield",
+        "amount": 2
+      }
+    }
+  }
+}

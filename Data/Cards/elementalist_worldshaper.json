@@ -1,0 +1,82 @@
+{
+  "id": "elementalist_worldshaper",
+  "name": "Worldshaper",
+  "school": "Elementalist",
+  "rarity": "Rare",
+  "top": {
+    "name": "Worldshaper",
+    "mana": 3,
+    "speed": "Sorcery",
+    "rules_text": "Choose an element. All imbued tiles of that element within range 3 explode: deal 5 damage to all adjacent enemies and are destroyed. Then imbue those tiles with a different element of your choice.",
+    "targeting": {
+      "type": "aoe",
+      "radius": 3,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "damage",
+          "amount": 5
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Worldshaper (Channel)",
+      "mana": 3,
+      "speed": "Reaction",
+      "rules_text": "Channel: Damage is 5 and range is 5",
+      "targeting": {
+        "type": "aoe",
+        "radius": 5,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "damage",
+        "amount": 9
+      }
+    }
+  },
+  "bottom": {
+    "name": "Confluence",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "If you have Fire Ice and Storm tiles all on the board: deal 14 damage to target and draw 2 cards. Otherwise deal 3.",
+    "targeting": {
+      "type": "unit",
+      "range": 6,
+      "los": true,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "damage",
+          "amount": 14
+        },
+        {
+          "type": "draw",
+          "count": 2
+        }
+      ]
+    },
+    "channel": {
+      "name": "Confluence (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: Also imbue target tile with all 3 elements simultaneously",
+      "targeting": {
+        "type": "tile",
+        "range": 4
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

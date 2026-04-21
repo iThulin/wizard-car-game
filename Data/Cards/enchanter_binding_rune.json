@@ -1,0 +1,74 @@
+{
+  "id": "enchanter_binding_rune",
+  "name": "Binding Rune",
+  "school": "Enchanter",
+  "rarity": "Common",
+  "top": {
+    "name": "Binding Rune",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Prepare on tile within 3: enemy here at start of turn is immobilized and takes 3 damage. Lasts 2 turns.",
+    "targeting": {
+      "type": "tile",
+      "range": 4
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Binding Rune (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: Also prevents Reaction casting",
+      "targeting": {
+        "type": "tile",
+        "range": 4
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Sigil Link",
+    "mana": 1,
+    "speed": "Sorcery",
+    "rules_text": "Link 2 prepared tiles. When one triggers the other triggers simultaneously.",
+    "targeting": {
+      "type": "tile",
+      "range": 4
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Sigil Link (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Link 3 tiles instead",
+      "targeting": {
+        "type": "tile",
+        "range": 4
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

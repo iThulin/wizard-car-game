@@ -1,0 +1,63 @@
+{
+  "id": "arcanist_overcharge",
+  "name": "Overcharge",
+  "school": "Arcanist",
+  "rarity": "Uncommon",
+  "top": {
+    "name": "Overcharge",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Spend all charges (min 2). Deal 5 damage per charge to target. Lose 4HP per charge.",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "damage",
+          "amount": 5
+        }
+      ]
+    },
+    "channel": {
+      "name": "Overcharge (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: No self damage",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Tome Bind",
+    "mana": 1,
+    "speed": "Sorcery",
+    "rules_text": "Exile a card from hand face up. Cast its top half for free once per turn while exiled.",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "empty"
+    },
+    "channel": {
+      "name": "Tome Bind (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: May cast either half",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

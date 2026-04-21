@@ -1,0 +1,72 @@
+{
+  "id": "arcanist_infinity_loop",
+  "name": "Infinity Loop",
+  "school": "Arcanist",
+  "rarity": "Rare",
+  "top": {
+    "name": "Infinity Loop",
+    "mana": 3,
+    "speed": "Sorcery",
+    "rules_text": "Gain 5 charges. For the rest of this turn your charge costs are halved (round up).",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Infinity Loop (Channel)",
+      "mana": 3,
+      "speed": "Reaction",
+      "rules_text": "Channel: Charge costs are 0 for this turn",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Living Spell",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Exile a spell from hand. Summon a Living Spell on target tile (HP = spell's mana cost x5DMG = mana cost x2). Living Spell casts the exiled spell on nearest enemy each turn.",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "summon",
+          "unit": "Living_Spell",
+          "count": 1
+        }
+      ]
+    },
+    "channel": {
+      "name": "Living Spell (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: Living Spell also has +2 speed",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

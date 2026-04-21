@@ -1,0 +1,82 @@
+{
+  "id": "elementalist_thermal_vent",
+  "name": "Thermal Vent",
+  "school": "Elementalist",
+  "rarity": "Common",
+  "top": {
+    "name": "Thermal Vent",
+    "mana": 1,
+    "speed": "Sorcery",
+    "rules_text": "Destroy a Fire tile you control. Deal 7 damage to all enemies within 2 tiles of it. Gain 1 mana.",
+    "targeting": {
+      "type": "aoe",
+      "radius": 2,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "damage",
+          "amount": 7
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Thermal Vent (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Deal 10 damage instead",
+      "targeting": {
+        "type": "aoe",
+        "radius": 2,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "damage",
+        "amount": 10
+      }
+    }
+  },
+  "bottom": {
+    "name": "Glacial Rift",
+    "mana": 2,
+    "speed": "Instant",
+    "rules_text": "Imbue a line of 3 tiles with Ice. Enemies on those tiles frozen for 1 turn. Ice costs 2 movement.",
+    "targeting": {
+      "type": "unit",
+      "range": 6,
+      "los": false,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Glacial Rift (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: Line is 5 tiles long",
+      "targeting": {
+        "type": "unit",
+        "range": 6,
+        "los": false,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

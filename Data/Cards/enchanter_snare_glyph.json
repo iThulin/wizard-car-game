@@ -1,0 +1,76 @@
+{
+  "id": "enchanter_snare_glyph",
+  "name": "Snare Glyph",
+  "school": "Enchanter",
+  "rarity": "Common",
+  "top": {
+    "name": "Snare Glyph",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Prepare on tile within 3: When enemy enters immobilize 1 turn and deal 4 damage.",
+    "targeting": {
+      "type": "tile",
+      "range": 4
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Snare Glyph (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: Also applies Hex (-3 damage) for 2 turns",
+      "targeting": {
+        "type": "unit",
+        "range": 6,
+        "los": false,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Rune Step",
+    "mana": 1,
+    "speed": "Sorcery",
+    "rules_text": "Teleport to any tile with your prepared spell on it. Draw 1 card.",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "draw",
+          "count": 1
+        }
+      ]
+    },
+    "channel": {
+      "name": "Rune Step (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Also trigger the prepared spell when you arrive",
+      "targeting": {
+        "type": "tile",
+        "range": 4
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "id": "tinker_deploy_turret",
+  "name": "Deploy Turret",
+  "school": "Tinker",
+  "rarity": "Common",
+  "top": {
+    "name": "Deploy Turret",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Deploy a Turret on target tile within 2 (10HP 5DMG Range 3). Turret auto-attacks nearest enemy each turn.",
+    "targeting": {
+      "type": "aoe",
+      "radius": 2,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "summon",
+      "unit": "Turret",
+      "count": 1
+    },
+    "channel": {
+      "name": "Deploy Turret (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: Turret enters with +2HP",
+      "targeting": {
+        "type": "tile",
+        "range": 4
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Recalibrate",
+    "mana": 1,
+    "speed": "Sorcery",
+    "rules_text": "Draw 1 card. If you have 2+ constructs on the board draw 2 instead.",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "draw",
+      "count": 1
+    },
+    "channel": {
+      "name": "Recalibrate (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Also gain 1 mana",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

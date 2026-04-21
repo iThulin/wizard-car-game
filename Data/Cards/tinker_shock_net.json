@@ -1,0 +1,97 @@
+{
+  "id": "tinker_shock_net",
+  "name": "Shock Net",
+  "school": "Tinker",
+  "rarity": "Common",
+  "top": {
+    "name": "Shock Net",
+    "mana": 1,
+    "speed": "Sorcery",
+    "rules_text": "Immobilize target enemy for 1 turn. If target is adjacent to a construct deal 4 damage as well.",
+    "targeting": {
+      "type": "unit",
+      "range": 6,
+      "los": true,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "type": "target_adjacent_to_tile",
+            "tile": "construct"
+          },
+          "then": {
+            "type": "damage",
+            "amount": 4
+          },
+          "else": {
+            "type": "damage",
+            "amount": 4
+          }
+        }
+      ]
+    },
+    "channel": {
+      "name": "Shock Net (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Immobilize for 2 turns",
+      "targeting": {
+        "type": "unit",
+        "range": 6,
+        "los": true,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Wire Trap",
+    "mana": 1,
+    "speed": "Sorcery",
+    "rules_text": "Deploy a Wire Trap on target tile within 2 (2HP invisible). When enemy enters deal 5 damage and slow for 1 turn.",
+    "targeting": {
+      "type": "aoe",
+      "radius": 2,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "summon",
+          "unit": "Wire_Trap",
+          "count": 1
+        },
+        {
+          "type": "damage",
+          "amount": 5
+        }
+      ]
+    },
+    "channel": {
+      "name": "Wire Trap (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Trap deals 9 damage",
+      "targeting": {
+        "type": "unit",
+        "range": 6,
+        "los": false,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "damage",
+        "amount": 9
+      }
+    }
+  }
+}

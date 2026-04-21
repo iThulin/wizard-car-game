@@ -1,0 +1,73 @@
+{
+  "id": "generic_leyline_tap",
+  "name": "Leyline Tap",
+  "school": "Generic",
+  "rarity": "Rare",
+  "top": {
+    "name": "Leyline Tap",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Imbue your tile with Arcane. While on an Arcane tile all your spells cost 1 less and deal +2 damage. Lasts 3 turns.",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Leyline Tap (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: Also affects adjacent allies",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Terrain Mastery",
+    "mana": 1,
+    "speed": "Instant",
+    "rules_text": "Choose a terrain type on the board. Deal 4 damage to all enemies standing on that terrain type. You gain 2 armor per enemy hit.",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "damage",
+          "amount": 4
+        },
+        {
+          "type": "shield",
+          "amount": 2
+        }
+      ]
+    },
+    "channel": {
+      "name": "Terrain Mastery (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Deal 5 damage and also slow each",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "damage",
+        "amount": 5
+      }
+    }
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "id": "chronomancer_temporal_inversion",
+  "name": "Temporal Inversion",
+  "school": "Chronomancer",
+  "rarity": "Rare",
+  "top": {
+    "name": "Temporal Inversion",
+    "mana": 3,
+    "speed": "Sorcery",
+    "rules_text": "Reverse the order of all spells on the stack. The spell that was going to resolve last now resolves first.",
+    "effect": {
+      "type": "empty"
+    },
+    "channel": {
+      "name": "Temporal Inversion (Channel)",
+      "mana": 3,
+      "speed": "Reaction",
+      "rules_text": "Channel: Also add a copy of your last cast spell to the top of the stack",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Phase Anchor",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Create 2 Phase tiles within range 2. You may teleport between them as a free action once per turn. Lasts 3 turns.",
+    "targeting": {
+      "type": "aoe",
+      "radius": 2,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "empty"
+    },
+    "channel": {
+      "name": "Phase Anchor (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: Create 3 Phase tiles and lasts 4 turns",
+      "targeting": {
+        "type": "aoe",
+        "radius": 2,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

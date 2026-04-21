@@ -1,0 +1,74 @@
+{
+  "id": "enchanter_glyph_network",
+  "name": "Glyph Network",
+  "school": "Enchanter",
+  "rarity": "Rare",
+  "top": {
+    "name": "Glyph Network",
+    "mana": 3,
+    "speed": "Sorcery",
+    "rules_text": "All prepared tiles trigger simultaneously. Each deals its effect plus 1 bonus per other tile triggered.",
+    "targeting": {
+      "type": "tile",
+      "range": 4
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "damage",
+          "amount": 2
+        }
+      ]
+    },
+    "channel": {
+      "name": "Glyph Network (Channel)",
+      "mana": 3,
+      "speed": "Reaction",
+      "rules_text": "Channel: Prepared glyphs not consumed when triggered this way",
+      "targeting": {
+        "type": "tile",
+        "range": 4
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Spell Anchor",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Prepare on tile: the next spell you cast while standing on this tile is cast twice.",
+    "targeting": {
+      "type": "tile",
+      "range": 4
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Spell Anchor (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: The copy spell costs 0 mana",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

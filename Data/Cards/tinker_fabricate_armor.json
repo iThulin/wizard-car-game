@@ -1,0 +1,67 @@
+{
+  "id": "tinker_fabricate_armor",
+  "name": "Fabricate Armor",
+  "school": "Tinker",
+  "rarity": "Common",
+  "top": {
+    "name": "Fabricate Armor",
+    "mana": 1,
+    "speed": "Instant",
+    "rules_text": "Gain 5 armor. If adjacent to a construct gain 5 instead.",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "shield",
+      "amount": 5
+    },
+    "channel": {
+      "name": "Fabricate Armor (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Adjacent construct also gains 2 armor",
+      "targeting": {
+        "type": "tile",
+        "range": 4
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Salvage",
+    "mana": 1,
+    "speed": "Instant",
+    "rules_text": "Destroy a construct you control within range 3. Gain 2 mana and draw 1 card. Gain 2 armor per 4HP the construct had remaining.",
+    "targeting": {
+      "type": "tile",
+      "range": 4
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "draw",
+          "count": 1
+        }
+      ]
+    },
+    "channel": {
+      "name": "Salvage (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Gain 2 mana and 2 cards instead",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "draw",
+        "count": 2
+      }
+    }
+  }
+}

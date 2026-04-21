@@ -1,0 +1,84 @@
+{
+  "id": "elementalist_frost_lance",
+  "name": "Frost Lance",
+  "school": "Elementalist",
+  "rarity": "Common",
+  "top": {
+    "name": "Frost Lance",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Deal 7 damage. If target is on Ice terrain deal 6 instead and freeze for 1 turn.",
+    "targeting": {
+      "type": "unit",
+      "range": 6,
+      "los": true,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "conditional",
+          "if": {
+            "type": "target_on_tile",
+            "tile": "ice"
+          },
+          "then": {
+            "type": "damage",
+            "amount": 6
+          },
+          "else": {
+            "type": "damage",
+            "amount": 7
+          }
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Frost Lance (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: Freeze lasts 2 turns",
+      "targeting": {
+        "type": "unit",
+        "range": 6,
+        "los": false,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Stone Wall",
+    "mana": 1,
+    "speed": "Instant",
+    "rules_text": "Create Stone pillar on target tile within 3. Blocks LOS and movement. 12HP.",
+    "targeting": {
+      "type": "aoe",
+      "radius": 3,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "empty"
+    },
+    "channel": {
+      "name": "Stone Wall (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Create 2 adjacent stone pillars instead",
+      "targeting": {
+        "type": "aoe",
+        "radius": 3,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

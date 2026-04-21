@@ -1,0 +1,81 @@
+{
+  "id": "arcanist_spell_fracture",
+  "name": "Spell Fracture",
+  "school": "Arcanist",
+  "rarity": "Uncommon",
+  "top": {
+    "name": "Spell Fracture",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Deal 5 damage. Gain 1 charge per unique keyword on this card's other half (check bottom half keywords).",
+    "targeting": {
+      "type": "unit",
+      "range": 6,
+      "los": true,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "damage",
+          "amount": 5
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Spell Fracture (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: Also gain 1 charge per keyword on any spell in your discard",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Arcane Trap",
+    "mana": 1,
+    "speed": "Sorcery",
+    "rules_text": "Create an Arcane Trap on tile within 2: when enemy enters spend 1 charge to deal 7 damage.",
+    "targeting": {
+      "type": "aoe",
+      "radius": 2,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "empty"
+        },
+        {
+          "type": "damage",
+          "amount": 7
+        }
+      ]
+    },
+    "channel": {
+      "name": "Arcane Trap (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Deals 10 damage",
+      "targeting": {
+        "type": "unit",
+        "range": 6,
+        "los": false,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "damage",
+        "amount": 10
+      }
+    }
+  }
+}

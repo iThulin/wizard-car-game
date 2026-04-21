@@ -1,0 +1,71 @@
+{
+  "id": "tinker_grand_turret",
+  "name": "Grand Turret",
+  "school": "Tinker",
+  "rarity": "Rare",
+  "top": {
+    "name": "Grand Turret",
+    "mana": 3,
+    "speed": "Sorcery",
+    "rules_text": "Deploy a Grand Turret on target tile (16HP 6DMG Range 4). Grand Turret hits all enemies in a line through its target. 1 turn setup.",
+    "targeting": {
+      "type": "aoe",
+      "radius": 2,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "summon",
+      "unit": "Grand_Turret",
+      "count": 1
+    },
+    "channel": {
+      "name": "Grand Turret (Channel)",
+      "mana": 3,
+      "speed": "Reaction",
+      "rules_text": "Channel: No setup and +2HP",
+      "targeting": {
+        "type": "aoe",
+        "radius": 2,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "summon",
+        "unit": "Grand_Turret",
+        "count": 1
+      }
+    }
+  },
+  "bottom": {
+    "name": "Master Schematic",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Draw 3 cards. The next 2 constructs you deploy this fight have +3HP and +1 to all stats.",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "draw",
+          "count": 3
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Master Schematic (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: Next 3 constructs instead",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

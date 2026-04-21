@@ -1,0 +1,70 @@
+{
+  "id": "chronomancer_precognition",
+  "name": "Precognition",
+  "school": "Chronomancer",
+  "rarity": "Common",
+  "top": {
+    "name": "Precognition",
+    "mana": 1,
+    "speed": "Sorcery",
+    "rules_text": "Look at top 3 cards of deck. Keep 1 discard rest. Kept card costs 1 less.",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "sequence",
+      "steps": [
+        {
+          "type": "draw",
+          "count": 1
+        },
+        {
+          "type": "empty"
+        }
+      ]
+    },
+    "channel": {
+      "name": "Precognition (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Keep 2 instead",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "draw",
+        "count": 2
+      }
+    }
+  },
+  "bottom": {
+    "name": "Haste",
+    "mana": 1,
+    "speed": "Instant",
+    "rules_text": "Target ally gains +2 movement this turn.",
+    "targeting": {
+      "type": "unit",
+      "range": 6,
+      "los": false,
+      "enemies_only": false
+    },
+    "effect": {
+      "type": "empty"
+    },
+    "channel": {
+      "name": "Haste (Channel)",
+      "mana": 1,
+      "speed": "Reaction",
+      "rules_text": "Channel: Also gains +1 action",
+      "targeting": {
+        "type": "unit",
+        "range": 6,
+        "los": false,
+        "enemies_only": false
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  }
+}

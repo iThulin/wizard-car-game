@@ -1,0 +1,62 @@
+{
+  "id": "arcanist_replicate",
+  "name": "Replicate",
+  "school": "Arcanist",
+  "rarity": "Uncommon",
+  "top": {
+    "name": "Replicate",
+    "mana": 2,
+    "speed": "Sorcery",
+    "rules_text": "Copy the last spell you cast this turn. Cast copy immediately with new targets. Costs 0.",
+    "targeting": {
+      "type": "self"
+    },
+    "effect": {
+      "type": "empty"
+    },
+    "channel": {
+      "name": "Replicate (Channel)",
+      "mana": 2,
+      "speed": "Reaction",
+      "rules_text": "Channel: Copy retains +damage buffs from this turn",
+      "targeting": {
+        "type": "self"
+      },
+      "effect": {
+        "type": "empty"
+      }
+    }
+  },
+  "bottom": {
+    "name": "Spell Surge",
+    "mana": 3,
+    "speed": "Sorcery",
+    "rules_text": "Deal 4 damage per spell cast this turn (including this). Minimum 2.",
+    "targeting": {
+      "type": "unit",
+      "range": 6,
+      "los": true,
+      "enemies_only": true
+    },
+    "effect": {
+      "type": "damage",
+      "amount": 4
+    },
+    "channel": {
+      "name": "Spell Surge (Channel)",
+      "mana": 3,
+      "speed": "Reaction",
+      "rules_text": "Channel: Each hit also pushes target 1 tile",
+      "targeting": {
+        "type": "unit",
+        "range": 6,
+        "los": false,
+        "enemies_only": true
+      },
+      "effect": {
+        "type": "move",
+        "tiles": 1
+      }
+    }
+  }
+}
