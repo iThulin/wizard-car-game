@@ -13,6 +13,7 @@ public partial class CampusScreen : Control
     private Label _schoolDescription;
     private CheckBox _debugCheckbox;
     private Button _startRunButton;
+    private Button _cardLibraryButton;
     private Button _quitButton;
     private VBoxContainer _layout;
 
@@ -142,6 +143,17 @@ public partial class CampusScreen : Control
         _startRunButton.Pressed += OnStartRun;
         _layout.AddChild(_startRunButton);
 
+        // ── Card Library button ─────────────────────────────────────────
+        _cardLibraryButton = new Button
+        {
+            Text = "Card Library",
+            CustomMinimumSize = new Vector2(300, 40),
+            SizeFlagsHorizontal = SizeFlags.ShrinkCenter,
+        };
+        _cardLibraryButton.AddThemeFontSizeOverride("font_size", 18);
+        _cardLibraryButton.Pressed += OnOpenCardLibrary;
+        _layout.AddChild(_cardLibraryButton);
+
         // ── Quit button ─────────────────────────────────────────────────
         _quitButton = new Button
         {
@@ -178,5 +190,10 @@ public partial class CampusScreen : Control
 
         GD.Print($"Starting run: {PlayerSession.SelectedSchool}, Debug: {PlayerSession.DebugMode}");
         GetTree().ChangeSceneToFile("res://Scenes/Overworld/OverworldScene.tscn");
+    }
+
+    private void OnOpenCardLibrary()
+    {
+        GetTree().ChangeSceneToFile("res://Scenes/UI/CardLibrary.tscn");
     }
 }
