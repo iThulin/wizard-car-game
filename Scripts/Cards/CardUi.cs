@@ -32,9 +32,11 @@ public partial class CardUi : Control
     private const float HalfDebounce = 0.08f;
 
     // ── Split view panels (for tinting) ──────────────────────────────
+    private Control _splitView;
     private Panel _topPanel;
     private Panel _bottomPanel;
     private ColorRect _splitDivider;
+    private Tween _transitionTween; // crossfade between split and full view
 
     // ── Split view labels (top half) ─────────────────────────────────
     private Label _topManaLabel;
@@ -105,6 +107,7 @@ public partial class CardUi : Control
         _restRotation = Rotation;
 
         // ── Split view: hover zones ─────────────────────────────────
+        _splitView = GetNode<Control>("CardVisual/SplitView");
         topArea = GetNode<Control>("CardVisual/SplitView/TopPanel/TopControl");
         bottomArea = GetNode<Control>("CardVisual/SplitView/BottomPanel/BottomControl");
 
@@ -470,13 +473,51 @@ public partial class CardUi : Control
         }
 
         _fullCardView.Visible = true;
+        _fullCardView.Modulate = new Color(1, 1, 1, 0); // start transparent
         _fullViewHalf = isTop ? "top" : "bottom";
+
+        // Crossfade: split out, full in
+        _transitionTween?.Kill();
+        _transitionTween = CreateTween().SetParallel(true);
+        _transitionTween.SetEase(Tween.EaseType.Out).SetTrans(Tween.TransitionType.Cubic);
+
+        // Fade split view out
+        _transitionTween.TweenProperty(_splitView, "modulate",
+            new Color(1, 1, 1, 0), 0.15f);
+
+        // Fade full view in
+        _transitionTween.TweenProperty(_fullCardView, "modulate",
+            Colors.White, 0.18f).SetDelay(0.05f);
+
+        // Subtle scale pop on the full view
+        _fullCardView.Scale = new Vector2(0.97f, 0.97f);
+        _transitionTween.TweenProperty(_fullCardView, "scale",
+            Vector2.One, 0.2f).SetDelay(0.05f);
     }
 
     private void HideFullCard()
     {
-        if (_fullCardView != null)
-            _fullCardView.Visible = false;
+        if (_fullCardView == null) return;
+
+        _transitionTween?.Kill();
+        _transitionTween = CreateTween().SetParallel(true);
+        _transitionTween.SetEase(Tween.EaseType.Out).SetTrans(Tween.TransitionType.Cubic);
+
+        // Fade full view out
+        _transitionTween.TweenProperty(_fullCardView, "modulate",
+            new Color(1, 1, 1, 0), 0.12f);
+
+        // Fade split view back in
+        _transitionTween.TweenProperty(_splitView, "modulate",
+            Colors.White, 0.15f).SetDelay(0.03f);
+
+        // Hide the full view node after fade completes to free up input
+        _transitionTween.Chain().TweenCallback(Callable.From(() =>
+        {
+            if (_fullViewHalf == "none" && _fullCardView != null)
+                _fullCardView.Visible = false;
+        }));
+
         _fullViewHalf = "none";
     }
 
@@ -522,6 +563,16 @@ public partial class CardUi : Control
         _halfTimer = 0f;
 
         HideFullCard();
+
+        // Ensure split view is fully visible (safety if transition tween was mid-fade)
+        _transitionTween?.Kill();
+        if (_splitView != null)
+            _splitView.Modulate = Colors.White;
+        if (_fullCardView != null)
+        {
+            _fullCardView.Visible = false;
+            _fullCardView.Modulate = new Color(1, 1, 1, 0);
+        }
 
         _cardTween?.Kill();
         _cardTween = CreateTween().SetParallel(true);
