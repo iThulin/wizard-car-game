@@ -398,6 +398,24 @@ public partial class RunManager : Node2D
         // Store results for the campus screen
         RunResultData.Set(reachedObjective, GoldEarned, EncountersWon, CurrentHP);
 
+        // ── Update persistent save data ─────────────────────────────────
+        if (SaveManager.ActiveSave != null)
+        {
+            var save = SaveManager.ActiveSave;
+            save.TotalRuns++;
+            save.TotalGoldEarned += GoldEarned;
+            save.TotalEncountersWon += EncountersWon;
+            save.Gold += GoldEarned;
+
+            if (reachedObjective)
+                save.RunsWon++;
+            else
+                save.RunsLost++;
+
+            SaveManager.Save();
+            GD.Print($"SaveManager: Run recorded. Total runs: {save.TotalRuns}, Gold: {save.Gold}");
+        }
+
         string result = reachedObjective ? "SUCCESS" : "FAILED";
         ShowInfo($"Run {result} — Gold: {GoldEarned}, Encounters: {EncountersWon}. Press R to return to campus.");
         EmitSignal(SignalName.RunEnded, reachedObjective);

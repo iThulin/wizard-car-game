@@ -17,6 +17,9 @@ public partial class CampusScreen : Control
     private Button _quitButton;
     private VBoxContainer _layout;
 
+    private int _selectedSlot = -1;
+    private VBoxContainer _slotContainer;
+
     private static readonly System.Collections.Generic.Dictionary<CardSchool, string> SchoolDescriptions = new()
     {
         { CardSchool.Arcanist,     "Masters of raw magic. High damage spells and mana manipulation." },
@@ -53,6 +56,21 @@ public partial class CampusScreen : Control
         };
         _titleLabel.AddThemeFontSizeOverride("font_size", 36);
         _layout.AddChild(_titleLabel);
+
+        // ── Save slot selection ─────────────────────────────────────────
+        var slotLabel = new Label
+        {
+            Text = "Save Slots",
+            HorizontalAlignment = HorizontalAlignment.Center,
+        };
+        slotLabel.AddThemeFontSizeOverride("font_size", 20);
+        _layout.AddChild(slotLabel);
+
+        _slotContainer = new VBoxContainer();
+        _slotContainer.AddThemeConstantOverride("separation", 8);
+        _layout.AddChild(_slotContainer);
+
+        RefreshSlotButtons();
 
         // ── Run summary (shown after returning from a run) ──────────────
         _summaryLabel = new Label
@@ -163,6 +181,8 @@ public partial class CampusScreen : Control
         };
         _quitButton.Pressed += () => GetTree().Quit();
         _layout.AddChild(_quitButton);
+
+        UpdateStartButton();
     }
 
     private void OnSchoolChanged(long index)
@@ -184,9 +204,17 @@ public partial class CampusScreen : Control
 
     private void OnStartRun()
     {
-        // Set the session before launching — GameRunner reads these
+        if (_selectedSlot < 0) return;
+
         PlayerSession.SelectedSchool = (CardSchool)_schoolPicker.GetSelectedId();
         PlayerSession.DebugMode = _debugCheckbox.ButtonPressed;
+
+        // Update save with current school
+        if (SaveManager.ActiveSave != null)
+        {
+            SaveManager.ActiveSave.SelectedSchool = PlayerSession.SelectedSchool.ToString();
+            SaveManager.Save();
+        }
 
         GD.Print($"Starting run: {PlayerSession.SelectedSchool}, Debug: {PlayerSession.DebugMode}");
         GetTree().ChangeSceneToFile("res://Scenes/Overworld/OverworldScene.tscn");
@@ -196,4 +224,97 @@ public partial class CampusScreen : Control
     {
         GetTree().ChangeSceneToFile("res://Scenes/UI/CardLibrary.tscn");
     }
+
+    private void RefreshSlotButtons()
+    {
+        // Clear existing buttons
+        foreach (var child in _slotContainer.GetChildren())
+            child.QueueFree();
+
+        var slots = SaveManager.GetAllSlotInfo();
+        foreach (var slot in slots)
+        {
+            var hbox = new HBoxContainer();
+            hbox.AddThemeConstantOverride("separation", 10);
+
+            string label;
+            if (slot.IsEmpty)
+            {
+                label = $"Slot {slot.Slot + 1}: Empty";
+            }
+            else
+            {
+                label = $"Slot {slot.Slot + 1}: {slot.GuildName} ({slot.School}) " +
+                        $"| Gold: {slot.Gold} | Runs: {slot.TotalRuns}";
+            }
+
+            var loadBtn = new Button
+            {
+                Text = slot.IsEmpty ? $"New Game (Slot {slot.Slot + 1})" : label,
+                CustomMinimumSize = new Vector2(350, 36),
+                SizeFlagsHorizontal = SizeFlags.ShrinkCenter,
+            };
+            int capturedSlot = slot.Slot; // capture for lambda
+            bool isEmpty = slot.IsEmpty;
+            loadBtn.Pressed += () => OnSlotSelected(capturedSlot, isEmpty);
+            hbox.AddChild(loadBtn);
+
+            // Delete button for non-empty slots
+            if (!slot.IsEmpty)
+            {
+                var delBtn = new Button
+                {
+                    Text = "X",
+                    CustomMinimumSize = new Vector2(36, 36),
+                };
+                delBtn.Pressed += () =>
+                {
+                    SaveManager.DeleteSlot(capturedSlot);
+                    _selectedSlot = -1;
+                    RefreshSlotButtons();
+                    UpdateStartButton();
+                };
+                hbox.AddChild(delBtn);
+            }
+
+            _slotContainer.AddChild(hbox);
+        }
+    }
+
+    private void OnSlotSelected(int slot, bool isEmpty)
+    {
+        if (isEmpty)
+        {
+            // Create new save
+            var school = (CardSchool)_schoolPicker.GetSelectedId();
+            SaveManager.NewGame(slot, $"Guild of {school}");
+            SaveManager.ActiveSave.SelectedSchool = school.ToString();
+            SaveManager.Save();
+        }
+        else
+        {
+            // Load existing
+            SaveManager.Load(slot);
+            // Update the school picker to match the loaded save
+            if (Enum.TryParse<CardSchool>(SaveManager.ActiveSave.SelectedSchool, out var school))
+            {
+                _schoolPicker.Selected = (int)school;
+                UpdateSchoolDescription();
+            }
+        }
+
+        _selectedSlot = slot;
+        RefreshSlotButtons();
+        UpdateStartButton();
+        GD.Print($"Selected slot {slot}");
+    }
+
+    private void UpdateStartButton()
+    {
+        _startRunButton.Disabled = _selectedSlot < 0;
+        _startRunButton.Text = _selectedSlot >= 0
+            ? "Begin Expedition"
+            : "Select a save slot first";
+    }
+
 }
