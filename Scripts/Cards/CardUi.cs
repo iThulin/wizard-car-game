@@ -87,6 +87,8 @@ public partial class CardUi : Control
     private bool _dragTopCard = false;
     private int _lastKnownMana = 999;
     public bool HasBeenPlaced { get; private set; } = false;
+    private bool _isReady = false;
+    private Card _pendingCard = null;
 
     // ═════════════════════════════════════════════════════════════════════
     //  Node paths (centralized for easy maintenance)
@@ -155,6 +157,16 @@ public partial class CardUi : Control
         // Start off-screen for draw-in animation
         Position = _originalPosition + new Vector2(0, 300f);
         Modulate = new Color(1, 1, 1, 0);
+
+        _isReady = true;
+
+        // If SetCard was called before _Ready (common with Instantiate + SetCard + AddChild),
+        // apply the pending card data now that nodes are cached.
+        if (_pendingCard != null)
+        {
+            ApplyCardData(_pendingCard.TopHalf, _pendingCard.BottomHalf);
+            _pendingCard = null;
+        }
     }
 
     public override void _Process(double delta)
@@ -224,13 +236,34 @@ public partial class CardUi : Control
     public void SetCard(Card card)
     {
         CardInstance = card;
-        SetCard(card.TopHalf, card.BottomHalf);
+        TopHalf = card.TopHalf;
+        BottomHalf = card.BottomHalf;
+
+        if (_isReady)
+            ApplyCardData(card.TopHalf, card.BottomHalf);
+        else
+            _pendingCard = card; // Will be applied in _Ready()
     }
 
     public void SetCard(CardHalf top, CardHalf bottom)
     {
         TopHalf = top;
         BottomHalf = bottom;
+
+        if (_isReady)
+            ApplyCardData(top, bottom);
+        else
+        {
+            // Create a temporary card to hold the halves for deferred apply
+            _pendingCard = new Card { TopHalf = top, BottomHalf = bottom };
+        }
+    }
+
+    /// <summary>
+    /// Actually populates labels, borders, and styles. Only call when nodes are cached.
+    /// </summary>
+    private void ApplyCardData(CardHalf top, CardHalf bottom)
+    {
 
         // ── Populate top split half ─────────────────────────────────
         PopulateSplitHalf(top,
@@ -656,8 +689,9 @@ public partial class CardUi : Control
     public override void _DropData(Vector2 atPosition, Variant data)
     {
         if (data.Obj is Godot.Collections.Dictionary dict &&
-            dict.ContainsKey("card") && dict["card"] is CardUi droppedCard)
+            dict.ContainsKey("card"))
         {
+            var droppedCard = (CardUi)dict["card"].AsGodotObject();
             droppedCard._isDragging = false;
             droppedCard.Modulate = Colors.White;
 
