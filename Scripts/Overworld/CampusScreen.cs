@@ -70,8 +70,6 @@ public partial class CampusScreen : Control
         _slotContainer.AddThemeConstantOverride("separation", 8);
         _layout.AddChild(_slotContainer);
 
-        RefreshSlotButtons();
-
         // ── Run summary (shown after returning from a run) ──────────────
         _summaryLabel = new Label
         {
@@ -182,6 +180,24 @@ public partial class CampusScreen : Control
         _quitButton.Pressed += () => GetTree().Quit();
         _layout.AddChild(_quitButton);
 
+                // Debug check
+        GD.Print($"CampusScreen: ActiveSave={SaveManager.ActiveSave?.GuildName ?? "NULL"}, " +
+                 $"Gold={SaveManager.ActiveSave?.Gold ?? -1}, " +
+                 $"Runs={SaveManager.ActiveSave?.TotalRuns ?? -1}");
+
+        // Auto-select active slot if returning from a run
+        if (SaveManager.ActiveSave != null && SaveManager.ActiveSlot >= 0)
+        {
+            _selectedSlot = SaveManager.ActiveSlot;
+
+            if (Enum.TryParse<CardSchool>(SaveManager.ActiveSave.SelectedSchool, out var school))
+            {
+                _schoolPicker.Selected = (int)school;
+                UpdateSchoolDescription();
+            }
+        }
+
+        RefreshSlotButtons();
         UpdateStartButton();
     }
 

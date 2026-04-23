@@ -413,7 +413,7 @@ public partial class RunManager : Node2D
                 save.RunsLost++;
 
             SaveManager.Save();
-            GD.Print($"SaveManager: Run recorded. Total runs: {save.TotalRuns}, Gold: {save.Gold}");
+            GD.Print($"SaveManager: Run recorded. Gold: {save.Gold}, Runs: {save.TotalRuns}, Won: {save.RunsWon}");
         }
 
         string result = reachedObjective ? "SUCCESS" : "FAILED";

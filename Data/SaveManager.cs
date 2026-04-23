@@ -20,6 +20,7 @@ public static class SaveManager
         WriteIndented = true,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        IncludeFields = true,
     };
 
     // ── The active save (loaded into memory) ────────────────────────────
