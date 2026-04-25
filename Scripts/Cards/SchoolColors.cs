@@ -30,7 +30,7 @@ public static class SchoolColors
 
     public static string GetBadgeText(CardSchool school) => school switch
     {
-        CardSchool.Elementalist  => "E",
+        CardSchool.Elementalist  => "El",
         CardSchool.Arcanist      => "A",
         CardSchool.Necromancer   => "N",
         CardSchool.Enchanter     => "En",

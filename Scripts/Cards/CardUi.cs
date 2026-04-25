@@ -74,6 +74,12 @@ public partial class CardUi : Control
     private static readonly Color BottomActiveColor = new Color(1.1f, 1.0f, 1.4f, 1f);
     private static readonly Color DimColor = new Color(0.55f, 0.55f, 0.55f, 1f);
 
+    //Rarity color (currently unused, but keeping here for easy re-enable if we want to add it back)
+    private static readonly Color CommonColor = new Color(0.8f, 0.8f, 0.8f);
+    private static readonly Color UncommonColor = new Color(0.4f, 0.8f, 0.4f);
+    private static readonly Color RareColor = new Color(0.4f, 0.6f, 1f);
+    private static readonly Color LegendaryColor = new Color(0.8f, 0.4f, 0.8f);
+
     // Signals
     [Signal] public delegate void CardDroppedEventHandler();
     [Signal] public delegate void CardHalfSelectedEventHandler(CardUi cardUi, bool isTop);
@@ -287,7 +293,16 @@ public partial class CardUi : Control
         ApplyPanelBorder(_bottomPanel, borderCol, false);
 
         if (_splitDivider != null)
-            _splitDivider.Color = borderCol;
+            // Rarity color
+            var rarityCol = top?.Rarity switch
+            {
+                CardRarity.Common => CommonColor,
+                CardRarity.Uncommon => UncommonColor,
+                CardRarity.Rare => RareColor,
+                CardRarity.Legendary => LegendaryColor,
+                _ => borderCol
+            };
+            //_splitDivider.Color = borderCol;
 
         // Style mana pips with school dark color
         StyleManaPip($"{SplitTop}/NameBar/ManaPip", darkCol);

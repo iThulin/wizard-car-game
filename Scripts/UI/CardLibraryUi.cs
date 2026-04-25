@@ -11,7 +11,7 @@ public partial class CardLibraryUi : Control
     [Export] public string ReturnScenePath   = "res://Scenes/Campus/CampusScene.tscn";
 
     [Export(PropertyHint.Range, "0.5,1.5,0.05")]
-    public float CardScale = 0.75f;
+    public float CardScale = 1f;
 
     // ── Node refs (wired from .tscn) ─────────────────────────────────────
     private HBoxContainer   _schoolTabs;
