@@ -179,41 +179,79 @@ public sealed class DealDamageEffect : EffectBase
 
 public sealed class DashEffect : EffectBase
 {
-	public int Tiles;
-	public DashEffect(int t) { Tiles = t; }
-	public override void Resolve(GameState s, Entity caster, TargetSet targets, EffectSnapshot snap)
-	{
+    public int Tiles;
+    public DashEffect(int t) { Tiles = t; }
+    public override void Resolve(GameState s, Entity caster, TargetSet targets, EffectSnapshot snap)
+    {
+        var casterUnit = FindCasterUnit(s, caster);
 
-		var casterUnit = FindCasterUnit(s, caster);
+        if (targets == null || targets.Items.Count == 0 ||
+            (targets.Items.Count == 1 && targets.Items[0] is Entity))
+        {
+            // Self-movement — grant move points
+            if (casterUnit != null)
+            {
+                casterUnit.Stats.MovePoints += Tiles;
+                s.Log($"[Dash] {casterUnit.Name} gains {Tiles} move points (now {casterUnit.Stats.MovePoints}).");
+            }
+        }
+        else
+        {
+            // Push — find the victim and try to move them away from caster
+            foreach (var obj in targets.Items)
+            {
+                var victim = ResolveTargetUnit(s, obj);
+                if (victim == null || victim.CurrentTile == null) continue;
+                if (casterUnit == null || casterUnit.CurrentTile == null) continue;
 
-		if (targets == null || targets.Items.Count == 0 ||
-			(targets.Items.Count == 1 && targets.Items[0] is Entity))
-		{
-			// Self movement, grant additional movement points
-			if ( casterUnit != null)
-			{
-				casterUnit.Stats.MovePoints += Tiles;
-				s.Log($"[Dash] {casterUnit.Name} gains {Tiles} move points (now {casterUnit.Stats.MovePoints}).");
-			}
-			else
-			{
-				s.Log($"[Dash] Move {Tiles} tile(s). (caster unit not found)");
-			}
-		}
-		else
-		{
-			// Push Effect applied to targets
-			foreach (var obj in targets.Items)
-			{
-				var victim = ResolveTargetUnit(s, obj);
-				if (victim != null)
-				{
-					// PUSH STUB. Needs to integrate with the pathfinder.
-					s.Log($"[Push] {victim.Name} pushed {Tiles} tile(s).");
-				}
-			}
-		}
-	}
+                // Calculate push direction: away from caster
+                var grid = s.Grid;
+                if (grid == null) { s.Log("[Push] No grid."); continue; }
+
+                var from = victim.CurrentTile.Axial;
+                var casterPos = casterUnit.CurrentTile.Axial;
+
+                // Push tile by tile away from caster
+                int pushed = 0;
+                for (int i = 0; i < Tiles; i++)
+                {
+                    var current = victim.CurrentTile.Axial;
+                    var dir = current - casterPos;
+
+                    // Normalize to one hex step — pick the neighbor furthest from caster
+                    TileData bestTile = null;
+                    int bestDist = -1;
+
+                    foreach (var neighbor in grid.GetNeighborCoords(current))
+                    {
+                        var td = grid.GetTile(neighbor);
+                        if (td == null || !td.CanEnter(victim)) continue;
+
+                        int distFromCaster = grid.Distance(casterPos, neighbor);
+                        if (distFromCaster > bestDist)
+                        {
+                            bestDist = distFromCaster;
+                            bestTile = td;
+                        }
+                    }
+
+                    if (bestTile != null)
+                    {
+                        victim.CurrentTile.ClearOccupant(victim);
+                        victim.PlaceOnTile(bestTile);
+                        pushed++;
+                    }
+                    else
+                    {
+                        // Hit a wall or edge — could add collision damage here
+                        s.Log($"[Push] {victim.Name} hit an obstacle after {pushed} tile(s).");
+                        break;
+                    }
+                }
+                s.Log($"[Push] {victim.Name} pushed {pushed} tile(s) away.");
+            }
+        }
+    }
 }
 
 // ── Shield / Armor Effect ───────────────────────────────────────
@@ -334,31 +372,57 @@ public sealed class HealEffect : EffectBase
 	}
 }
 
-// ── Imbue Tile Effect ───────────────────────────────────────────
-// Phase 2 stub: logs the imbue and deals minor bonus damage if
-// an enemy is on the tile. Full elemental terrain system comes later.
 public sealed class ImbueTileEffect : EffectBase
 {
-	public string Element;  // "fire", "ice", "storm", "stone"
-	public int BonusDamage; // Optional damage to occupant
-	public ImbueTileEffect(string element, int bonusDamage = 0)
+    public string Element;
+    public int BonusDamage;
+    public ImbueTileEffect(string element, int bonusDamage = 0)
+    {
+        Element = element;
+        BonusDamage = bonusDamage;
+    }
+    public override void Resolve(GameState s, Entity caster, TargetSet targets, EffectSnapshot snap)
 	{
-		Element = element;
-		BonusDamage = bonusDamage;
-	}
-	public override void Resolve(GameState s, Entity caster, TargetSet targets, EffectSnapshot snap)
-	{
-		s.Log($"[ImbueTile] Imbuing tile(s) with {Element}.");
-		if (BonusDamage > 0 && targets != null)
+		if (s?.Grid == null) { s?.Log("[ImbueTile] No grid."); return; }
+
+		TileElementType elementType = Element.ToLowerInvariant() switch
 		{
-			foreach (var obj in targets.Items)
+			"fire"  => TileElementType.Fire,
+			"ice"   => TileElementType.Frost,
+			"frost" => TileElementType.Frost,
+			"storm" => TileElementType.Lightning,
+			"stone" => TileElementType.Earth,
+			"earth" => TileElementType.Earth,
+			_       => TileElementType.None
+		};
+
+		if (targets == null) return;
+
+		foreach (var obj in targets.Items)
+		{
+			TileData tile = null;
+
+			if (obj is TileData td) tile = td;
+			else if (obj is HexTile tv) tile = s.Grid.GetTile(tv.Axial);
+			else if (obj is Unit u && u.CurrentTile != null) tile = u.CurrentTile;
+
+			if (tile == null) continue;
+
+			tile.ElementType = elementType;
+			tile.ElementStrength = 1.0f;
+
+			if (elementType == TileElementType.Fire)
+				tile.IsHazardous = true;
+
+			// Use the existing visual system to update the tile
+			s.Grid.ApplyVisualToTile(tile);
+
+			s.Log($"[ImbueTile] {tile.Axial} imbued with {Element} ({elementType}).");
+
+			if (BonusDamage > 0 && tile.Occupant != null && tile.Occupant.TeamId != 0)
 			{
-				var victim = ResolveTargetUnit(s, obj);
-				if (victim != null && victim.TeamId != 0) // Only damage enemies
-				{
-					victim.ApplyDamage(BonusDamage);
-					s.Log($"[ImbueTile] {Element} deals {BonusDamage} to {victim.Name}.");
-				}
+				tile.Occupant.ApplyDamage(BonusDamage);
+				s.Log($"[ImbueTile] {Element} deals {BonusDamage} to {tile.Occupant.Name}.");
 			}
 		}
 	}

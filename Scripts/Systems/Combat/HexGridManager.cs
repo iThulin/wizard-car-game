@@ -576,7 +576,7 @@ public partial class HexGridManager : Node3D
         }
     }
 
-    private void ApplyVisualToTile(TileData tile)
+    public void ApplyVisualToTile(TileData tile)
     {
         if (tile.TileView == null)
             return;
@@ -1553,6 +1553,21 @@ public partial class HexGridManager : Node3D
     }
 
     // Terrain helpers
+
+    public List<Vector2I> GetNeighborCoords(Vector2I coord)
+    {
+        // Axial hex directions
+        var dirs = new Vector2I[]
+        {
+            new(1, 0), new(1, -1), new(0, -1),
+            new(-1, 0), new(-1, 1), new(0, 1)
+        };
+
+        var result = new List<Vector2I>();
+        foreach (var d in dirs)
+            result.Add(coord + d);
+        return result;
+    }
 
     private int GetTerrainPatchCount(int minCount, int maxCount)
     {

@@ -53,11 +53,11 @@
         },
         {
           "type": "move",
-          "amount": 2
+          "tiles": 2
         },
         {
           "type": "summon",
-          "kind": "boulder",
+          "unit": "boulder",
           "amount": 1
         }
       ]
@@ -112,11 +112,6 @@
           {
             "type": "imbue_tile",
             "element": "ice"
-          },
-          {
-            "type": "apply_status",
-            "status": "frozen",
-            "duration": 2
           },
           {
             "type": "apply_status",

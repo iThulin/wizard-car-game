@@ -498,6 +498,13 @@ public partial class GameRunner : Node3D
             unit.TickStatuses();
         }
 
+        // Sync mana back to GameState so card costs check the right value
+        if (playerUnit != null)
+        {
+            State.Mana[Me] = playerUnit.Stats.Mana;
+            playerUnit.SyncManaToBar();
+        }
+
         selectedUnit       = null;
         inspectedEnemyUnit = null;
         ClearMoveTiles();

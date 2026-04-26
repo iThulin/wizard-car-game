@@ -169,6 +169,12 @@ public static class CardScriptRegistry
             return new CasterOnTerrain(terrain);
         });
 
+        RegisterPredicate("target_adjacent_to_tile", n =>
+        {
+            var tile = n.GetProperty("tile").GetString();
+            return new TargetAdjacentToTile(tile);
+        });
+
         // ═══════════════════════════════════════════════════════════
         // TARGETERS
         // ═══════════════════════════════════════════════════════════
