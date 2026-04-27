@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 
 // ============================================================
-// Predicate library — the "questions you ask about game state."
+// Predicate library 
 //
 // These are deliberately simple. They take a PredicateContext,
 // return bool, and don't mutate anything.
@@ -50,8 +50,7 @@ public sealed class NotPredicate : IPredicate
     public bool Evaluate(PredicateContext ctx) => !Inner.Evaluate(ctx);
 }
 
-// "Was the last effect's damage lethal?" Used by cards like
-// Bone Shatter: "Deal 5 damage. If lethal leave a corpse and summon skeleton."
+// "Was the last effect's damage lethal?"
 public sealed class LastEffectWasLethal : IPredicate
 {
     public bool Evaluate(PredicateContext ctx) => ctx.LastResult?.WasLethal ?? false;

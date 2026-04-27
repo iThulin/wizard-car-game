@@ -41,6 +41,7 @@ public partial class GameRunner : Node3D
     private Unit               inspectedEnemyUnit = null;   
     private HashSet<Vector2I>  currentMoveTiles   = new();
     private Unit _hoveredUnit = null;
+    private SchoolAttunementUI schoolAttunementUI;
 
     // ── Phase ───────────────────────────────────────────────────────────────
     public enum CombatPhase { Deployment, PlayerTurn, EnemyTurn, Victory, Defeat }
@@ -102,6 +103,12 @@ public partial class GameRunner : Node3D
             // NEW – enemy roster buttons inspect the corresponding enemy
             combatUI.EnemyButtonPressed += OnEnemyRosterButtonPressed;
         }
+
+        // Create teh attunement UI as a child of CombatUI
+        schoolAttunementUI = new SchoolAttunementUI();
+        schoolAttunementUI.SetAnchorsPreset(Control.LayoutPreset.TopLeft);
+        schoolAttunementUI.Position = new Vector2(10, 220);
+        combatUI.AddChild(schoolAttunementUI);
 
         if (playerUnit != null)
             State.Mana[Me] = playerUnit.Stats.Mana;
@@ -255,6 +262,7 @@ public partial class GameRunner : Node3D
     private void RefreshPlayerUnitBar()
     {
         combatUI?.RefreshPlayerUnitBar(playerUnits, selectedUnit);
+        schoolAttunementUI?.ShowForUnit(selectedUnit);
     }
 
     private void RefreshDeckCounts()
@@ -497,6 +505,7 @@ public partial class GameRunner : Node3D
                 continue;
             unit.StartTurn();
             unit.TickStatuses();
+            unit.Attunement?.Decay();
         }
 
         // Hazardous tile damage (fire, lava)
@@ -525,6 +534,7 @@ public partial class GameRunner : Node3D
 
         GD.Print($"=== Round {roundNumber}: Player Turn ===");
         combatUI?.ClearActionLog();
+        schoolAttunementUI?.Refresh();
         RefreshAllUI();
     }
 
@@ -922,6 +932,8 @@ public partial class GameRunner : Node3D
 
         BuildPlayerDeploymentArea();
 
+        playerUnit.School = PlayerSession.SelectedSchool;
+
         if (EnableDeploymentPhase)
             StartDeploymentPhase();
     }
@@ -996,6 +1008,43 @@ public partial class GameRunner : Node3D
 
         var ok = Rules.TryCastWithTargets(half, State, Me, targets, cardUi.CardInstance);
         GD.Print($"Cast result={ok} manaNow={State.Mana[Me]}");
+
+        // --- Attunement integration ---
+        if (selectedUnit != null &&
+            selectedUnit.School == CardSchool.Elementalist &&
+            selectedUnit.Attunement is ElementalAttunement elemAtt &&
+            half.Tags != null && half.Tags.Length > 0)
+        {
+            // 1. Feed tags to tracker
+            var burstEffects = elemAtt.OnSpellCast(half.Tags);
+
+            // 2. Apply threshold bonuses
+            var bonusLog = AttunementResolver.ApplyThresholdEffects(
+                elemAtt, half.Tags, State, selectedUnit, targets);
+
+            foreach (var msg in bonusLog)
+            {
+                GD.Print(msg);
+                combatUI?.AppendActionLog(msg);
+            }
+
+            // 3. Resolve bursts
+            foreach (var burst in burstEffects)
+            {
+                var burstLog = AttunementResolver.ResolveBurst(
+                    burst.Element, State, selectedUnit);
+
+                foreach (var msg in burstLog)
+                {
+                    GD.Print(msg);
+                    combatUI?.AppendActionLog(msg);
+                }
+            }
+
+            // 4. Refresh
+            schoolAttunementUI?.Refresh();
+            RefreshAllUI();
+        }
 
         if (ok)
         {

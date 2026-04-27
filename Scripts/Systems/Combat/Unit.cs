@@ -41,8 +41,13 @@ public partial class Unit : Node3D
     [Export] public int StartMaxMana = 3;
     [Export] public int StartMana = 3;
 
-    public Stats Stats = new Stats();
+    // School-specific class mechanic. Created in _Ready based on School.
+    // Null for Generic or schools without a mechanic yet.
+    public ISchoolAttunement Attunement { get; private set; }
+    [Export] public CardSchool School = CardSchool.Generic;
 
+    // Runtime stats
+    public Stats Stats = new Stats();
     public TileData CurrentTile { get; private set; }
     private HealthBarRoot _healthBar;
 
@@ -72,6 +77,8 @@ public partial class Unit : Node3D
         _healthBar = GetNodeOrNull<HealthBarRoot>("HealthBarRoot");
         _healthBar?.SetHealth(Stats.Health, Stats.MaxHealth);
         _healthBar?.SetMana(Stats.Mana, Stats.MaxMana);
+
+        InitializeAttunement();
 
         CreateSelectionRing();
         SetSelected(false);
@@ -351,5 +358,17 @@ public partial class Unit : Node3D
         if (mesh == null) return;
         var mat = new StandardMaterial3D { AlbedoColor = color };
         mesh.SetSurfaceOverrideMaterial(0, mat);
-}
+    }
+
+    private void InitializeAttunement()
+    {
+        Attunement = School switch
+        {
+            CardSchool.Elementalist => new ElementalAttunement(),
+            // Future schools:
+            // CardSchool.Necromancer => new NecromancerBinding(),
+            // CardSchool.Arcanist   => new ArcaneFocus(),
+            _ => null
+        };
+    }
 }

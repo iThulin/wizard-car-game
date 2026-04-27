@@ -2,14 +2,10 @@ using System.Collections.Generic;
 using Godot;
 
 // ============================================================
-// Composite effects. These are the heart of the new system.
-// With Sequence, Conditional, and ForEach, every card in your
-// deck can be expressed as a tree of primitives.
+// Composite effects. With Sequence, Conditional, and ForEach, 
+// every card can be expressed as a tree of primitives.
 // ============================================================
 
-// Resolve a list of child effects in order. The result of the LAST
-// child becomes the sequence's result (so "Deal damage, then check
-// if lethal" works — the conditional sees the damage's result).
 public sealed class SequenceEffect : EffectBase
 {
     public IEffect[] Steps;
@@ -46,7 +42,6 @@ public sealed class SequenceEffect : EffectBase
 }
 
 // Branch on a predicate. Then-branch required, else-branch optional.
-// This is how "If target adjacent to corpse, deal 6 instead" works.
 public sealed class ConditionalEffect : EffectBase
 {
     public IPredicate If;
@@ -93,7 +88,6 @@ public sealed class ConditionalEffect : EffectBase
 }
 
 // Apply an effect once per target in the current target set.
-// Useful for "Deal 4 damage to each enemy within 2 tiles".
 public sealed class ForEachTargetEffect : EffectBase
 {
     public IEffect PerTarget;

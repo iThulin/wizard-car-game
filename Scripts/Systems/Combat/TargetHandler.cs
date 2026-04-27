@@ -4,12 +4,6 @@ using System.Collections.Generic;
 
 // ============================================================
 // Target Selectors — PHASE 2 UPDATE
-//
-// SelectUnitTarget and SelectTileTarget now query the real grid
-// and return actual Unit/TileData objects. SelectAreaTarget was
-// already updated. These are used as fallbacks when TryCast is
-// called without pre-selected targets (enemy AI, chain effects).
-//
 // For player card-drops, OnCardDroppedOnTile bypasses these via
 // TryCastWithTargets — but these need to work for everything else.
 // ============================================================
