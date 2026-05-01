@@ -8,22 +8,13 @@
     "mana": 1,
     "speed": "Instant",
     "rules_text": "Deal 4 damage. Slow target (half movement next turn).",
-    "targeting": {
-      "type": "unit",
-      "range": 6,
-      "los": true,
-      "enemies_only": true
-    },
+    "tags": ["ice"],
+    "targeting": { "type": "unit", "range": 6, "los": true, "enemies_only": true },
     "effect": {
       "type": "sequence",
       "steps": [
-        {
-          "type": "damage",
-          "amount": 4
-        },
-        {
-          "type": "empty"
-        }
+        { "type": "damage", "amount": 4 },
+        { "type": "apply_status", "status": "slowed", "duration": 1 }
       ]
     },
     "channel": {
@@ -31,12 +22,15 @@
       "mana": 1,
       "speed": "Reaction",
       "rules_text": "Channel: Also imbue target tile with Ice",
-      "targeting": {
-        "type": "tile",
-        "range": 4
-      },
+      "tags": ["ice"],
+      "targeting": { "type": "unit", "range": 6, "los": true, "enemies_only": true },
       "effect": {
-        "type": "empty"
+        "type": "sequence",
+        "steps": [
+          { "type": "damage", "amount": 4 },
+          { "type": "apply_status", "status": "slowed", "duration": 1 },
+          { "type": "imbue_tile", "element": "ice" }
+        ]
       }
     }
   },
@@ -44,24 +38,14 @@
     "name": "Gust",
     "mana": 1,
     "speed": "Instant",
-    "rules_text": "Push target enemy 1 tile in any direction. If pushed onto a hazard tile deal 2 bonus damage.",
-    "targeting": {
-      "type": "unit",
-      "range": 6,
-      "los": false,
-      "enemies_only": true
-    },
+    "rules_text": "Push target enemy 1 tile. Deal 4 damage.",
+    "tags": ["storm"],
+    "targeting": { "type": "unit", "range": 6, "los": false, "enemies_only": true },
     "effect": {
       "type": "sequence",
       "steps": [
-        {
-          "type": "move",
-          "tiles": 1
-        },
-        {
-          "type": "damage",
-          "amount": 4
-        }
+        { "type": "move", "tiles": 1 },
+        { "type": "damage", "amount": 4 }
       ]
     }
   }

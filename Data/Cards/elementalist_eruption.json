@@ -7,23 +7,14 @@
     "name": "Eruption",
     "mana": 2,
     "speed": "Sorcery",
-    "rules_text": "Deal 5 damage to target. Imbue target's tile with Fire. Fire tiles deal 3 to units starting turn on them.",
-    "targeting": {
-      "type": "unit",
-      "range": 6,
-      "los": true,
-      "enemies_only": true
-    },
+    "rules_text": "Deal 5 damage to target. Imbue target's tile with Fire.",
+    "tags": ["fire"],
+    "targeting": { "type": "unit", "range": 6, "los": true, "enemies_only": true },
     "effect": {
       "type": "sequence",
       "steps": [
-        {
-          "type": "damage",
-          "amount": 5
-        },
-        {
-          "type": "empty"
-        }
+        { "type": "damage", "amount": 5 },
+        { "type": "imbue_tile", "element": "fire" }
       ]
     },
     "channel": {
@@ -31,13 +22,17 @@
       "mana": 2,
       "speed": "Reaction",
       "rules_text": "Channel: Also imbue all tiles adjacent to target with Fire",
-      "targeting": {
-        "type": "aoe",
-        "radius": 1,
-        "enemies_only": true
-      },
+      "tags": ["fire"],
+      "targeting": { "type": "aoe", "radius": 1, "enemies_only": true },
       "effect": {
-        "type": "empty"
+        "type": "sequence",
+        "steps": [
+          { "type": "damage", "amount": 5 },
+          { "type": "retarget",
+            "targeting": { "type": "aoe", "radius": 1, "enemies_only": true },
+            "do": { "type": "imbue_tile", "element": "fire" }
+          }
+        ]
       }
     }
   },
@@ -45,20 +40,16 @@
     "name": "Gale Leap",
     "mana": 1,
     "speed": "Instant",
-    "rules_text": "Move 3 tiles. Push all enemies adjacent to your landing tile 1 tile away.",
-    "targeting": {
-      "type": "self"
-    },
+    "rules_text": "Move 3 tiles. Push adjacent enemies 1 tile away.",
+    "tags": ["storm"],
+    "targeting": { "type": "self" },
     "effect": {
       "type": "sequence",
       "steps": [
-        {
-          "type": "move",
-          "tiles": 3
-        },
-        {
-          "type": "move",
-          "tiles": 1
+        { "type": "move", "tiles": 3 },
+        { "type": "retarget",
+          "targeting": { "type": "aoe", "radius": 1, "enemies_only": true },
+          "do": { "type": "move", "tiles": 1 }
         }
       ]
     },
@@ -67,15 +58,9 @@
       "mana": 1,
       "speed": "Reaction",
       "rules_text": "Channel: Pushed enemies also take 2 damage",
-      "targeting": {
-        "type": "aoe",
-        "radius": 1,
-        "enemies_only": true
-      },
-      "effect": {
-        "type": "damage",
-        "amount": 2
-      }
+      "tags": ["storm"],
+      "targeting": { "type": "aoe", "radius": 1, "enemies_only": true },
+      "effect": { "type": "damage", "amount": 2 }
     }
   }
 }

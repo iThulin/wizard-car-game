@@ -69,6 +69,8 @@ public static class CardScriptRegistry
         // COMPOSITE EFFECTS
         // ═══════════════════════════════════════════════════════════
 
+        // Sequence: 
+        // { "type": "sequence", "steps": [ { ...effect... }, { ...effect... }, ... ] }
         RegisterEffect("sequence", n =>
         {
             var steps = new List<IEffect>();
@@ -77,6 +79,8 @@ public static class CardScriptRegistry
             return new SequenceEffect(steps.ToArray());
         });
 
+        // Conditional: 
+        // { "type": "conditional", "if": { ...predicate... }, "then": { ...effect... }, "else": { ...effect... } }
         RegisterEffect("conditional", n =>
         {
             var pred = BuildPredicate(n.GetProperty("if"));
@@ -85,10 +89,22 @@ public static class CardScriptRegistry
             return new ConditionalEffect(pred, then, elseE);
         });
 
+
+        // For each target in the current TargetSet, run the child effect with that single target
+        // { "type": "for_each_target", "do": { ...effect... } }
         RegisterEffect("for_each_target", n =>
             new ForEachTargetEffect(BuildEffect(n.GetProperty("do"))));
 
         RegisterEffect("empty", _ => new EmptyEffect());
+
+        // Retarget: run a new targeter mid-sequence, execute child effect
+        // { "type": "retarget", "targeting": { ... }, "do": { ... } }
+        RegisterEffect("retarget", n =>
+        {
+            var targeter = BuildTargeter(n.GetProperty("targeting"));
+            var child = BuildEffect(n.GetProperty("do"));
+            return new RetargetEffect(targeter, child);
+        });
 
         // ═══════════════════════════════════════════════════════════
         // CORE LEAF EFFECTS (all functional)
@@ -162,13 +178,16 @@ public static class CardScriptRegistry
             return new TargetOnTile(tile);
         });
 
-        // Caster standing on terrain: { "type": "caster_on_terrain", "terrain": "stone" }
+        // Caster standing on terrain: 
+        // { "type": "caster_on_terrain", "terrain": "stone" }
         RegisterPredicate("caster_on_terrain", n =>
         {
             var terrain = n.GetProperty("terrain").GetString();
             return new CasterOnTerrain(terrain);
         });
 
+        // Target adjacent to tile: 
+        // { "type": "target_adjacent_to_tile", "tile": "fire" }
         RegisterPredicate("target_adjacent_to_tile", n =>
         {
             var tile = n.GetProperty("tile").GetString();
@@ -182,6 +201,8 @@ public static class CardScriptRegistry
         RegisterTargeter("self", _ => new SelectSelfTarget());
         RegisterTargeter("none", _ => new SelectGlobalTarget());
 
+        // Unit selector: 
+        // { "type": "unit", "enemies_only": bool, "range": n, "los": bool }
         RegisterTargeter("unit", n =>
         {
             bool enemyOnly = n.TryGetProperty("enemies_only", out var eo) && eo.GetBoolean();
@@ -190,12 +211,16 @@ public static class CardScriptRegistry
             return new SelectUnitTarget(enemyOnly, range, los);
         });
 
+        // Tile selector: 
+        // { "type": "tile", "range": n }    
         RegisterTargeter("tile", n =>
         {
             int range = n.TryGetProperty("range", out var r) ? r.GetInt32() : 4;
             return new SelectTileTarget(range);
         });
 
+        // AoE selector:
+        // { "type": "aoe", "radius": n, "enemies_only": bool }
         RegisterTargeter("aoe", n =>
         {
             int radius = n.TryGetProperty("radius", out var r) ? r.GetInt32() : 1;
@@ -203,6 +228,8 @@ public static class CardScriptRegistry
             return new SelectAreaTarget(radius, enemiesOnly, false);
         });
 
+        // Tag selector:
+        // { "type": "by_tag", "tag": "fire", "enemies_only": bool }
         RegisterTargeter("by_tag", n =>
         {
             var tag = n.GetProperty("tag").GetString();

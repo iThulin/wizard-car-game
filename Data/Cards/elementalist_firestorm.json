@@ -7,22 +7,14 @@
     "name": "Firestorm",
     "mana": 3,
     "speed": "Sorcery",
-    "rules_text": "Deal 4 damage to all enemies on or adjacent to Fire tiles. Imbue all tiles in range 2 with Fire.",
-    "targeting": {
-      "type": "aoe",
-      "radius": 2,
-      "enemies_only": true
-    },
+    "rules_text": "Deal 4 damage to all enemies in aoe 2. Imbue tiles with Fire (3 damage a turn).",
+    "tags": ["fire"],
+    "targeting": { "type": "aoe", "radius": 2, "enemies_only": true },
     "effect": {
       "type": "sequence",
       "steps": [
-        {
-          "type": "damage",
-          "amount": 4
-        },
-        {
-          "type": "empty"
-        }
+        { "type": "damage", "amount": 4 },
+        { "type": "imbue_tile", "element": "fire", "bonus_damage": 3 }
       ]
     },
     "channel": {
@@ -30,14 +22,14 @@
       "mana": 3,
       "speed": "Reaction",
       "rules_text": "Channel: Deal 7 damage instead",
-      "targeting": {
-        "type": "aoe",
-        "radius": 2,
-        "enemies_only": true
-      },
+      "tags": ["fire"],
+      "targeting": { "type": "aoe", "radius": 2, "enemies_only": true },
       "effect": {
-        "type": "damage",
-        "amount": 7
+        "type": "sequence",
+        "steps": [
+          { "type": "damage", "amount": 7 },
+          { "type": "imbue_tile", "element": "fire", "bonus_damage": 3 }
+        ]
       }
     }
   },
@@ -45,31 +37,31 @@
     "name": "Blizzard",
     "mana": 3,
     "speed": "Sorcery",
-    "rules_text": "Freeze all enemies standing on Ice tiles for 2 turns. All Ice tiles deal 4 damage to enemies on them.",
+    "rules_text": "Freeze all enemies for 2 turns. Deal 4 damage. Imbue tiles with Ice.",
+    "tags": ["ice"],
+    "targeting": { "type": "aoe", "radius": 2, "enemies_only": true },
     "effect": {
       "type": "sequence",
       "steps": [
-        {
-          "type": "empty"
-        },
-        {
-          "type": "damage",
-          "amount": 4
-        }
+        { "type": "apply_status", "status": "frozen", "duration": 2 },
+        { "type": "damage", "amount": 4 },
+        { "type": "imbue_tile", "element": "ice" }
       ]
     },
     "channel": {
       "name": "Blizzard (Channel)",
       "mana": 3,
       "speed": "Reaction",
-      "rules_text": "Channel: Also create Ice on all tiles adjacent to existing Ice tiles",
-      "targeting": {
-        "type": "aoe",
-        "radius": 1,
-        "enemies_only": true
-      },
+      "rules_text": "Channel: Also create Ice on adjacent tiles",
+      "tags": ["ice"],
+      "targeting": { "type": "aoe", "radius": 3, "enemies_only": true },
       "effect": {
-        "type": "empty"
+        "type": "sequence",
+        "steps": [
+          { "type": "apply_status", "status": "frozen", "duration": 2 },
+          { "type": "damage", "amount": 5 },
+          { "type": "imbue_tile", "element": "ice" }
+        ]
       }
     }
   }
