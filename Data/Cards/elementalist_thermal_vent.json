@@ -8,14 +8,14 @@
     	"mana": 1,
     	"speed": "Sorcery",
     	"rules_text": "Destroy a Fire tile you control. Deal 5 damage to all enemies within 2 tiles of it. Gain 1 mana.",
-    	"targeting": { "type": "aoe", "radius": 2, "enemies_only": true },
+    	"targeting": { "type": "tile", "range": 6},
     	"effect": { 
 			"type": "sequence",
       			"steps": [
         			{ "type": "consume_element_tile", "element": "fire", "radius": 2, "damage": 5 },
 					{ "type": "retarget",
-						"targetting": {"type": "self"},
-						"do": { "type": "gain_mana", "amount": 1}
+						"targeting": {"type": "self"},
+						"do": { "type": "mana_gain", "amount": 1}
 					}
       			]
 		},
@@ -24,45 +24,55 @@
       		"mana": 1,
       		"speed": "Reaction",
       		"rules_text": "Channel: Deal 10 damage instead",
-      		"targeting": { "type": "aoe", "radius": 2, "enemies_only": true },
+      		"targeting": { "type": "tile", "range": 6},
       		"effect": { 
 				"type": "sequence",
 					"steps": [
 						{ "type": "consume_element_tile", "element": "fire", "radius": 2, "damage": 10 },
 						{ "type": "retarget",
-							"targetting": {"type": "self"},
-							"do": { "type": "gain_mana", "amount": 1}
+							"targeting": {"type": "self"},
+							"do": { "type": "mana_gain", "amount": 1}
 						}
 					]
 			}
     	}
   	},
   	"bottom": {
-    	"name": "Glacial Rift",
-    	"mana": 2,
-    	"speed": "Instant",
-    	"rules_text": "Imbue a line of 3 tiles with Ice. Enemies on those tiles frozen for 1 turn.",
-    	"targeting": { "type": "line", "length": 3, "enemies_only": false, "include_tiles": true },
-    	"effect": {
-      		"type": "sequence",
-      			"steps": [
-        			{ "type": "imbue_tile", "element": "ice" },
-        			{ "type": "apply_status", "status": "Frozen", "duration": 1 }
-      		]
-    	},
-    	"channel": {
-      		"name": "Glacial Rift (Channel)",
-      		"mana": 2,
-      		"speed": "Reaction",
-      		"rules_text": "Channel: Line is 5 tiles long",
-      		"targeting": { "type": "line", "length": 5, "enemies_only": false, "include_tiles": true },
+		"name": "Glacial Rift",
+		"mana": 2,
+		"speed": "Instant",
+		"rules_text": "Imbue a line of 3 tiles with Ice. Enemies on those tiles frozen for 1 turn.",
+		"tags": ["ice"],
+		"targeting": { "type": "unit", "range": 6, "los": true, "enemies_only": true },
+		"effect": {
+			"type": "retarget",
+			"targeting": { "type": "line", "length": 3, "enemies_only": false, "include_tiles": true },
+			"do": {
+				"type": "sequence",
+				"steps": [
+					{ "type": "imbue_tile", "element": "ice" },
+					{ "type": "apply_status", "status": "frozen", "duration": 1 }
+				]
+			}
+		},
+		"channel": {
+			"name": "Glacial Rift (Channel)",
+			"mana": 2,
+			"speed": "Reaction",
+			"rules_text": "Channel: Line is 5 tiles long",
+			"tags": ["ice"],
+			"targeting": { "type": "unit", "range": 6, "los": true, "enemies_only": true },
 			"effect": {
-      			"type": "sequence",
-      				"steps": [
-        				{ "type": "imbue_tile", "element": "ice" },
-        				{ "type": "apply_status", "status": "Frozen", "duration": 1 }
-      				]
-    		}
-    	}
-  	}
+				"type": "retarget",
+				"targeting": { "type": "line", "length": 5, "enemies_only": false, "include_tiles": true },
+				"do": {
+					"type": "sequence",
+					"steps": [
+						{ "type": "imbue_tile", "element": "ice" },
+						{ "type": "apply_status", "status": "frozen", "duration": 1 }
+					]
+				}
+			}
+		}
+	}
 }

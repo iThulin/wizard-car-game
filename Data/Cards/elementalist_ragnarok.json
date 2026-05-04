@@ -35,7 +35,7 @@
       		"rules_text": "Channel: Set all elemental attunements to 4",
       		"tags": ["fire", "ice", "storm", "stone"],
 			"targeting": { "type": "self" },
-			"effect": { "type": "set_attunement_counters", "radius": 3, "attunement_counters": 4 }
+			"effect": { "type": "elemental_convergence", "radius": 3, "attunement_counters": 4 }
 		}
     }
 }

@@ -274,6 +274,34 @@ public static class CardScriptRegistry
             return new PrimordialSurgeEffect(radius).WithTag("Terrain");
         });
 
+        // Tectonic Shatter: { "type": "tectonic_shatter", "radius": n, "damage": m }
+        RegisterEffect("tectonic_shatter", n =>
+        {
+            int radius = n.TryGetProperty("radius", out var r) ? r.GetInt32() : 3;
+            int dmg = n.TryGetProperty("damage_per_tile", out var d) ? d.GetInt32() : 5;
+            return new TectonicShatterEffect(radius, dmg).WithTag("Terrain");
+        });
+
+                // Avatar Transform: { "type": "avatar_transform", "turns": n, "bonus_damage": m, "armor": a, "bonus_speed": s }
+        RegisterEffect("avatar_transform", n =>
+        {
+            int turns = n.TryGetProperty("turns", out var t) ? t.GetInt32() : 3;
+            int bonus = n.TryGetProperty("bonus_damage", out var b) ? b.GetInt32() : 3;
+            int armor = n.TryGetProperty("armor", out var a) ? a.GetInt32() : 7;
+            int speed = n.TryGetProperty("bonus_speed", out var sp) ? sp.GetInt32() : 0;
+            return new AvatarTransformEffect(turns, bonus, armor, speed).WithTag("Transform");
+        });
+
+        // Create Maelstrom: { "type": "create_maelstrom", "radius": n, "damage": m, "turns": t, "freezes": bool }
+        RegisterEffect("create_maelstrom", n =>
+        {
+            int radius = n.TryGetProperty("radius", out var r) ? r.GetInt32() : 3;
+            int damage = n.TryGetProperty("damage", out var d) ? d.GetInt32() : 2;
+            int turns = n.TryGetProperty("turns", out var t) ? t.GetInt32() : 3;
+            bool freezes = n.TryGetProperty("freezes", out var f) && f.GetBoolean();
+            return new CreateMaelstromEffect(radius, damage, turns, freezes).WithTag("Terrain");
+        });
+
         // ═══════════════════════════════════════════════════════════
         // PREDICATES
         // ═══════════════════════════════════════════════════════════
@@ -402,31 +430,13 @@ public static class CardScriptRegistry
             return new SelectAdjacentToTarget(includeTiles);
         });
     
+        // Element tile selector:
+        // { "type": "element_tile", "element": "fire", "range":
         RegisterTargeter("element_tile", n =>
         {
             var element = n.GetProperty("element").GetString();
             int range = n.TryGetProperty("range", out var r) ? r.GetInt32() : 6;
             return new SelectElementTileTarget(element, range);
-        });
-
-        // Avatar Transform: { "type": "avatar_transform", "turns": n, "bonus_damage": m, "armor": a, "bonus_speed": s }
-        RegisterEffect("avatar_transform", n =>
-        {
-            int turns = n.TryGetProperty("turns", out var t) ? t.GetInt32() : 3;
-            int bonus = n.TryGetProperty("bonus_damage", out var b) ? b.GetInt32() : 3;
-            int armor = n.TryGetProperty("armor", out var a) ? a.GetInt32() : 7;
-            int speed = n.TryGetProperty("bonus_speed", out var sp) ? sp.GetInt32() : 0;
-            return new AvatarTransformEffect(turns, bonus, armor, speed).WithTag("Transform");
-        });
-
-        // Create Maelstrom: { "type": "create_maelstrom", "radius": n, "damage": m, "turns": t, "freezes": bool }
-        RegisterEffect("create_maelstrom", n =>
-        {
-            int radius = n.TryGetProperty("radius", out var r) ? r.GetInt32() : 3;
-            int damage = n.TryGetProperty("damage", out var d) ? d.GetInt32() : 2;
-            int turns = n.TryGetProperty("turns", out var t) ? t.GetInt32() : 3;
-            bool freezes = n.TryGetProperty("freezes", out var f) && f.GetBoolean();
-            return new CreateMaelstromEffect(radius, damage, turns, freezes).WithTag("Terrain");
         });
 
     }
