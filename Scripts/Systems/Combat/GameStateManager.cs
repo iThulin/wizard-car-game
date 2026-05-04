@@ -8,19 +8,29 @@ public sealed class GameState {
     public PriorityManager Priority = new();
     public Resolver Resolver;
 
+    public List<PersistentEffect> ActiveEffects = new();
+
     public string Step = "Main";
     public HexGridManager Grid;
     public Unit PlayerUnit;
     public Unit EnemyUnit;
     public List<Unit> UnitsInPlay = new();
+    public Func<string, TileData, int, Unit> OnSummonRequested;
 
     public Entity PlayerA = new(){ Name="A"};
     public Entity PlayerB = new(){ Name="B"};
+    public TargetSet RetargetOrigin;
 
     public Dictionary<Entity,int> Mana = new();
     public List<Card> LibraryA = new(), LibraryB = new();
     public List<Card> HandA = new(), HandB = new();
     public List<Card> Graveyard = new();
+
+
+    /// <summary>
+    /// Cleanup actions to run at end of turn (remove movement callbacks, etc.)
+    /// </summary>
+    public List<Action> OnTurnEndCleanups;
 
     public GameState(){
         Resolver = new Resolver(Bus, Stack);
@@ -53,4 +63,14 @@ public sealed class GameState {
     }
 
     public void Log(string msg){ GD.Print(msg); } // replace with your UI log if you want
+
+    public bool HasActiveEffect<T>(Entity owner) where T : PersistentEffect
+    {
+        return ActiveEffects?.Exists(e => e is T && e.Owner == owner && !e.IsExpired) ?? false;
+    }
+
+    public T GetActiveEffect<T>(Entity owner) where T : PersistentEffect
+    {
+        return ActiveEffects?.Find(e => e is T && e.Owner == owner && !e.IsExpired) as T;
+    }
 }

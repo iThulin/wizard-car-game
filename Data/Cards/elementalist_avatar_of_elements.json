@@ -1,79 +1,42 @@
 {
-  "id": "elementalist_avatar_of_elements",
-  "name": "Avatar of Elements",
-  "school": "Elementalist",
-  "rarity": "Legendary",
-  "top": {
-    "name": "Avatar of Elements (WIP)",
-    "mana": 4,
-    "speed": "Instant",
-    "rules_text": "Transform: gain 7 armor and for 3 turns all your spells imbue their target tile with a random element AND deal +3 damage. You leave elemental terrain on every tile you walk across.",
-    "tags": [
-      "fire",
-      "ice",
-      "storm",
-      "stone"
-    ],
-    "targeting": {
-      "type": "self"
-    },
-    "effect": {
-      "type": "sequence",
-      "steps": [
-        {
-          "type": "empty"
-        },
-        {
-          "type": "armor",
-          "amount": 7
+    "id": "elementalist_avatar_of_elements",
+    "name": "Avatar of Elements",
+    "school": "Elementalist",
+    "rarity": "Legendary",
+    "top": {
+        "name": "Avatar of Elements",
+        "mana": 4,
+        "speed": "Instant",
+        "rules_text": "Transform for 3 turns: gain 7 armor, spells deal +3 damage and imbue target with random element. Leave elemental trails when moving.",
+        "tags": ["fire", "ice", "storm", "stone"],
+        "targeting": { "type": "self" },
+        "effect": { "type": "avatar_transform", "turns": 3, "bonus_damage": 3, "armor": 7, "bonus_speed": 0 },
+        "channel": {
+            "name": "Avatar of Elements (Channel)",
+            "mana": 4,
+            "speed": "Reaction",
+            "rules_text": "Channel: 5 turns and +2 speed",
+            "tags": ["fire", "ice", "storm", "stone"],
+            "targeting": { "type": "self" },
+            "effect": { "type": "avatar_transform", "turns": 5, "bonus_damage": 3, "armor": 7, "bonus_speed": 2 }
         }
-      ]
     },
-    "channel": {
-      "name": "Avatar of Elements (Channel)",
-      "mana": 4,
-      "speed": "Reaction",
-      "rules_text": "Channel: Duration is 5 turns and you also gain +2 speed",
-      "targeting": {
-        "type": "self"
-      },
-      "effect": {
-        "type": "empty"
-      }
+    "bottom": {
+        "name": "Maelstrom",
+        "mana": 3,
+        "speed": "Sorcery",
+        "rules_text": "Create a storm zone (radius 3). Each turn deals 5 damage, pushes clockwise, imbues with Storm. Lasts 3 turns.",
+        "tags": ["storm"],
+        "targeting": { "type": "unit", "range": 6, "los": false, "enemies_only": true },
+        "effect": { "type": "create_maelstrom", "radius": 3, "damage": 5, "turns": 3, "freezes": false },
+        "channel": {
+            "name": "Maelstrom (Channel)",
+            "mana": 3,
+            "speed": "Reaction",
+            "rules_text": "Channel: Radius 4, also freezes enemies hit",
+            "tags": ["storm"],
+            "targeting": { "type": "unit", "range": 6, "los": false, "enemies_only": true },
+            "effect": { "type": "create_maelstrom", "radius": 4, "damage": 5, "turns": 3, "freezes": true }
+        }
     }
-  },
-  "bottom": {
-    "name": "Maelstrom  (WIP)",
-    "mana": 3,
-    "speed": "Sorcery",
-    "rules_text": "Create a 3-tile radius storm centered on target point. Every turn it rotates dealing 2 damage and pushing all enemies 1 tile clockwise. Imbues all tiles it touches with Storm. Lasts 3 turns.",
-    "tags": [
-      "fire",
-      "ice",
-      "storm",
-      "stone"
-    ],
-    "targeting": {
-      "type": "aoe",
-      "radius": 3,
-      "enemies_only": true
-    },
-    "effect": {
-      "type": "empty"
-    },
-    "channel": {
-      "name": "Maelstrom (Channel)",
-      "mana": 3,
-      "speed": "Reaction",
-      "rules_text": "Channel: Radius is 4 and it also freezes enemies hit",
-      "targeting": {
-        "type": "aoe",
-        "radius": 4,
-        "enemies_only": true
-      },
-      "effect": {
-        "type": "empty"
-      }
-    }
-  }
 }

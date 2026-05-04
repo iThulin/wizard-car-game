@@ -60,6 +60,12 @@ public partial class Unit : Node3D
     private StandardMaterial3D _hoverMat;
     private bool _isHovered = false;
 
+    /// <summary>
+    /// Fires when this unit moves to a new tile.
+    /// Parameters: the tile the unit just LEFT (may be null on first placement).
+    /// </summary>
+    public event Action<TileData> OnTileLeft;
+
     public override void _Ready()
     {
         // initialize runtime stats from exported values
@@ -103,20 +109,20 @@ public partial class Unit : Node3D
 
     public void PlaceOnTile(TileData tile)
     {
-        if (tile == null)
-            return;
+        if (tile == null) return;
+        if (tile.IsOccupied && tile.Occupant != this) return;
 
-        if (!tile.TrySetOccupant(this))
-        {
-            GD.PrintErr($"Cannot place {Name} on tile {tile.Axial}; tile is blocked or occupied.");
-            return;
-        }
-
+        var previousTile = CurrentTile;
         CurrentTile?.ClearOccupant(this);
         CurrentTile = tile;
+        //tile.SetOccupant(this);
 
         if (tile.TileView != null)
             GlobalPosition = tile.TileView.GlobalPosition;
+
+        // Fire the callback so effects can react to movement
+        if (previousTile != null && previousTile != tile)
+            OnTileLeft?.Invoke(previousTile);
     }
 
     public bool TryMoveTo(HexGridManager grid, TileData dest)
@@ -225,6 +231,10 @@ public partial class Unit : Node3D
             Stats.MovePoints = 0;
         else if (status == "slowed")
             Stats.MovePoints = Math.Max(0, Stats.MovePoints / 2);
+        else if (status == "rooted")
+            Stats.MovePoints = 0;
+        else if (status == "chaining")
+            // no immediate effect, but checked at cast time by DealDamageEffect
 
         GD.Print($"{Name} gains {status} for {duration} turn(s).");
     }
@@ -252,10 +262,24 @@ public partial class Unit : Node3D
         }
 
         // Re-apply ongoing effects for statuses that are still active
-        if (HasStatus("frozen"))
+        if (HasStatus("frozen") || HasStatus("rooted"))
             Stats.MovePoints = 0;
         else if (HasStatus("slowed"))
             Stats.MovePoints = Math.Max(0, Stats.MovePoints / 2);
+    }
+
+    public bool CanAct()
+    {
+        // Frozen = can't do anything (move or cast)
+        if (HasStatus("frozen")) return false;
+        return true;
+    }
+
+    public bool CanMove()
+    {
+        // Frozen OR rooted = can't move
+        if (HasStatus("frozen") || HasStatus("rooted")) return false;
+        return true;
     }
 
     // Selection visual methods
@@ -372,4 +396,26 @@ public partial class Unit : Node3D
             _ => null
         };
     }
+
+    // For predicates that need to check the caster's current tile properties, this tracks the element of the last cast spell for use in those checks.
+    public ElementTag LastCastElement = ElementTag.Fire;
+    public ElementTag HighestAttunementElement
+    {
+        get
+        {
+            if (Attunement is not ElementalAttunement att) return ElementTag.Fire;
+            ElementTag best = ElementTag.Fire;
+            int bestCount = -1;
+            foreach (var kvp in att.Charges)
+            {
+                if (kvp.Value > bestCount)
+                {
+                    bestCount = kvp.Value;
+                    best = kvp.Key;
+                }
+            }
+            return best;
+        }
+    }
+
 }

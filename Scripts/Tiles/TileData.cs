@@ -37,9 +37,11 @@ public class TileData
 	public bool BlocksMovementByHeight = false;
 	public bool BlocksLineOfSight = false;
 	public bool IsHazardous = false;
+	public string TerrainModifier = ""; // "rubble", "scorched", "frozen", etc.
 
 	// Layout and pathfinding
 	public int MoveCost = 1;
+	public int BaseMoveCost = 1; // original cost before modification
 	public int Height = 0;
 
 	// Gameplay properties
@@ -72,4 +74,31 @@ public class TileData
         if (unit != null && Occupant == unit)
             Occupant = null;
     }
+
+	public void ApplyTerrainModifier(string modifier)
+{
+    TerrainModifier = modifier;
+    BaseMoveCost = MoveCost; // save original
+
+    switch (modifier)
+    {
+        case "rubble":
+            MoveCost = 2;
+            TerrainType = TileTerrainType.Stone;
+            break;
+        case "scorched":
+            MoveCost = 2;
+            IsHazardous = true;
+            break;
+        case "frozen":
+            MoveCost = 1;
+            TerrainType = TileTerrainType.Ice;
+            break;
+        case "none":
+            MoveCost = BaseMoveCost;
+            IsHazardous = false;
+            TerrainModifier = "";
+            break;
+    }
+}
 }

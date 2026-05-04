@@ -1,68 +1,41 @@
 {
-  "id": "elementalist_ragnarok",
-  "name": "Ragnarok",
-  "school": "Elementalist",
-  "rarity": "Legendary",
-  "top": {
-    "name": "Ragnarok",
-    "mana": 5,
-    "speed": "Sorcery",
-    "rules_text": "Deal 7 damage to ALL units (including allies) for each unique element currently imbued on the board (max 4 elements = 26 damage). Then purge all imbued tiles.",
-    "targeting": {
-      "type": "aoe",
-      "radius": 1,
-      "enemies_only": true
-    },
-    "effect": {
-      "type": "damage",
-      "amount": 7
-    },
-    "channel": {
-      "name": "Ragnarok (Channel)",
-      "mana": 5,
-      "speed": "Reaction",
-      "rules_text": "Channel: Your units take half damage from this effect",
-      "targeting": {
-        "type": "aoe",
-        "radius": 1,
-        "enemies_only": true
-      },
-      "effect": {
-        "type": "damage",
-        "amount": 4
-      }
+  	"id": "elementalist_ragnarok",
+  	"name": "Ragnarok",
+  	"school": "Elementalist",
+  	"rarity": "Legendary",
+  	"top": {
+    	"name": "Ragnarok",
+    	"mana": 5,
+    	"speed": "Sorcery",
+    	"rules_text": "Deal 7 damage to ALL units for each unique element currently imbued on the board (max 28). Purge all imbued tiles.",
+		"tags": ["fire", "ice", "storm", "stone"],
+    	"targeting": { "type": "self" },
+    	"effect": { "type": "ragnarok", "damage_per_element": 7, "half_to_allies": false },
+    	"channel": {
+      		"name": "Ragnarok (Channel)",
+      		"mana": 5,
+      		"speed": "Reaction",
+      		"rules_text": "Channel: Your units take half damage from this effect",
+      		"targeting": { "type": "self" },
+      		"effect": { "type": "ragnarok", "damage_per_element": 7, "half_to_allies": true }
+    	}
+  	},
+  	"bottom": {
+    	"name": "Elemental Convergence",
+    	"mana": 3,
+    	"speed": "Sorcery",
+    	"rules_text": "Imbue all tiles within range 3 with random elements. Set all elemental attunement counters to 3.",
+    	"tags": ["fire", "ice", "storm", "stone"],
+		"targeting": { "type": "self" },
+    	"effect": { "type": "elemental_convergence", "radius": 3, "attunement_counters": 3 },
+    	"channel": {
+      		"name": "Elemental Convergence (Channel)",
+      		"mana": 3,
+      		"speed": "Reaction",
+      		"rules_text": "Channel: Set all elemental attunements to 4",
+      		"tags": ["fire", "ice", "storm", "stone"],
+			"targeting": { "type": "self" },
+			"effect": { "type": "set_attunement_counters", "radius": 3, "attunement_counters": 4 }
+		}
     }
-  },
-  "bottom": {
-    "name": "Genesis",
-    "mana": 3,
-    "speed": "Sorcery",
-    "rules_text": "After Ragnarok: imbue every tile on the board with alternating elements in a pattern of your choice. For 2 turns your elemental spells cost 0.",
-    "targeting": {
-      "type": "none"
-    },
-    "effect": {
-      "type": "sequence",
-      "steps": [
-        {
-          "type": "empty"
-        },
-        {
-          "type": "empty"
-        }
-      ]
-    },
-    "channel": {
-      "name": "Genesis (Channel)",
-      "mana": 3,
-      "speed": "Reaction",
-      "rules_text": "Channel: Lasts 3 turns instead",
-      "targeting": {
-        "type": "none"
-      },
-      "effect": {
-        "type": "empty"
-      }
-    }
-  }
 }

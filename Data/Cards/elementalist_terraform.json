@@ -1,72 +1,52 @@
 {
-  "id": "elementalist_terraform",
-  "name": "Terraform",
-  "school": "Elementalist",
-  "rarity": "Legendary",
-  "top": {
+    "id": "elementalist_terraform",
     "name": "Terraform",
-    "mana": 4,
-    "speed": "Sorcery",
-    "rules_text": "Permanently reshape a 3-tile radius area: choose any terrain type for each tile. Enemies in the area take 6 damage and are pushed to the edge. All tiles are imbued with your choice of element.",
-    "targeting": {
-      "type": "aoe",
-      "radius": 3,
-      "enemies_only": true
-    },
-    "effect": {
-      "type": "sequence",
-      "steps": [
-        {
-          "type": "empty"
-        },
-        {
-          "type": "damage",
-          "amount": 7
+    "school": "Elementalist",
+    "rarity": "Legendary",
+    "top": {
+        "name": "Terraform",
+        "mana": 4,
+        "speed": "Sorcery",
+        "rules_text": "Reshape 3-tile radius to match your highest element. Push enemies to edge, deal 6 damage. Imbue all tiles.",
+        "tags": ["fire", "ice", "storm", "stone"],
+        "targeting": { "type": "unit", "range": 6, "los": false, "enemies_only": true },
+        "effect": { "type": "terraform", "radius": 3, "damage": 6 },
+        "channel": {
+            "name": "Terraform (Channel)",
+            "mana": 4,
+            "speed": "Reaction",
+            "rules_text": "Channel: Radius is 5 tiles",
+            "tags": ["fire", "ice", "storm", "stone"],
+            "targeting": { "type": "unit", "range": 6, "los": false, "enemies_only": true },
+            "effect": { "type": "terraform", "radius": 5, "damage": 6 }
         }
-      ]
     },
-    "channel": {
-      "name": "Terraform (Channel)",
-      "mana": 4,
-      "speed": "Reaction",
-      "rules_text": "Channel: Radius is 5 tiles",
-      "targeting": {
-        "type": "aoe",
-        "radius": 5,
-        "enemies_only": true
-      },
-      "effect": {
-        "type": "empty"
-      }
+    "bottom": {
+        "name": "Elemental Colossus",
+        "mana": 4,
+        "speed": "Instant",
+        "rules_text": "Summon the Colossus (30HP 5ARM 1SPD) on target tile. Absorbs imbued tiles it walks over (Phase 2).",
+        "tags": ["stone"],
+        "targeting": { "type": "tile", "range": 4 },
+        "effect": {
+            "type": "sequence",
+            "steps": [
+                { "type": "summon", "unit": "colossus", "count": 1 },
+                {
+                    "type": "retarget",
+                    "targeting": { "type": "self" },
+                    "do": { "type": "armor", "amount": 4 }
+                }
+            ]
+        },
+        "channel": {
+            "name": "Elemental Colossus (Channel)",
+            "mana": 4,
+            "speed": "Reaction",
+            "rules_text": "Channel: Colossus enters with extra armor",
+            "tags": ["stone"],
+            "targeting": { "type": "tile", "range": 4 },
+            "effect": { "type": "summon", "unit": "colossus_empowered", "count": 1 }
+        }
     }
-  },
-  "bottom": {
-    "name": "Elemental Colossus",
-    "mana": 4,
-    "speed": "Instant",
-    "rules_text": "Summon the Colossus (30HP 10DMG 1SPD) on target tile. The Colossus absorbs imbued tiles it walks over gaining +2 damage per Fire +2 armor per Stone and +1 speed per Storm absorbed. Creates terrain matching last absorbed element.",
-    "targeting": {
-      "type": "aoe",
-      "radius": 2,
-      "enemies_only": true
-    },
-    "effect": {
-      "type": "summon",
-      "unit": "Colossus",
-      "count": 1
-    },
-    "channel": {
-      "name": "Elemental Colossus (Channel)",
-      "mana": 4,
-      "speed": "Reaction",
-      "rules_text": "Channel: Colossus enters with 20HP",
-      "targeting": {
-        "type": "tile",
-        "range": 4
-      },
-      "effect": {
-        "type": "empty"
-      }
-    }
-  }
 }

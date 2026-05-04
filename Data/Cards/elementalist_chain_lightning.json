@@ -1,84 +1,95 @@
 {
-  "id": "elementalist_chain_lightning",
-  "name": "Chain Lightning",
-  "school": "Elementalist",
-  "rarity": "Uncommon",
-  "top": {
-	"name": "Chain Lightning",
-	"mana": 3,
-	"speed": "Sorcery",
-	"rules_text": "Deal 5 damage to target. Chains to nearest enemy within 2 tiles for 4 then again for 2.",
-	"targeting": {
-	  "type": "unit",
-	  "range": 6,
-	  "los": true,
-	  "enemies_only": true
-	},
-	"effect": {
-	  "type": "sequence",
-	  "steps": [
-		{
-		  "type": "damage",
-		  "amount": 5
-		},
-		{
-		  "type": "empty"
-		}
-	  ]
-	},
-	"channel": {
-	  "name": "Chain Lightning (Channel)",
-	  "mana": 3,
-	  "speed": "Reaction",
-	  "rules_text": "Channel: Each chain also imbues the target's tile with Storm",
-	  "targeting": {
-		"type": "tile",
-		"range": 4
-	  },
-	  "effect": {
-		"type": "empty"
-	  }
-	}
-  },
-  "bottom": {
-	"name": "Wind Shear",
-	"mana": 2,
-	"speed": "Instant",
-	"rules_text": "Push all enemies in a cone (3 wide 2 deep) 2 tiles backward. Deal 2 damage per tile pushed.",
-	"targeting": {
-	  "type": "unit",
-	  "range": 6,
-	  "los": false,
-	  "enemies_only": true
-	},
-	"effect": {
-	  "type": "sequence",
-	  "steps": [
-		{
-		  "type": "move",
-		  "tiles": 2
-		},
-		{
-		  "type": "damage",
-		  "amount": 2
-		}
-	  ]
+  	"id": "elementalist_chain_lightning",
+  	"name": "Chain Lightning",
+  	"school": "Elementalist",
+  	"rarity": "Uncommon",
+  	"top": {
+		"name": "Chain Lightning",
+		"mana": 3,
+		"speed": "Sorcery",
+		"rules_text": "Deal 5 damage to target. Chains to nearest enemy within 2 tiles for 4 then again for 2.",
+		"tags": ["storm"],
+		"targeting": { "type": "unit", "range": 6, "los": true, "enemies_only": true },
+		"effect": {
+			"type": "sequence",
+			"steps": [
+				{ "type": "damage", "amount": 5},
+				{ "type": "retarget",
+					"targeting": {"type": "nearest_to_target", "range":2},
+					"do": { "type": "sequence",
+						"steps": [
+							{"type": "damage", "amount": 4},
+							{"type": "retarget",
+								"targeting": {"type": "nearest_to_target", "range":2},
+								"do": { "type": "damage", "amount": 2 }
+							}
+						]
+					}
+				}
+			]
 	},
 	"channel": {
-	  "name": "Wind Shear (Channel)",
-	  "mana": 2,
-	  "speed": "Reaction",
-	  "rules_text": "Channel: Cone is 3 tiles deep instead",
-	  "targeting": {
-		"type": "unit",
-		"range": 6,
-		"los": false,
-		"enemies_only": true
-	  },
-	  "effect": {
-		"type": "move",
-		"tiles": 2
-	  }
+		"name": "Chain Lightning (Channel)",
+		"mana": 3,
+		"speed": "Reaction",
+		"rules_text": "Channel: Each strike also imbues the target's tile with Storm",
+		"tags": ["storm"],
+		"targeting": { "type": "tile", "range": 4, "los": true },
+		"effect": {
+			"type": "sequence",
+			"steps": [
+				{ "type": "damage", "amount": 5 },
+				{ "type": "imbue_tile", "element": "storm" },
+				{ "type": "retarget",
+					"targeting": {"type": "nearest_to_target", "range":2},
+					"do": { "type": "sequence",
+						"steps": [
+							{"type": "damage", "amount": 4},
+							{"type": "imbue_tile", "element": "storm"},
+							{"type": "retarget",
+								"targeting": {"type": "nearest_to_target", "range":2},
+								"do": { "type": "sequence",
+									"steps": [
+										{"type": "damage", "amount": 2},
+										{"type": "imbue_tile", "element": "storm"}
+									]
+								}
+							}
+						]
+					}
+				}
+	  		]
+		}
+	},
+	"bottom": {
+		"name": "Wind Shear",
+		"mana": 2,
+		"speed": "Instant",
+		"rules_text": "Target: Cone (4). Push all enemies 2 tiles backward. For each tile a unit is pushed do 2 damage.",
+		"tags": ["storm"],
+		"targeting": { "type": "cone", "range": 4, "los": true, "enemies_only": false },
+		"effect": {
+			"type": "sequence",
+			"steps": [
+				{ "type": "damage", "amount": 2 },
+				{ "type": "push_damage", "tiles": 2, "damage_per_tile": 2 }
+			]
+		},
+		"channel": {
+			"name": "Wind Shear (Channel)",
+			"mana": 2,
+			"speed": "Reaction",
+			"rules_text": "Channel: Push 4 tiles",
+			"tags": ["storm"],
+			"targeting": { "type": "cone", "range": 4, "los": true, "enemies_only": false },
+			"effect": {
+				"type": "sequence",
+				"steps": [
+					{ "type": "damage", "amount": 2 },
+					{ "type": "push_damage", "tiles": 2, "damage_per_tile": 2 }
+				]
+				}
+			}
+		}
 	}
-  }
 }

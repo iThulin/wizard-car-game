@@ -176,3 +176,53 @@ public sealed class CasterOnTerrain : IPredicate
         return false;
     }
 }
+
+// "Is the caster adjacent to at least one tile with any of these elements?"
+public sealed class HasElementsNearCaster : IPredicate
+{
+    public string[] RequiredElements;
+    public int Range;
+
+    public HasElementsNearCaster(string[] elements, int range = 2)
+    {
+        RequiredElements = elements;
+        Range = range;
+    }
+
+    public bool Evaluate(PredicateContext ctx)
+    {
+        if (ctx.Game?.Grid == null) return false;
+
+        Unit casterUnit = null;
+        if (ctx.Caster == ctx.Game.PlayerA) casterUnit = ctx.Game.PlayerUnit;
+        else if (ctx.Caster == ctx.Game.PlayerB) casterUnit = ctx.Game.EnemyUnit;
+        if (casterUnit?.CurrentTile == null) return false;
+
+        var center = casterUnit.CurrentTile.Axial;
+        var foundElements = new HashSet<TileElementType>();
+
+        foreach (var kvp in ctx.Game.Grid.Tiles)
+        {
+            if (ctx.Game.Grid.Distance(center, kvp.Key) > Range) continue;
+            var tile = kvp.Value;
+            if (tile?.ElementType != TileElementType.None)
+                foundElements.Add(tile.ElementType);
+        }
+
+        foreach (var req in RequiredElements)
+        {
+            TileElementType needed = req.ToLowerInvariant() switch
+            {
+                "fire"  => TileElementType.Fire,
+                "ice"   => TileElementType.Frost,
+                "frost" => TileElementType.Frost,
+                "storm" => TileElementType.Lightning,
+                "stone" => TileElementType.Earth,
+                _ => TileElementType.None
+            };
+            if (!foundElements.Contains(needed)) return false;
+        }
+
+        return true;
+    }
+}

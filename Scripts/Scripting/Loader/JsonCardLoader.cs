@@ -130,12 +130,26 @@ public static class CardScriptRegistry
         RegisterEffect("armor", n =>
             new GiveArmorEffect(n.GetProperty("amount").GetInt32()).WithTag("Defense"));
 
+        // Grant armor: { "type": "grant_armor", "amount": n }
+        RegisterEffect("grant_armor", n =>
+        new GiveTargetArmorEffect(n.GetProperty("amount").GetInt32()).WithTag("Defense"));
+
         // Summon: { "type": "summon", "kind": "skeleton", "count": n}
         RegisterEffect("summon", n =>
         {
             var kind = n.GetProperty("unit").GetString();
             var count = n.TryGetProperty("count", out var c) ? c.GetInt32() : 1;
             return new SummonEffect(kind, count).WithTag("Summon");
+        });
+
+        // Create rubble: { "type": "create_rubble" }
+        RegisterEffect("create_rubble", _ => new CreateRubbleEffect().WithTag("Terrain"));
+
+        // Raise terrain: { "type": "raise_terrain", "height": n }
+        RegisterEffect("raise_terrain", n =>
+        {
+            int height = n.TryGetProperty("height", out var h) ? h.GetInt32() : 1;
+            return new RaiseTerrainEffect(height).WithTag("Terrain");
         });
 
         // Mana gain: { "type": "mana_gain", "amount": n }
@@ -158,12 +172,106 @@ public static class CardScriptRegistry
             return new ImbueTileEffect(element, bonus).WithTag("Terrain");
         });
 
+        // Imbue area selector:
+        // { "type": "imbue_area", "element": "fire", "radius
+        RegisterEffect("imbue_area", n =>
+        {
+            var element = n.GetProperty("element").GetString();
+            int radius = n.TryGetProperty("radius", out var r) ? r.GetInt32() : 2;
+            return new ImbueAreaEffect(element, radius).WithTag("Terrain");
+        });
+
         // Apply status: { "type": "apply_status", "status": "frozen", "duration": n }
         RegisterEffect("apply_status", n =>
         {
             var status = n.GetProperty("status").GetString();
             var duration = n.TryGetProperty("duration", out var d) ? d.GetInt32() : 1;
             return new ApplyStatusEffect(status, duration).WithTag("Status");
+        });
+
+        // Push: { "type": "push", "tiles": n, "collision_damage": m }
+        RegisterEffect("push", n =>
+        {
+            int tiles = n.GetProperty("tiles").GetInt32();
+            int collisionDmg = n.TryGetProperty("collision_damage", out var cd) ? cd.GetInt32() : 0;
+            return new PushEffect(tiles, collisionDmg).WithTag("Movement");
+        });
+
+        // Push + damage: { "type": "push_damage", "tiles": n, "damage_per_tile": m }
+        RegisterEffect("push_damage", n =>
+        {
+            int tiles = n.TryGetProperty("tiles", out var t) ? t.GetInt32() : 1;
+            int dmgPerTile = n.TryGetProperty("damage_per_tile", out var d) ? d.GetInt32() : 0;
+            return new PushDamageEffect(tiles, dmgPerTile).WithTag("Movement");
+        });
+
+        // Imbue + move: { "type": "imbue_path", "element": "ice", "move": n, "armor_per_tile": m }
+        RegisterEffect("imbue_path", n =>
+        {
+            var element = n.GetProperty("element").GetString();
+            int moveTiles = n.TryGetProperty("move", out var m) ? m.GetInt32() : 0;
+            int armorPerTile = n.TryGetProperty("armor_per_tile", out var a) ? a.GetInt32() : 0;
+            return new ImbuePathEffect(element, moveTiles, armorPerTile);
+        });
+
+        // Remove armor: { "type": "remove_armor", "amount": n }
+        RegisterEffect("remove_armor", n =>
+        {
+            int amount = n.TryGetProperty("amount", out var a) ? a.GetInt32() : 0;
+            return new RemoveArmorEffect(amount).WithTag("Debuff");
+        });
+        
+        // Consume element tile: { "type": "consume_element_tile", "element": "fire", "radius": n, "damage": m }
+        RegisterEffect("consume_element_tile", n =>
+        {
+            var element = n.GetProperty("element").GetString();
+            int radius = n.TryGetProperty("radius", out var r) ? r.GetInt32() : 2;
+            int damage = n.TryGetProperty("damage", out var d) ? d.GetInt32() : 7;
+            return new ConsumeElementTileEffect(element, radius, damage).WithTag("Terrain");
+        });
+
+        // ═══════════════════════════════════════════════════════════
+        // Elementalist-specific effects:
+        // ═══════════════════════════════════════════════════════════        
+
+        // Terraform: { "type": "terraform", "radius": n, "damage": m }
+        RegisterEffect("terraform", n =>
+        {
+            int radius = n.TryGetProperty("radius", out var r) ? r.GetInt32() : 3;
+            int damage = n.TryGetProperty("damage", out var d) ? d.GetInt32() : 6;
+            return new TerraformEffect(radius, damage).WithTag("Terrain");
+        });
+
+        // Elemental Convergence: { "type": "elemental_convergence", "radius": n, "attunement_set_to": m }
+        RegisterEffect("elemental_convergence", n =>
+        {
+            int radius = n.TryGetProperty("radius", out var r) ? r.GetInt32() : 3;
+            int attSet = n.TryGetProperty("attunement_set_to", out var a) ? a.GetInt32() : 3;
+            return new ElementalConvergenceEffect(radius, attSet).WithTag("Terrain");
+        });
+
+        // Ragnarok: { "type": "ragnarok", "damage_per_element": n, "half_to_allies": bool }
+        RegisterEffect("ragnarok", n =>
+        {
+            int dmgPer = n.TryGetProperty("damage_per_element", out var d) ? d.GetInt32() : 7;
+            bool half = n.TryGetProperty("half_to_allies", out var h) && h.GetBoolean();
+            return new RagnarokEffect(dmgPer, half).WithTag("Damage");
+        });
+
+        // Cataclysm: { "type": "cataclysm", "radius": n, "damage_per_tile": m, "tiles_per_draw": t }
+        RegisterEffect("cataclysm", n =>
+        {
+            int radius = n.TryGetProperty("radius", out var r) ? r.GetInt32() : 4;
+            int dmg = n.TryGetProperty("damage_per_tile", out var d) ? d.GetInt32() : 2;
+            int draw = n.TryGetProperty("tiles_per_draw", out var td) ? td.GetInt32() : 3;
+            return new CataclysmEffect(radius, dmg, draw).WithTag("Terrain");
+        });
+
+        // Primordial Surge: { "type": "primordial_surge", "radius": n }
+        RegisterEffect("primordial_surge", n =>
+        {
+            int radius = n.TryGetProperty("radius", out var r) ? r.GetInt32() : 4;
+            return new PrimordialSurgeEffect(radius).WithTag("Terrain");
         });
 
         // ═══════════════════════════════════════════════════════════
@@ -192,6 +300,19 @@ public static class CardScriptRegistry
         {
             var tile = n.GetProperty("tile").GetString();
             return new TargetAdjacentToTile(tile);
+        });
+
+
+        // Caster has elements nearby:
+        // { "type": "has_elements_near_caster", "elements": [ "fire", "ice" ], "range": n }
+        RegisterPredicate("has_elements_near_caster", n =>
+        {
+            var elements = new List<string>();
+            if (n.TryGetProperty("elements", out var arr))
+                foreach (var e in arr.EnumerateArray())
+                    elements.Add(e.GetString());
+            int range = n.TryGetProperty("range", out var r) ? r.GetInt32() : 2;
+            return new HasElementsNearCaster(elements.ToArray(), range);
         });
 
         // ═══════════════════════════════════════════════════════════
@@ -228,6 +349,24 @@ public static class CardScriptRegistry
             return new SelectAreaTarget(radius, enemiesOnly, false);
         });
 
+        // Cone selector:
+        // { "type": "cone", "range": n, "enemies_only": bool }
+        RegisterTargeter("cone", n =>
+        {
+            int range = n.TryGetProperty("range", out var r) ? r.GetInt32() : 3;
+            bool enemiesOnly = n.TryGetProperty("enemies_only", out var eo) && eo.GetBoolean();
+            return new SelectConeTarget(range, enemiesOnly);
+        });
+
+        // Ring selector:
+        // { "type": "ring", "radius": n, "include_tiles": bool
+        RegisterTargeter("ring", n =>
+        {
+            int radius = n.TryGetProperty("radius", out var r) ? r.GetInt32() : 2;
+            bool includeTiles = n.TryGetProperty("include_tiles", out var it) ? it.GetBoolean() : true;
+            return new SelectRingTarget(radius, includeTiles);
+        });
+
         // Tag selector:
         // { "type": "by_tag", "tag": "fire", "enemies_only": bool }
         RegisterTargeter("by_tag", n =>
@@ -236,6 +375,60 @@ public static class CardScriptRegistry
             bool enemyOnly = n.TryGetProperty("enemies_only", out var eo) && eo.GetBoolean();
             return new SelectByTagTarget(tag, enemyOnly);
         });
+
+        // Nearest to target selector:
+        // { "type": "nearest_to_target", "range": n }
+        RegisterTargeter("nearest_to_target", n =>
+        {
+            int range = n.TryGetProperty("range", out var r) ? r.GetInt32() : 3;
+            return new SelectNearestToTarget(range);
+        });
+
+        // Line selector:
+        // { "type": "line", "length": n, "enemies_only": bool, "include_tiles": bool }
+        RegisterTargeter("line", n =>
+        {
+            int length = n.TryGetProperty("length", out var l) ? l.GetInt32() : 2;
+            bool enemiesOnly = n.TryGetProperty("enemies_only", out var eo) && eo.GetBoolean();
+            bool includeTiles = n.TryGetProperty("include_tiles", out var it) && it.GetBoolean();
+            return new SelectLineTarget(length, enemiesOnly, includeTiles);
+        });
+
+        // Adjacent to target selector:
+        // { "type": "adjacent_to_target", "include_tiles": bool }
+        RegisterTargeter("adjacent_to_target", n =>
+        {
+            bool includeTiles = n.TryGetProperty("include_tiles", out var it) && it.GetBoolean();
+            return new SelectAdjacentToTarget(includeTiles);
+        });
+    
+        RegisterTargeter("element_tile", n =>
+        {
+            var element = n.GetProperty("element").GetString();
+            int range = n.TryGetProperty("range", out var r) ? r.GetInt32() : 6;
+            return new SelectElementTileTarget(element, range);
+        });
+
+        // Avatar Transform: { "type": "avatar_transform", "turns": n, "bonus_damage": m, "armor": a, "bonus_speed": s }
+        RegisterEffect("avatar_transform", n =>
+        {
+            int turns = n.TryGetProperty("turns", out var t) ? t.GetInt32() : 3;
+            int bonus = n.TryGetProperty("bonus_damage", out var b) ? b.GetInt32() : 3;
+            int armor = n.TryGetProperty("armor", out var a) ? a.GetInt32() : 7;
+            int speed = n.TryGetProperty("bonus_speed", out var sp) ? sp.GetInt32() : 0;
+            return new AvatarTransformEffect(turns, bonus, armor, speed).WithTag("Transform");
+        });
+
+        // Create Maelstrom: { "type": "create_maelstrom", "radius": n, "damage": m, "turns": t, "freezes": bool }
+        RegisterEffect("create_maelstrom", n =>
+        {
+            int radius = n.TryGetProperty("radius", out var r) ? r.GetInt32() : 3;
+            int damage = n.TryGetProperty("damage", out var d) ? d.GetInt32() : 2;
+            int turns = n.TryGetProperty("turns", out var t) ? t.GetInt32() : 3;
+            bool freezes = n.TryGetProperty("freezes", out var f) && f.GetBoolean();
+            return new CreateMaelstromEffect(radius, damage, turns, freezes).WithTag("Terrain");
+        });
+
     }
 }
 
@@ -351,6 +544,18 @@ public static class JsonCardLoader
                     tagList.Add(tagStr);
             }
             half.Tags = tagList.ToArray();
+        }
+
+        if (halfNode.TryGetProperty("requires", out var reqElement)
+            && reqElement.ValueKind == JsonValueKind.Array)
+        {
+            var reqList = new List<string>();
+            foreach (var r in reqElement.EnumerateArray())
+            {
+                var rs = r.GetString();
+                if (!string.IsNullOrEmpty(rs)) reqList.Add(rs);
+            }
+            half.Requirements = reqList.ToArray();
         }
 
         if (halfNode.TryGetProperty("channel", out var chan))

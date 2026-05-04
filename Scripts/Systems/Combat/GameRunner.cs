@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public partial class GameRunner : Node3D
 {
@@ -73,6 +74,7 @@ public partial class GameRunner : Node3D
         }
 
         SpawnTestUnits();
+        RegisterSummonHandler();
 
         // Wire up helper nodes
         deckManager = GetNodeOrNull<DeckManager>("../Player/DeckManager");
@@ -477,6 +479,13 @@ public partial class GameRunner : Node3D
         var tileData = grid.GetTile(tileView.Axial);
         if (tileData == null) return;
 
+        if (selectedUnit != null && !selectedUnit.CanMove())
+        {
+            GD.Print($"{selectedUnit.Name} cannot move!");
+            combatUI?.AppendActionLog($"{selectedUnit.Name} is immobilized!");
+            return;
+        }
+
         if (selectedUnit.TryMoveTo(grid, tileData))
         {
             GD.Print($"{selectedUnit.Name} moved to {tileData.Axial}");
@@ -516,13 +525,11 @@ public partial class GameRunner : Node3D
 
         foreach (var unit in playerUnits)
         {
-            if (unit == null || !IsInstanceValid(unit) || !unit.Stats.IsAlive)
-                continue;
+            if (unit == null || !IsInstanceValid(unit) || !unit.Stats.IsAlive) continue;
             unit.StartTurn();
             unit.TickStatuses();
             unit.Attunement?.Decay();
 
-            // Draw cards for EVERY living wizard
             if (unit.DeckData != null)
             {
                 var drawn = unit.DeckData.DrawToFull();
@@ -531,10 +538,28 @@ public partial class GameRunner : Node3D
             }
         }
 
-        // Hazardous tile damage
+        // Tick persistent effects AFTER units have started their turn
+        if (State.ActiveEffects != null)
+        {
+            foreach (var effect in State.ActiveEffects.ToList())
+            {
+                effect.Tick(State);
+                if (effect.IsExpired)
+                    State.ActiveEffects.Remove(effect);
+            }
+        }
+
         ApplyHazardDamage(playerUnits);
 
-        // Auto-select first living unit (shows their hand + attunement)
+        // Cleanups (imbue path callbacks, etc.)
+        if (State.OnTurnEndCleanups != null)
+        {
+            foreach (var cleanup in State.OnTurnEndCleanups)
+                cleanup();
+            State.OnTurnEndCleanups.Clear();
+        }
+
+        // Auto-select first living unit
         selectedUnit = null;
         inspectedEnemyUnit = null;
         ClearMoveTiles();
@@ -588,6 +613,21 @@ public partial class GameRunner : Node3D
         }
 
         ApplyHazardDamage(enemyUnits);
+
+        if (State.ActiveEffects != null)
+        {
+            foreach (var effect in State.ActiveEffects.ToList())
+            {
+                // Only tick zone effects, not player auras
+                if (effect is MaelstromEffect)
+                {
+                    effect.Tick(State);
+                    if (effect.IsExpired)
+                        State.ActiveEffects.Remove(effect);
+                }
+            }
+        }
+
         PruneDeadUnits();
 
         GD.Print("=== Enemy Turn Start ===");
@@ -596,7 +636,7 @@ public partial class GameRunner : Node3D
 
         await RunEnemyTurn();
 
-        PruneDeadUnits();   // ← ADD THIS before CheckCombatEnd
+        PruneDeadUnits();
 
         if (CheckCombatEnd()) return;
 
@@ -609,6 +649,12 @@ public partial class GameRunner : Node3D
         foreach (var enemy in enemyUnits)
         {
             if (enemy == null || !enemy.Stats.IsAlive) continue;
+            if (!enemy.CanAct())
+            {
+                GD.Print($"{enemy.Name} is frozen — skipping turn.");
+                combatUI?.AppendActionLog($"{enemy.Name} is frozen!");
+                continue;
+            }
 
             var target = FindNearestPlayerUnit(enemy);
             if (target == null) continue;
@@ -1014,12 +1060,208 @@ public partial class GameRunner : Node3D
         return best;
     }
 
+        private void RegisterSummonHandler()
+    {
+        State.OnSummonRequested = (unitKind, tile, teamId) =>
+        {
+            // Look up what to spawn based on unitKind
+            PackedScene scene = null;
+            int hp = 10;
+            int speed = 0;
+            int armor = 0;
+            bool isPlayerControlled = (teamId == 0);
+
+            switch (unitKind.ToLowerInvariant())
+            {
+                case "stone_pillar":
+                case "boulder":
+                    scene = DummyUnitScene;
+                    hp = 12;
+                    speed = 0; 
+                    armor = 5;
+                    break;
+
+                case "earth_elemental":
+                    scene = DummyUnitScene;
+                    hp = 16;
+                    speed = 1;
+                    armor = 0;
+                    break;
+                case "earth_elemental_armored":
+                    scene = DummyUnitScene;
+                    hp = 16;
+                    speed = 1;
+                    armor = 3;
+                    break;
+
+                case "colossus":
+                    scene = DummyUnitScene;
+                    hp = 30;
+                    speed = 1;
+                    armor = 5;
+                    // TODO Phase 2: Colossus should absorb imbued tiles as it moves,
+                    // gaining +2 DMG per Fire, +2 Armor per Stone, +1 SPD per Storm.
+                    // Requires OnTileLeft callback and a ColossusBehavior component.
+                    break;
+
+                case "colossus_empowered": // channel version
+                    scene = DummyUnitScene;
+                    hp = 30;
+                    speed = 1;
+                    armor = 8; // pre-charged with more armor
+                    break;
+
+                default:
+                    GD.PrintErr($"[Summon] Unknown unit kind: {unitKind}");
+                    return null;
+            }
+
+            if (scene == null) return null;
+
+            var unit = scene.Instantiate<Unit>();
+            unit.IsPlayerControlled = isPlayerControlled;
+            unit.TeamId = teamId;
+            unit.StartMaxHealth = hp;
+            unit.StartHealth = hp;
+            unit.StartBaseSpeed = speed;
+            unit.StartMaxMana = 0;
+            unit.StartMana = 0;
+            unit.StartArmor = armor;
+            unit.StartShield = 0;
+
+            AddChild(unit);
+            unit.PlaceOnTile(tile);
+
+            // Name it
+            string suffix = unitKind.Replace("_", " ");
+            suffix = char.ToUpper(suffix[0]) + suffix.Substring(1);
+            unit.Name = suffix;
+            unit.RefreshNameLabel();
+
+            // Color: friendly summons are blue-ish, pillars are grey
+            if (unitKind.Contains("pillar") || unitKind.Contains("boulder"))
+                unit.SetBodyColor(new Color(0.5f, 0.45f, 0.35f)); // stone grey-brown
+            else if (isPlayerControlled)
+                unit.SetBodyColor(new Color(0.3f, 0.6f, 0.9f)); // friendly blue
+            else
+                unit.SetBodyColor(new Color(0.9f, 0.3f, 0.3f)); // enemy red
+
+            // Add to the appropriate unit list
+            if (isPlayerControlled)
+                playerUnits.Add(unit);
+            else
+                enemyUnits.Add(unit);
+
+            State.UnitsInPlay.Add(unit);
+
+            GD.Print($"[Summon] Spawned {suffix} at {tile.Axial} (HP:{hp} SPD:{speed} ARM:{armor})");
+            return unit;
+        };
+    }
+
     // ═══════════════════════════════════════════════════════════════════════
     // Casting / card logic
     // ═══════════════════════════════════════════════════════════════════════
 
+    private bool CheckCastRequirements(CardHalf half, TargetSet targets, out string failReason)
+    {
+        failReason = null;
+        if (half.Requirements == null || half.Requirements.Length == 0)
+            return true;
+
+        foreach (var req in half.Requirements)
+        {
+            switch (req.ToLowerInvariant())
+            {
+                case "stone_tile":
+                    if (!TargetHasTileType(targets, TileTerrainType.Stone, TileElementType.Earth))
+                    {
+                        failReason = "Requires a stone tile!";
+                        return false;
+                    }
+                    break;
+
+                case "ice_tile":
+                    if (!TargetHasTileType(targets, TileTerrainType.Ice, TileElementType.Frost))
+                    {
+                        failReason = "Requires an ice tile!";
+                        return false;
+                    }
+                    break;
+
+                case "fire_tile":
+                    if (!TargetHasTileType(targets, TileTerrainType.Lava, TileElementType.Fire))
+                    {
+                        failReason = "Requires a fire tile!";
+                        return false;
+                    }
+                    break;
+
+                case "storm_tile":
+                    if (!TargetHasTileType(targets, TileTerrainType.Grass, TileElementType.Lightning))
+                    {
+                        failReason = "Requires a storm tile!";
+                        return false;
+                    }
+                    break;
+
+                case "empty_tile":
+                    if (!TargetHasEmptyTile(targets))
+                    {
+                        failReason = "Requires an empty tile!";
+                        return false;
+                    }
+                    break;
+            }
+        }
+
+        return true;
+    }
+
+    private bool TargetHasTileType(TargetSet targets, TileTerrainType terrain, TileElementType element)
+    {
+        if (targets == null) return false;
+
+        foreach (var obj in targets.Items)
+        {
+            TileData tile = null;
+            if (obj is TileData td) tile = td;
+            else if (obj is HexTile tv) tile = grid.GetTile(tv.Axial);
+            else if (obj is Unit u && u.CurrentTile != null) tile = u.CurrentTile;
+            else if (obj is Entity e)
+            {
+                // Self-targeting: check the caster's tile
+                if (selectedUnit?.CurrentTile != null)
+                    tile = selectedUnit.CurrentTile;
+            }
+
+            if (tile == null) continue;
+            if (tile.TerrainType == terrain || tile.ElementType == element)
+                return true;
+        }
+
+        return false;
+    }
+
+    private bool TargetHasEmptyTile(TargetSet targets)
+    {
+        if (targets == null) return false;
+
+        foreach (var obj in targets.Items)
+        {
+            TileData tile = null;
+            if (obj is TileData td) tile = td;
+            else if (obj is HexTile tv) tile = grid.GetTile(tv.Axial);
+
+            if (tile != null && tile.Occupant == null) return true;
+        }
+
+        return false;
+    }
+
     private void OnCardDroppedOnTile(CardUi cardUi, bool isTop, HexTile tile)
     {
+        // --- Basic checks ---
         if (isInDeploymentPhase) { GD.Print("Cannot cast during deployment."); return; }
 
         var half = isTop ? cardUi.TopHalf : cardUi.BottomHalf;
@@ -1027,16 +1269,41 @@ public partial class GameRunner : Node3D
 
         GD.Print($"Attempt cast {half.Name} cost? {(half.Costs.Length > 0 ? half.Costs[0].GetType().Name : "none")} mana={State.Mana[Me]}");
 
+        if (selectedUnit != null && !selectedUnit.CanAct())
+        {
+            GD.Print($"{selectedUnit.Name} is frozen and cannot act!");
+            combatUI?.AppendActionLog($"{selectedUnit.Name} is frozen!");
+            return;
+        }
+
         var targets = new TargetSet();
         targets.Items.Add(tile);
 
+        if (!CheckCastRequirements(half, targets, out var failMsg))
+        {
+            GD.Print($"Cast blocked: {failMsg}");
+            combatUI?.AppendActionLog(failMsg);
+            return;
+        }
+
+        // Try to cast the card half on the target tile
         var ok = Rules.TryCastWithTargets(half, State, Me, targets, cardUi.CardInstance);
         GD.Print($"Cast result={ok} manaNow={State.Mana[Me]}");
 
-        
-
         if (ok)
         {
+
+            // --- Avatar aura: notify on cast, apply bonus damage ---
+            if (State.ActiveEffects != null && selectedUnit != null)
+            {
+                foreach (var effect in State.ActiveEffects)
+                {
+                    if (effect is AvatarAuraEffect aura && effect.Owner == Me && !effect.IsExpired)
+                    {
+                        aura.OnSpellCast(State, selectedUnit, targets);
+                    }
+                }
+            }
             // --- Attunement integration ---
             if (selectedUnit != null &&
                 selectedUnit.School == CardSchool.Elementalist &&
@@ -1072,6 +1339,19 @@ public partial class GameRunner : Node3D
                 // 4. Refresh
                 schoolAttunementUI?.Refresh();
                 RefreshAllUI();
+            }
+
+            // Set last cast element for potential synergies
+            if (half.Tags != null)
+            {
+                foreach (var tag in half.Tags)
+                {
+                    if (ElementalAttunement.TryParseTag(tag, out var elem))
+                    {
+                        selectedUnit.LastCastElement = elem;
+                        break; // take the first element tag
+                    }
+                }
             }
 
             // Resolve the stack immediatly

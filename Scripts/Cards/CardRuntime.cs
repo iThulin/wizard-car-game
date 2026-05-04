@@ -40,6 +40,7 @@ public sealed class CardHalf : Ability
     public CardHalf ChannelVariant; // optional
     public string RulesText = "";
     public CardSchool School;
+    public string[] Requirements;
 
     /// <summary>
     /// Element tags for this spell half (e.g. "fire", "ice", "storm", "earth").
