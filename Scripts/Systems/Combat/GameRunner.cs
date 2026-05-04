@@ -16,6 +16,7 @@ public partial class GameRunner : Node3D
     private Entity Me, Opp;
     private List<Card>       _compiled = new();
     private DeckManager      deckManager;
+    private DeckUiManager  deckUiManager;
     private CardDropHandler  dropper;
     private HexGridManager   grid;
     private CombatUI         combatUI;
@@ -43,6 +44,10 @@ public partial class GameRunner : Node3D
     private HashSet<Vector2I>  currentMoveTiles   = new();
     private Unit _hoveredUnit = null;
     private SchoolAttunementUI schoolAttunementUI;
+
+    // ── Tile highlighting state ─────────────────────────────────────────────
+    private HashSet<Vector2I> _targetHighlightTiles = new();
+    private CardHalf _lastHighlightedHalf = null;
 
     // ── Phase ───────────────────────────────────────────────────────────────
     public enum CombatPhase { Deployment, PlayerTurn, EnemyTurn, Victory, Defeat }
@@ -83,6 +88,13 @@ public partial class GameRunner : Node3D
 
         if (deckManager != null)
             CallDeferred(nameof(InitializeUnitDecks));
+
+        // Assign DeckUiManager separately
+        deckUiManager = GetNodeOrNull<DeckUiManager>("../DeckUI/DeckUIManager");
+        if (deckUiManager != null)
+            deckUiManager.CardHalfHovered += OnCardHalfHovered;
+        else
+            GD.PrintErr("DeckUiManager not found. Target highlighting won't work.");
 
         dropper = GetNodeOrNull<CardDropHandler>("../CardDropHandler");
         if (dropper == null)
@@ -443,6 +455,7 @@ public partial class GameRunner : Node3D
 
         selectedUnit = unit;
         selectedUnit.SetSelected(true);
+        ClearTargetHighlight();
 
         ClearMoveTiles();
         var reachable = grid.GetReachableTiles(unit);
@@ -1259,9 +1272,25 @@ public partial class GameRunner : Node3D
         return false;
     }
 
+    private void OnCardHalfHovered(CardUi cardUi, bool isTop, bool isEntering)
+    {
+        if (currentPhase != CombatPhase.PlayerTurn) return;
+
+        if (isEntering)
+        {
+            var half = isTop ? cardUi.TopHalf : cardUi.BottomHalf;
+            ShowTargetHighlight(half);
+        }
+        else
+        {
+            ClearTargetHighlight();
+        }
+    }
+
     private void OnCardDroppedOnTile(CardUi cardUi, bool isTop, HexTile tile)
     {
         // --- Basic checks ---
+        ClearTargetHighlight();
         if (isInDeploymentPhase) { GD.Print("Cannot cast during deployment."); return; }
 
         var half = isTop ? cardUi.TopHalf : cardUi.BottomHalf;
@@ -1413,6 +1442,120 @@ public partial class GameRunner : Node3D
             GD.Print($"[{i}] {c.CardName}  (Top:{c.TopHalf?.Name ?? "-"} | Bottom:{c.BottomHalf?.Name ?? "-"})");
         }
     }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Target highlighting logic
+    // ═══════════════════════════════════════════════════════════════════════
+
+    private void ShowTargetHighlight(CardHalf half)
+    {
+        ClearTargetHighlight();
+        if (half == null || selectedUnit == null || grid == null) return;
+
+        _lastHighlightedHalf = half;
+        var highlightCoords = GetValidTargetCoords(half);
+
+        foreach (var coord in highlightCoords)
+        {
+            _targetHighlightTiles.Add(coord);
+            grid.GetTileView(coord)?.SetTargetHighlight(true);
+        }
+    }
+
+    private void ClearTargetHighlight()
+    {
+        foreach (var coord in _targetHighlightTiles)
+            grid.GetTileView(coord)?.SetTargetHighlight(false);
+        _targetHighlightTiles.Clear();
+        _lastHighlightedHalf = null;
+    }
+
+    private HashSet<Vector2I> GetValidTargetCoords(CardHalf half)
+    {
+        var coords = new HashSet<Vector2I>();
+        if (half?.Targeting == null || selectedUnit?.CurrentTile == null) return coords;
+
+        var center = selectedUnit.CurrentTile.Axial;
+        var targeter = half.Targeting;
+
+        // Determine range from targeter type and highlight accordingly
+        if (targeter is SelectUnitTarget ut)
+        {
+            // Highlight tiles with enemies in range
+            foreach (var unit in State.UnitsInPlay)
+            {
+                if (unit == null || !unit.Stats.IsAlive || unit.CurrentTile == null) continue;
+                if (ut.enemyOnly && unit.TeamId == 0) continue;
+                if (grid.Distance(center, unit.CurrentTile.Axial) <= ut.range)
+                    coords.Add(unit.CurrentTile.Axial);
+            }
+        }
+        else if (targeter is SelectTileTarget tt)
+        {
+            // Highlight all tiles in range
+            foreach (var kvp in grid.Tiles)
+            {
+                if (grid.Distance(center, kvp.Key) <= tt.range)
+                    coords.Add(kvp.Key);
+            }
+        }
+        else if (targeter is SelectAreaTarget at)
+        {
+            // Highlight tiles in AoE radius
+            foreach (var kvp in grid.Tiles)
+            {
+                if (grid.Distance(center, kvp.Key) <= at.Radius)
+                    coords.Add(kvp.Key);
+            }
+        }
+        else if (targeter is SelectSelfTarget || targeter is SelectGlobalTarget)
+        {
+            // Just highlight the caster's tile
+            coords.Add(center);
+        }
+        else if (targeter is SelectElementTileTarget et)
+        {
+            // Highlight matching element tiles
+            TileElementType needed = et.Element.ToLowerInvariant() switch
+            {
+                "fire"  => TileElementType.Fire,
+                "ice"   => TileElementType.Frost,
+                "storm" => TileElementType.Lightning,
+                "stone" => TileElementType.Earth,
+                _ => TileElementType.None
+            };
+            foreach (var kvp in grid.Tiles)
+                if (kvp.Value?.ElementType == needed)
+                    coords.Add(kvp.Key);
+        }
+        else if (targeter is SelectConeTarget ct)
+        {
+            // Highlight cone in direction of nearest enemy as preview
+            Unit nearest = null;
+            int nearestDist = int.MaxValue;
+            foreach (var unit in State.UnitsInPlay)
+            {
+                if (unit == null || !unit.Stats.IsAlive || unit.CurrentTile == null) continue;
+                if (unit.TeamId == 0) continue;
+                int dist = grid.Distance(center, unit.CurrentTile.Axial);
+                if (dist < nearestDist) { nearestDist = dist; nearest = unit; }
+            }
+            if (nearest != null)
+            {
+                // Let the targeter build the cone
+                State.RetargetOrigin = new TargetSet();
+                State.RetargetOrigin.Items.Add(nearest);
+                if (ct.Select(State, Me, out var ts))
+                    foreach (var obj in ts.Items)
+                        if (obj is Unit u && u.CurrentTile != null)
+                            coords.Add(u.CurrentTile.Axial);
+                State.RetargetOrigin = null;
+            }
+        }
+
+        return coords;
+    }
+
 
     // ═══════════════════════════════════════════════════════════════════════
     // Unchanged/old code below

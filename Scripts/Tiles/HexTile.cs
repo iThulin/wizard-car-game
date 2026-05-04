@@ -19,6 +19,10 @@ public partial class HexTile : Node3D
     private bool moveHighlighted = false;
     private Color moveHighlightColor = new Color(0.2f, 0.6f, 1.0f, 1f);
 
+    private bool targetHighlighted = false;
+    private Color targetHighlightColor = new Color(1.0f, 0.4f, 0.4f, 1f); // red-orange for enemies
+    // or new Color(0.4f, 1.0f, 0.9f, 1f) for a teal neutral highlight
+
     public override void _Ready()
     {
         meshInstance = GetNode<MeshInstance3D>("HexMesh");
@@ -50,6 +54,9 @@ public partial class HexTile : Node3D
 
         if (moveHighlighted)
             c = c.Lerp(moveHighlightColor, 0.45f);
+
+        if (targetHighlighted) 
+            c = c.Lerp(targetHighlightColor, 0.5f);
 
         c = c.Lerp(HoverColor, 0.5f);
 
@@ -139,6 +146,12 @@ public partial class HexTile : Node3D
         RefreshVisualState();
     }
 
+    public void SetTargetHighlight(bool enabled)
+    {
+        targetHighlighted = enabled;
+        RefreshVisualState();
+    }
+
     public void RefreshVisualState()
     {
         if (material == null)
@@ -151,6 +164,9 @@ public partial class HexTile : Node3D
 
         if (moveHighlighted)
             finalColor = finalColor.Lerp(moveHighlightColor, 0.45f);
+
+        if (targetHighlighted)
+            finalColor = finalColor.Lerp(targetHighlightColor, 0.5f);
 
         material.AlbedoColor = finalColor;
     }

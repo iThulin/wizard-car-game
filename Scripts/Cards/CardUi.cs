@@ -30,6 +30,7 @@ public partial class CardUi : Control
     private string _pendingHalf = "none";
     private float _halfTimer = 0f;
     private const float HalfDebounce = 0.08f;
+    private bool _lastHoveredTop = true;
 
     // ── Split view panels (for tinting) ──────────────────────────────
     private Control _splitView;
@@ -83,6 +84,7 @@ public partial class CardUi : Control
     // Signals
     [Signal] public delegate void CardDroppedEventHandler();
     [Signal] public delegate void CardHalfSelectedEventHandler(CardUi cardUi, bool isTop);
+    [Signal] public delegate void CardHalfHoveredEventHandler(CardUi cardUi, bool isTop, bool isEntering);
 
     // Drag handling
     private bool _dragPressed = false;
@@ -568,9 +570,14 @@ public partial class CardUi : Control
         ZIndex = 100;
 
         _deckUiManager?.OnCardHoverChanged(this, true);
+        EmitSignal(SignalName.CardHalfHovered, this, _lastHoveredTop, true);
     }
 
-    private void OnCardMaybeExit() => CallDeferred(nameof(CheckCardExit));
+    private void OnCardMaybeExit()
+    {
+        CallDeferred(nameof(CheckCardExit));
+        EmitSignal(SignalName.CardHalfHovered, this, _lastHoveredTop, false);
+    }
 
     private void CheckCardExit()
     {
@@ -730,6 +737,9 @@ public partial class CardUi : Control
                 GetViewport().SetInputAsHandled();
             }
         }
+
+        bottomArea.MouseEntered += () => { _lastHoveredTop = false; OnCardEnter(); EmitSignal(SignalName.CardHalfHovered, this, _lastHoveredTop, true); };
+        topArea.MouseEntered += () => { _lastHoveredTop = true; OnCardEnter(); EmitSignal(SignalName.CardHalfHovered, this, _lastHoveredTop, true); };
     }
 
     private void PlayGrabAnimation()

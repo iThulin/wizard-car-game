@@ -273,5 +273,11 @@ public partial class DeckUiManager : Node2D
 		}
 	}
 
+	[Signal] public delegate void CardHalfHoveredEventHandler(CardUi cardUi, bool isTop, bool isEntering);
+
+	private void OnCardHalfHovered(CardUi cardUi, bool isTop, bool isEntering)
+	{
+		EmitSignal(SignalName.CardHalfHovered, cardUi, isTop, isEntering);
+	}
 	
 }
