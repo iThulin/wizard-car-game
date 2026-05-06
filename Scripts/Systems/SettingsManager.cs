@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 /// <summary>
 /// Autoload singleton that loads, saves, and applies display/UI settings.
-/// Settings persist to user://settings.cfg (per-user save folder, survives reinstalls).
 /// </summary>
 public partial class SettingsManager : Node
 {
@@ -11,14 +10,17 @@ public partial class SettingsManager : Node
 
     private const string ConfigPath = "user://settings.cfg";
 
-    // ── Public state (read by the menu UI) ──────────────────────────────────
+    // ── Whether we're inside the Godot editor's embedded player ────────────
+    // True when running via F5 inside the editor. False in exported builds.
+    private static bool IsEmbedded => OS.HasFeature("editor");
+
+    // ── Public state ────────────────────────────────────────────────────────
     public Vector2I Resolution { get; private set; } = new Vector2I(1920, 1080);
     public DisplayServer.WindowMode WindowMode { get; private set; } = DisplayServer.WindowMode.Windowed;
     public bool VSync { get; private set; } = true;
-    public float UIScale { get; private set; } = 1.0f;        // 0.75 .. 1.5
-    public float MasterVolume { get; private set; } = 1.0f;   // 0.0 .. 1.0
+    public float UIScale { get; private set; } = 1.0f;
+    public float MasterVolume { get; private set; } = 1.0f;
 
-    // Resolutions offered in the dropdown. Tweak this list to taste.
     public static readonly List<Vector2I> SupportedResolutions = new()
     {
         new Vector2I(1280, 720),
@@ -26,8 +28,8 @@ public partial class SettingsManager : Node
         new Vector2I(1600, 900),
         new Vector2I(1920, 1080),
         new Vector2I(2560, 1440),
-        new Vector2I(3440, 1440),   // ultrawide
-        new Vector2I(3840, 2160),   // 4K
+        new Vector2I(3440, 1440),
+        new Vector2I(3840, 2160),
     };
 
     public override void _Ready()
@@ -36,10 +38,13 @@ public partial class SettingsManager : Node
         ProcessMode = ProcessModeEnum.Always;
         LoadSettings();
         ApplyAllSettings();
+
+        if (IsEmbedded)
+            GD.Print("[Settings] Running in editor — window resize/move skipped.");
     }
 
     // ════════════════════════════════════════════════════════════════════════
-    //  Apply settings to the running engine
+    //  Apply
     // ════════════════════════════════════════════════════════════════════════
 
     public void ApplyAllSettings()
@@ -62,7 +67,6 @@ public partial class SettingsManager : Node
     {
         WindowMode = mode;
         ApplyWindowMode();
-        // Re-apply resolution because window mode changes can reset window size.
         if (mode == DisplayServer.WindowMode.Windowed)
             ApplyResolution();
         SaveSettings();
@@ -89,16 +93,15 @@ public partial class SettingsManager : Node
         SaveSettings();
     }
 
-    // ── Apply helpers ───────────────────────────────────────────────────────
+    // ── Apply helpers ────────────────────────────────────────────────────────
 
     private void ApplyResolution()
     {
-        // Only resize the window when we're in windowed mode. Fullscreen sizes
-        // itself to the monitor.
+        // The embedded player can't be resized — skip silently.
+        if (IsEmbedded) return;
         if (WindowMode != DisplayServer.WindowMode.Windowed) return;
 
         DisplayServer.WindowSetSize(Resolution);
-        // Re-center the window so it doesn't drift off-screen on big res changes.
         var screenSize = DisplayServer.ScreenGetSize();
         var pos = (screenSize - Resolution) / 2;
         DisplayServer.WindowSetPosition(pos);
@@ -106,6 +109,9 @@ public partial class SettingsManager : Node
 
     private void ApplyWindowMode()
     {
+        // The embedded player only supports Windowed mode — skip silently.
+        if (IsEmbedded) return;
+
         DisplayServer.WindowSetMode(WindowMode);
     }
 
@@ -117,8 +123,6 @@ public partial class SettingsManager : Node
 
     private void ApplyUIScale()
     {
-        // content_scale_factor multiplies all UI sizes on top of the stretch mode.
-        // Works perfectly with stretch mode = canvas_items.
         GetTree().Root.ContentScaleFactor = UIScale;
     }
 
@@ -127,7 +131,6 @@ public partial class SettingsManager : Node
         int masterBus = AudioServer.GetBusIndex("Master");
         if (masterBus >= 0)
         {
-            // Convert linear 0..1 to dB. -80 dB is effectively silent.
             float db = MasterVolume <= 0.0001f ? -80f : Mathf.LinearToDb(MasterVolume);
             AudioServer.SetBusVolumeDb(masterBus, db);
         }
@@ -154,9 +157,9 @@ public partial class SettingsManager : Node
         int mode = (int)cfg.GetValue("display", "window_mode", (int)DisplayServer.WindowMode.Windowed);
         WindowMode = (DisplayServer.WindowMode)mode;
 
-        VSync         = (bool)cfg.GetValue("display", "vsync", true);
-        UIScale       = (float)cfg.GetValue("ui", "scale", 1.0f);
-        MasterVolume  = (float)cfg.GetValue("audio", "master_volume", 1.0f);
+        VSync        = (bool)cfg.GetValue("display", "vsync", true);
+        UIScale      = (float)cfg.GetValue("ui", "scale", 1.0f);
+        MasterVolume = (float)cfg.GetValue("audio", "master_volume", 1.0f);
 
         GD.Print($"[Settings] Loaded — {Resolution.X}x{Resolution.Y}, mode={WindowMode}, " +
                  $"vsync={VSync}, ui_scale={UIScale}, vol={MasterVolume}");

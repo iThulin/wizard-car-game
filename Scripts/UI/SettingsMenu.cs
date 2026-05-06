@@ -3,22 +3,12 @@ using Godot;
 /// <summary>
 /// Controller for the settings menu UI.
 /// 
-/// Hooks up all the controls to SettingsManager. Reads current values on _Ready,
-/// pushes changes back through SettingsManager so they apply + persist.
-/// 
-/// Expects a scene structure matching SettingsMenu.tscn (paths below).
+/// FIX vs first version: uses FindChild() by name rather than fragile NodePath
+/// strings, so it works regardless of how the scene tree is nested (which it is
+/// — there's a SettingsPanelWrapper CenterContainer between VBox and Settings).
 /// </summary>
 public partial class SettingsMenu : Control
 {
-    [Export] public NodePath ResolutionDropdownPath = "Margin/VBox/Settings/ResolutionRow/ResolutionDropdown";
-    [Export] public NodePath WindowModeDropdownPath  = "Margin/VBox/Settings/WindowModeRow/WindowModeDropdown";
-    [Export] public NodePath VSyncCheckPath          = "Margin/VBox/Settings/VSyncRow/VSyncCheck";
-    [Export] public NodePath UIScaleSliderPath       = "Margin/VBox/Settings/UIScaleRow/UIScaleSlider";
-    [Export] public NodePath UIScaleValueLabelPath   = "Margin/VBox/Settings/UIScaleRow/UIScaleValue";
-    [Export] public NodePath VolumeSliderPath        = "Margin/VBox/Settings/VolumeRow/VolumeSlider";
-    [Export] public NodePath VolumeValueLabelPath    = "Margin/VBox/Settings/VolumeRow/VolumeValue";
-    [Export] public NodePath BackButtonPath          = "Margin/VBox/TopBar/BackButton";
-
     /// <summary>Optional: scene to return to when Back is pressed. If empty, hides the menu.</summary>
     [Export] public string ReturnScenePath = "";
 
@@ -33,14 +23,23 @@ public partial class SettingsMenu : Control
 
     public override void _Ready()
     {
-        _resDropdown    = GetNode<OptionButton>(ResolutionDropdownPath);
-        _modeDropdown   = GetNode<OptionButton>(WindowModeDropdownPath);
-        _vsyncCheck     = GetNode<CheckBox>(VSyncCheckPath);
-        _uiScaleSlider  = GetNode<HSlider>(UIScaleSliderPath);
-        _uiScaleValue   = GetNode<Label>(UIScaleValueLabelPath);
-        _volumeSlider   = GetNode<HSlider>(VolumeSliderPath);
-        _volumeValue    = GetNode<Label>(VolumeValueLabelPath);
-        _backButton     = GetNode<Button>(BackButtonPath);
+        // Find children by name (recursive). This is robust to scene-tree nesting
+        // changes — much better than hardcoded NodePath strings.
+        _resDropdown    = FindChild("ResolutionDropdown",  true) as OptionButton;
+        _modeDropdown   = FindChild("WindowModeDropdown",  true) as OptionButton;
+        _vsyncCheck     = FindChild("VSyncCheck",          true) as CheckBox;
+        _uiScaleSlider  = FindChild("UIScaleSlider",       true) as HSlider;
+        _uiScaleValue   = FindChild("UIScaleValue",        true) as Label;
+        _volumeSlider   = FindChild("VolumeSlider",        true) as HSlider;
+        _volumeValue    = FindChild("VolumeValue",         true) as Label;
+        _backButton     = FindChild("BackButton",          true) as Button;
+
+        if (_resDropdown   == null) GD.PrintErr("[SettingsMenu] ResolutionDropdown not found");
+        if (_modeDropdown  == null) GD.PrintErr("[SettingsMenu] WindowModeDropdown not found");
+        if (_vsyncCheck    == null) GD.PrintErr("[SettingsMenu] VSyncCheck not found");
+        if (_uiScaleSlider == null) GD.PrintErr("[SettingsMenu] UIScaleSlider not found");
+        if (_volumeSlider  == null) GD.PrintErr("[SettingsMenu] VolumeSlider not found");
+        if (_backButton    == null) GD.PrintErr("[SettingsMenu] BackButton not found");
 
         PopulateResolutionDropdown();
         PopulateWindowModeDropdown();
@@ -54,6 +53,7 @@ public partial class SettingsMenu : Control
 
     private void PopulateResolutionDropdown()
     {
+        if (_resDropdown == null) return;
         _resDropdown.Clear();
         for (int i = 0; i < SettingsManager.SupportedResolutions.Count; i++)
         {
@@ -64,9 +64,10 @@ public partial class SettingsMenu : Control
 
     private void PopulateWindowModeDropdown()
     {
+        if (_modeDropdown == null) return;
         _modeDropdown.Clear();
         _modeDropdown.AddItem("Windowed",   (int)DisplayServer.WindowMode.Windowed);
-        _modeDropdown.AddItem("Borderless", (int)DisplayServer.WindowMode.Maximized); // borderless-ish; see note
+        _modeDropdown.AddItem("Borderless", (int)DisplayServer.WindowMode.Maximized);
         _modeDropdown.AddItem("Fullscreen", (int)DisplayServer.WindowMode.Fullscreen);
         _modeDropdown.AddItem("Exclusive",  (int)DisplayServer.WindowMode.ExclusiveFullscreen);
     }
@@ -85,24 +86,28 @@ public partial class SettingsMenu : Control
             return;
         }
 
-        // Resolution
-        int resIdx = SettingsManager.SupportedResolutions.IndexOf(sm.Resolution);
-        if (resIdx < 0) resIdx = 3; // default to 1920x1080 if current res isn't in the list
-        _resDropdown.Selected = resIdx;
-
-        // Window mode
-        for (int i = 0; i < _modeDropdown.ItemCount; i++)
+        if (_resDropdown != null)
         {
-            if (_modeDropdown.GetItemId(i) == (int)sm.WindowMode)
+            int resIdx = SettingsManager.SupportedResolutions.IndexOf(sm.Resolution);
+            if (resIdx < 0) resIdx = 3;
+            _resDropdown.Selected = resIdx;
+        }
+
+        if (_modeDropdown != null)
+        {
+            for (int i = 0; i < _modeDropdown.ItemCount; i++)
             {
-                _modeDropdown.Selected = i;
-                break;
+                if (_modeDropdown.GetItemId(i) == (int)sm.WindowMode)
+                {
+                    _modeDropdown.Selected = i;
+                    break;
+                }
             }
         }
 
-        _vsyncCheck.ButtonPressed = sm.VSync;
-        _uiScaleSlider.Value      = sm.UIScale;
-        _volumeSlider.Value       = sm.MasterVolume;
+        if (_vsyncCheck    != null) _vsyncCheck.ButtonPressed = sm.VSync;
+        if (_uiScaleSlider != null) _uiScaleSlider.Value      = sm.UIScale;
+        if (_volumeSlider  != null) _volumeSlider.Value       = sm.MasterVolume;
 
         UpdateUIScaleLabel(sm.UIScale);
         UpdateVolumeLabel(sm.MasterVolume);
@@ -114,12 +119,12 @@ public partial class SettingsMenu : Control
 
     private void WireUpSignals()
     {
-        _resDropdown.ItemSelected   += OnResolutionSelected;
-        _modeDropdown.ItemSelected  += OnWindowModeSelected;
-        _vsyncCheck.Toggled         += OnVSyncToggled;
-        _uiScaleSlider.ValueChanged += OnUIScaleChanged;
-        _volumeSlider.ValueChanged  += OnVolumeChanged;
-        _backButton.Pressed         += OnBackPressed;
+        if (_resDropdown   != null) _resDropdown.ItemSelected   += OnResolutionSelected;
+        if (_modeDropdown  != null) _modeDropdown.ItemSelected  += OnWindowModeSelected;
+        if (_vsyncCheck    != null) _vsyncCheck.Toggled         += OnVSyncToggled;
+        if (_uiScaleSlider != null) _uiScaleSlider.ValueChanged += OnUIScaleChanged;
+        if (_volumeSlider  != null) _volumeSlider.ValueChanged  += OnVolumeChanged;
+        if (_backButton    != null) _backButton.Pressed         += OnBackPressed;
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -163,6 +168,13 @@ public partial class SettingsMenu : Control
             QueueFree();
     }
 
-    private void UpdateUIScaleLabel(float v) => _uiScaleValue.Text = $"{v * 100f:0}%";
-    private void UpdateVolumeLabel(float v)  => _volumeValue.Text  = $"{v * 100f:0}%";
+    private void UpdateUIScaleLabel(float v)
+    {
+        if (_uiScaleValue != null) _uiScaleValue.Text = $"{v * 100f:0}%";
+    }
+
+    private void UpdateVolumeLabel(float v)
+    {
+        if (_volumeValue != null) _volumeValue.Text = $"{v * 100f:0}%";
+    }
 }

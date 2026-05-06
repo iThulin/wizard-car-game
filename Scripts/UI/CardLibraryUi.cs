@@ -403,7 +403,7 @@ public partial class CardLibraryUi : Control
 
     private void OnBackPressed()
     {
-        // If we were instantiated inline (no scene change), just remove ourselves.
+        // Inline-overlay mode: PauseMenu mounted us, just remove ourselves.
         if (string.IsNullOrEmpty(ReturnScenePath) || ReturnScenePath == "__INLINE__")
         {
             QueueFree();
