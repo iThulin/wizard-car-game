@@ -63,7 +63,7 @@ public partial class CardLibraryUi : Control
         }
 
         if (_backButton != null)
-            _backButton.Pressed += () => GetTree().ChangeSceneToFile(ReturnScenePath);
+            _backButton.Pressed += OnBackPressed;
 
         // Defer the first grid build so the scroll container has its
         // final size and column calculation is correct.
@@ -399,5 +399,16 @@ public partial class CardLibraryUi : Control
         }
 
         return true;
+    }
+
+    private void OnBackPressed()
+    {
+        // If we were instantiated inline (no scene change), just remove ourselves.
+        if (string.IsNullOrEmpty(ReturnScenePath) || ReturnScenePath == "__INLINE__")
+        {
+            QueueFree();
+            return;
+        }
+        GetTree().ChangeSceneToFile(ReturnScenePath);
     }
 }

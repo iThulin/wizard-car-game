@@ -1,0 +1,139 @@
+[gd_scene format=3 uid="uid://b5mjvnlj1wvhg"]
+
+[ext_resource type="Script" path="res://Scripts/UI/PauseMenu.cs" id="1_pause"]
+
+; ── Menu container background ──────────────────────────────────────────────
+[sub_resource type="StyleBoxFlat" id="SBF_menuPanel"]
+bg_color = Color(0.06, 0.06, 0.10, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.4, 0.4, 0.5, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+
+; ══════════════════════════════════════════════════════════════════════════
+; ROOT — full-screen overlay
+; ══════════════════════════════════════════════════════════════════════════
+[node name="PauseMenu" type="Control"]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+script = ExtResource("1_pause")
+
+; ── Backdrop (semi-transparent black, dismisses on click) ──────────────────
+[node name="Backdrop" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0, 0, 0, 0.55)
+
+; ── OverlayHost — where Settings / Card Library overlays mount ────────────
+[node name="OverlayHost" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+
+; ══════════════════════════════════════════════════════════════════════════
+; MENU PANEL — centered card with the action buttons
+; ══════════════════════════════════════════════════════════════════════════
+[node name="MenuContainer" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -180.0
+offset_top = -200.0
+offset_right = 180.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+custom_minimum_size = Vector2(360, 400)
+mouse_filter = 1
+theme_override_styles/panel = SubResource("SBF_menuPanel")
+
+[node name="Margin" type="MarginContainer" parent="MenuContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="VBox" type="VBoxContainer" parent="MenuContainer/Margin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+; ── Title ─────────────────────────────────────────────────────────────────
+[node name="Title" type="Label" parent="MenuContainer/Margin/VBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Paused"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 28
+
+; ── Spacer below title ────────────────────────────────────────────────────
+[node name="TitleSpacer" type="Control" parent="MenuContainer/Margin/VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 8)
+
+; ── Buttons ───────────────────────────────────────────────────────────────
+[node name="ResumeButton" type="Button" parent="MenuContainer/Margin/VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 44)
+text = "Resume"
+
+[node name="SettingsButton" type="Button" parent="MenuContainer/Margin/VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 44)
+text = "Settings"
+
+[node name="CardLibraryButton" type="Button" parent="MenuContainer/Margin/VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 44)
+text = "Card Library"
+
+[node name="ReturnToCampusButton" type="Button" parent="MenuContainer/Margin/VBox"]
+visible = false
+layout_mode = 2
+custom_minimum_size = Vector2(0, 44)
+text = "Return to Campus (forfeit run)"
+
+[node name="ForfeitCombatButton" type="Button" parent="MenuContainer/Margin/VBox"]
+visible = false
+layout_mode = 2
+custom_minimum_size = Vector2(0, 44)
+text = "Forfeit Combat"
+
+; ── Spacer above quit ─────────────────────────────────────────────────────
+[node name="BottomSpacer" type="Control" parent="MenuContainer/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="QuitButton" type="Button" parent="MenuContainer/Margin/VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 44)
+text = "Quit to Desktop"

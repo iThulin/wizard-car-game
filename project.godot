@@ -21,6 +21,7 @@ config/features=PackedStringArray("4.6", "C#", "GL Compatibility")
 [autoload]
 
 SettingsManager="*res://Scripts/Systems/SettingsManager.cs"
+PauseManager="*res://Scripts/Systems/PauseManager.cs"
 
 [display]
 

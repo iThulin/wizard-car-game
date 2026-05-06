@@ -3,12 +3,7 @@ using System.Collections.Generic;
 
 /// <summary>
 /// Autoload singleton that loads, saves, and applies display/UI settings.
-/// 
-/// SETUP:
-///   1. Save this script as res://Scripts/Systems/SettingsManager.cs
-///   2. In Project Settings → Globals → Autoload, add this script with name "SettingsManager"
-///      so it's available everywhere as `SettingsManager.Instance`.
-///   3. Settings persist to user://settings.cfg (per-user save folder, survives reinstalls).
+/// Settings persist to user://settings.cfg (per-user save folder, survives reinstalls).
 /// </summary>
 public partial class SettingsManager : Node
 {
