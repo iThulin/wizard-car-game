@@ -11,6 +11,7 @@ public partial class OverworldHexGrid : Node2D
     [Export] public int Seed = 0;  // 0 = random
     [Export] public int GridWidth = 15;
     [Export] public int GridHeight = 15;
+    [Export] public float HexSize = 36f;
 
     // ── Runtime data ────────────────────────────────────────────────────
     private RandomNumberGenerator _rng;
@@ -34,8 +35,13 @@ public partial class OverworldHexGrid : Node2D
         else
         {
             _rng.Randomize();
-            Seed = (int)_rng.Randi(); // capture the random seed so HashCoord can use it
+            Seed = (int)_rng.Randi();
         }
+
+        // Initialize hex spacing constants from HexSize
+        _hexSize = HexSize;
+        _hexWidth = _hexSize * 1.5f;
+        _hexHeight = _hexSize * Mathf.Sqrt(3f);
 
         GenerateGrid();
     }
@@ -45,6 +51,7 @@ public partial class OverworldHexGrid : Node2D
     /// </summary>
     public void GenerateGrid()
     {
+        GD.Print($"GenerateGrid called from:\n{System.Environment.StackTrace}");
         foreach (var hex in Hexes.Values)
             hex.QueueFree();
         Hexes.Clear();
