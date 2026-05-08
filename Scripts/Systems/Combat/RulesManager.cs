@@ -84,41 +84,6 @@ public static class Rules {
         return true;
     }
 
-    public static bool TryCastWithTargets(Ability a, GameState s, Entity caster, TargetSet targets)
-    {
-        if (!CanCast(a, s, caster))
-        {
-            s.Log("Cast failed (timing/conditions/cost).");
-            return false;
-        }
-
-        // If the ability expects targets, require them
-        if (a.Targeting != null)
-        {
-            if (targets == null || targets.Items == null || targets.Items.Count == 0)
-            {
-                s.Log("Cast failed (missing targets).");
-                return false;
-            }
-        }
-        else
-        {
-            // If ability expects no targets, ignore any provided
-            targets = null;
-        }
-
-        foreach (var c in a.Costs) c.Pay(s, caster);
-
-        var snap = (a as CardHalf)?.MakeSnapshot(s, caster) ?? new EffectSnapshot();
-        var item = new StackItem { Ability = a, Caster = caster, Targets = targets, Snapshot = snap};
-
-        s.Stack.Push(item);
-        s.Priority.OnStackItemAdded();
-        s.Bus.Emit("AbilityCast", item);
-        s.Log($"Cast (preselected) → {a.Name} [{a.Speed}] (stack size {s.StackCount()})");
-        return true;
-    }
-
     public static bool TryCastWithTargets(Ability a, GameState s, Entity caster, TargetSet targets, Card sourceCard)
     {
         if (!CanCast(a, s, caster))
@@ -129,11 +94,20 @@ public static class Rules {
 
         if (a.Targeting != null)
         {
-            if (targets == null || targets.Items == null || targets.Items.Count == 0)
+            bool isAreaSpell = a.Targeting is SelectAreaTarget
+                            || a.Targeting is SelectConeTarget
+                            || a.Targeting is SelectLineTarget
+                            || a.Targeting is SelectRingTarget
+                            || a.Targeting is SelectGlobalTarget;
+
+            if (!isAreaSpell && (targets == null || targets.Items == null || targets.Items.Count == 0))
             {
                 s.Log("Cast failed (missing targets).");
                 return false;
             }
+
+            // For area spells, ensure targets is at least non-null
+            if (targets == null) targets = new TargetSet();
         }
         else
         {

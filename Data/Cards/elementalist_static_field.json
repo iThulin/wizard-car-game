@@ -46,13 +46,16 @@
     	"rules_text": "Deal 5 damage to all enemies in a line (4). Push each enemy 1 backward.",
 		"tags": ["ice"],
 		"targeting": { "type": "line", "length": 4, "enemies_only": true },
-    	"effect": {
-      		"type": "sequence",
-      			"steps": [
-        			{ "type": "damage", "amount": 5 },
-        			{ "type": "push", "tiles": 1, "collision_damage": 3 }
-      		]
-    	},
+		"effect": {
+			"type": "retarget",
+			"targeting": { "type": "line", "length": 4, "enemies_only": true },
+			"do": { "type": "sequence",
+				"steps": [
+					{ "type": "damage", "amount": 5 },
+					{ "type": "push", "tiles": 1, "collision_damage": 3 }
+				]
+			}
+		},
     	"channel": {
       		"name": "Avalanche (Channel)",
       		"mana": 2,
@@ -60,13 +63,16 @@
       		"rules_text": "Channel: Line (6), push 2",
 			"tags": ["ice"],
 			"targeting": { "type": "line", "length": 6, "enemies_only": true },
-      		"effect": {
-      			"type": "sequence",
-      				"steps": [
-        				{ "type": "damage", "amount": 5 },
-        				{ "type": "push", "tiles": 2, "collision_damage": 5 }
-      				]
-    		}
+			"effect": {
+				"type": "retarget",
+				"targeting": { "type": "line", "length": 6, "enemies_only": true },
+				"do": { "type": "sequence",
+					"steps": [
+						{ "type": "damage", "amount": 5 },
+						{ "type": "push", "tiles": 2, "collision_damage": 3 }
+					]
+				}
+			}
   		}
 	}
 }

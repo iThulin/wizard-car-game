@@ -38,14 +38,36 @@ public partial class RunManager : Node2D
 
     public override void _Ready()
     {
-        // ── Build the scene tree ────────────────────────────────────────
+        // ── Make sure the router exists FIRST so we can read saved seed/state ──
+        EnsureEncounterRouter();
+        var router = EncounterRouter.Instance;
 
-        // Grid
-        _grid = new OverworldHexGrid { Name = "HexGrid" };
+        // ── Decide which seed to use for this overworld ─────────────────────
+        int seed;
+        if (router != null && router.HasSavedSeed)
+        {
+            seed = router.SavedRunSeed;
+            GD.Print($"RunManager: Reusing saved seed {seed} (returning from combat).");
+        }
+        else
+        {
+            seed = (int)GD.Randi();
+            GD.Print($"RunManager: New run with seed {seed}.");
+        }
+
+        // ── Build the grid with that seed ───────────────────────────────────
+        _grid = new OverworldHexGrid { Name = "HexGrid", Seed = seed };
         AddChild(_grid);
 
-        // Place encounters
-        POIGenerator.Generate(_grid, combatCount: 10, restCount: 4);
+        // POIs use the same seed so layout is deterministic
+        POIGenerator.Generate(_grid, combatCount: 10, restCount: 4, narrativeCount: 3, seed: seed);
+
+        // Stash the seed on the router so it survives the next combat
+        if (router != null)
+        {
+            router.SavedRunSeed = seed;
+            router.HasSavedSeed = true;
+        }
 
         // Fog manager (child of grid)
         _fog = new FogOfWarManager { Name = "FogOfWar" };
@@ -66,10 +88,7 @@ public partial class RunManager : Node2D
         AddChild(_camera);
         _camera.CallDeferred("make_current");
 
-        // ── Ensure EncounterRouter exists (persistent across scenes) ────
-        EnsureEncounterRouter();
-
-        // ── UI Layer ────────────────────────────────────────────────────
+        // ── UI Layer ────────────────────────────────────────────────────────
         var canvas = new CanvasLayer { Name = "UI" };
         AddChild(canvas);
 
@@ -86,27 +105,25 @@ public partial class RunManager : Node2D
         _infoLabel.Modulate = new Color(1f, 1f, 0.7f);
         canvas.AddChild(_infoLabel);
 
-        // ── Initialize run state ────────────────────────────────────────
+        // ── Initialize run state defaults (may be overwritten by restore) ───
         StepsRemaining = StepBudget;
         CurrentHP = MaxHP;
         GoldEarned = 0;
         EncountersWon = 0;
         RunComplete = false;
 
-        // ── Check if we're returning from combat ────────────────────────
-        var router = EncounterRouter.Instance;
+        // ── Restore from combat or place at entry ───────────────────────────
         if (router != null && router.HasPendingReturn)
         {
             RestoreFromCombat(router);
         }
         else
         {
-            // Fresh run — place party at entry
             _party.Initialize(_grid, _fog, _grid.EntryCoord);
             ShowInfo("Explore the map. Reach the golden objective marker.");
         }
 
-        // ── Wire signals ────────────────────────────────────────────────
+        // ── Wire signals ────────────────────────────────────────────────────
         _grid.HexClicked += OnHexClicked;
         _party.PartyMoved += OnPartyMoved;
         _party.PartyArrived += OnPartyArrived;
@@ -208,17 +225,11 @@ public partial class RunManager : Node2D
 
         var router = new EncounterRouter { Name = "EncounterRouter" };
         router.CombatScenePath = "res://Scenes/Combat/Battlefield.tscn";
-        router.OverworldScenePath = "res://Scenes/Overworld/CampusScene.tscn";
+        router.OverworldScenePath = "res://Scenes/Overworld/OverworldScene.tscn"; // ← FIXED
 
-        // Defer the add since the tree is busy during _Ready()
-        GetTree().Root.CallDeferred("add_child", router);
-        GD.Print("RunManager: Created EncounterRouter on tree root (deferred).");
-    }
-
-    private void OnHexClicked(Vector2I axial)
-    {
-        if (RunComplete) return;
-        _party.TryMoveTo(axial);
+        // Add immediately, not deferred — we need it ready for the seed check below.
+        GetTree().Root.AddChild(router);
+        GD.Print("RunManager: Created EncounterRouter on tree root.");
     }
 
     private void OnPartyMoved(Vector2I newCoord, Vector2I oldCoord)
@@ -266,6 +277,12 @@ public partial class RunManager : Node2D
         UpdateUI();
     }
 
+        private void OnHexClicked(Vector2I axial)
+    {
+        if (RunComplete) return;
+        _party.TryMoveTo(axial);
+    }
+    
     private void OnPartyArrived(Vector2I coord)
     {
         if (RunComplete) return;
@@ -394,6 +411,13 @@ public partial class RunManager : Node2D
     private void EndRun(bool reachedObjective)
     {
         RunComplete = true;
+
+        // Run is over — clear the saved seed so the next run gets a fresh map
+        if (EncounterRouter.Instance != null)
+        {
+            EncounterRouter.Instance.HasSavedSeed = false;
+            EncounterRouter.Instance.HasPendingReturn = false;
+        }
 
         // Store results for the campus screen
         RunResultData.Set(reachedObjective, GoldEarned, EncountersWon, CurrentHP);

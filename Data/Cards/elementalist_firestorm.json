@@ -11,27 +11,33 @@
 		"tags": ["fire"],
 		"targeting": { "type": "aoe", "radius": 2, "enemies_only": true },
 		"effect": {
-	  		"type": "sequence",
-	  		"steps": [
-				{ "type": "damage", "amount": 4 },
-				{ "type": "imbue_tile", "element": "fire", "bonus_damage": 3 }
-	  		]
-	},
-	"channel": {
-	  	"name": "Firestorm (Channel)",
-	  	"mana": 3,
-	  	"speed": "Reaction",
-	  	"rules_text": "Channel: Deal 7 damage instead",
-	  	"tags": ["fire"],
-	  	"targeting": { "type": "aoe", "radius": 2, "enemies_only": true },
-	  	"effect": {
-			"type": "sequence",
-			"steps": [
-		  		{ "type": "damage", "amount": 7 },
-		  		{ "type": "imbue_tile", "element": "fire", "bonus_damage": 3 }
-			]
-	  	}
-	}
+			"type": "retarget",
+			"targeting": { "type": "aoe", "radius": 2, "enemies_only": true },
+			"do": { "type": "sequence",
+				"steps": [
+					{ "type": "damage", "amount": 4 },
+					{ "type": "imbue_tile", "element": "fire", "bonus_damage": 3 }
+				]
+			}
+		},
+		"channel": {
+			"name": "Firestorm (Channel)",
+			"mana": 3,
+			"speed": "Reaction",
+			"rules_text": "Channel: Deal 7 damage instead",
+			"tags": ["fire"],
+			"targeting": { "type": "aoe", "radius": 2, "enemies_only": true },
+			"effect": {
+				"type": "retarget",
+				"targeting": { "type": "aoe", "radius": 2, "enemies_only": true },
+				"do": { "type": "sequence",
+					"steps": [
+						{ "type": "damage", "amount": 7 },
+						{ "type": "imbue_tile", "element": "fire", "bonus_damage": 3 }
+					]
+				}
+			}
+		}
   	},
   	"bottom": {
 		"name": "Blizzard",
@@ -41,28 +47,34 @@
 		"tags": ["ice"],
 		"targeting": { "type": "aoe", "radius": 2, "enemies_only": true },
 		"effect": {
-	  		"type": "sequence",
-	  		"steps": [
-				{ "type": "apply_status", "status": "frozen", "duration": 2 },
-				{ "type": "damage", "amount": 4 },
-				{ "type": "imbue_tile", "element": "ice" }
-	  		]
-	},
-	"channel": {
-	  	"name": "Blizzard (Channel)",
-	  	"mana": 3,
-	  	"speed": "Reaction",
-	  	"rules_text": "Channel: Also create Ice on adjacent tiles",
-	  	"tags": ["ice"],
-	  	"targeting": { "type": "aoe", "radius": 3, "enemies_only": true },	
-	  	"effect": {
-			"type": "sequence",
-			"steps": [
-		  		{ "type": "apply_status", "status": "frozen", "duration": 2 },
-		  		{ "type": "damage", "amount": 5 },
-		  		{ "type": "imbue_tile", "element": "ice" }
-			]
-	  		}
+			"type": "retarget",
+			"targeting": { "type": "aoe", "radius": 2, "enemies_only": true },
+			"do": { "type": "sequence",
+				"steps": [
+					{ "type": "apply_status", "status": "frozen", "duration": 2 },
+					{ "type": "damage", "amount": 4 },
+					{ "type": "imbue_tile", "element": "ice", "bonus_damage": 0 }
+				]
+			}
+		},
+		"channel": {
+			"name": "Blizzard (Channel)",
+			"mana": 3,
+			"speed": "Reaction",
+			"rules_text": "Channel: Also create Ice on adjacent tiles",
+			"tags": ["ice"],
+			"targeting": { "type": "aoe", "radius": 3, "enemies_only": true },	
+			"effect": {
+				"type": "retarget",
+				"targeting": { "type": "aoe", "radius": 2, "enemies_only": true },
+				"do": { "type": "sequence",
+					"steps": [
+						{ "type": "apply_status", "status": "frozen", "duration": 2 },
+						{ "type": "damage", "amount": 4 },
+						{ "type": "imbue_tile", "element": "ice", "bonus_damage": 0 }
+					]
+				}
+			}
 		}
-  	}
+	}
 }

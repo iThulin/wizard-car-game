@@ -40,6 +40,7 @@ public partial class Unit : Node3D
     [Export] public int StartBaseSpeed = 2;
     [Export] public int StartMaxMana = 3;
     [Export] public int StartMana = 3;
+    public bool IsDeathQueued { get; private set; }
 
     // School-specific class mechanic. Created in _Ready based on School.
     // Null for Generic or schools without a mechanic yet.
@@ -65,6 +66,7 @@ public partial class Unit : Node3D
     /// Parameters: the tile the unit just LEFT (may be null on first placement).
     /// </summary>
     public event Action<TileData> OnTileLeft;
+    public event Action<Unit> OnDied;
 
     public override void _Ready()
     {
@@ -147,7 +149,7 @@ public partial class Unit : Node3D
 
     public void ApplyDamage(int amount)
     {
-        if (amount <= 0) return;
+        if (amount <= 0 || IsDeathQueued) return;
         int remaining = amount;
 
         if (Stats.Shield > 0)
@@ -170,22 +172,28 @@ public partial class Unit : Node3D
         _healthBar?.SetHealth(Stats.Health, Stats.MaxHealth);
         GD.Print($"{Name} HP now {Stats.Health}/{Stats.MaxHealth}");
 
-        if (!Stats.IsAlive)
+        if (!Stats.IsAlive && !IsDeathQueued)
         {
-            GD.Print($"{Name} has died.");
-            Die();
+            OnDied?.Invoke(this);  
+            Die();                  
         }
     }
 
     public void Die()
     {
-        // Free the tile so other units can enter it
+        if (IsDeathQueued) return;   // idempotent — calling twice does nothing
+        IsDeathQueued = true;
+
+        // Free the tile immediately so other units can move/spawn there
         CurrentTile?.ClearOccupant(this);
         CurrentTile = null;
 
-        // Hide and remove from the scene
+        // Hide visually, but DON'T QueueFree yet — leave that to GameRunner
         Visible = false;
-        QueueFree();
+
+        // Disable any input/physics so it can't be clicked or interacted with
+        SetProcessInput(false);
+        SetProcessUnhandledInput(false);
     }
 
     public void GainMana(int amount)

@@ -37,6 +37,7 @@ public partial class GameRunner : Node3D
     private Unit       dummyUnit;    // primary enemy unit  (kept for existing refs)
     private List<Unit> playerUnits = new();
     private List<Unit> enemyUnits  = new();
+    private bool _pruneNeeded;
 
     // ── Selection state ─────────────────────────────────────────────────────
     private Unit               selectedUnit       = null;
@@ -152,6 +153,14 @@ public partial class GameRunner : Node3D
 
     public override void _Process(double delta)
     {
+        if (_pruneNeeded)
+        {
+            _pruneNeeded = false;
+            PruneDeadUnits();
+            if (currentPhase != CombatPhase.Victory && currentPhase != CombatPhase.Defeat)
+                CheckCombatEnd();
+        }
+
         if (currentPhase == CombatPhase.EnemyTurn) return;
 
         var camera = GetViewport().GetCamera3D();
@@ -665,9 +674,13 @@ public partial class GameRunner : Node3D
 
     private async System.Threading.Tasks.Task RunEnemyTurn()
     {
-        foreach (var enemy in enemyUnits)
+        // Snapshot so deaths during iteration don't corrupt the loop
+        var snapshot = enemyUnits.ToList();
+        foreach (var enemy in snapshot)
         {
-            if (enemy == null || !enemy.Stats.IsAlive) continue;
+            if (enemy == null || !IsInstanceValid(enemy) || !enemy.Stats.IsAlive)
+                continue;
+
             if (!enemy.CanAct())
             {
                 GD.Print($"{enemy.Name} is frozen — skipping turn.");
@@ -686,35 +699,24 @@ public partial class GameRunner : Node3D
         GD.Print("=== Enemy Turn End ===");
         enemyPhaseRunning = false;
     }
-    
+        
     private async System.Threading.Tasks.Task ActEnemyUnit(Unit enemy, Unit target)
     {
-        if (enemy.CurrentTile == null || target.CurrentTile == null) return;
+        if (!IsValidActor(enemy) || !IsValidActor(target)) return;
 
         int dist = grid.Distance(enemy.CurrentTile, target.CurrentTile);
 
+        // ── Attack if already adjacent ──
         if (dist <= 1)
         {
-            // ── Attack ──────────────────────────────────────────────────────
-            int dmg = 5;
-            target.ApplyDamage(dmg);
-
-            string msg = $"{enemy.Name} attacks {target.Name} for {dmg} damage. ({target.Stats.Health}/{target.Stats.MaxHealth} HP remaining)";
-            GD.Print(msg);
-            combatUI?.AppendActionLog(msg);
-
-            RefreshSelectedUnitUI();
-            RefreshEnemyRoster();
-            RefreshPlayerUnitBar();
-            RefreshDeckCounts();
-            await ToSignal(GetTree().CreateTimer(0.35f), "timeout");
+            await PerformAttack(enemy, target);
             return;
         }
 
-        // ── Move toward target ───────────────────────────────────────────────
-        var moveOptions  = grid.GetReachableTiles(enemy);
-        Vector2I bestMove  = enemy.CurrentTile.Axial;
-        int      bestDist  = dist;
+        // ── Move toward target ──
+        var moveOptions = grid.GetReachableTiles(enemy);
+        Vector2I bestMove = enemy.CurrentTile.Axial;
+        int bestDist = dist;
 
         foreach (var coord in moveOptions)
         {
@@ -736,23 +738,38 @@ public partial class GameRunner : Node3D
             }
         }
 
-        // ── Attack again if now adjacent after moving ────────────────────────
-        if (enemy.CurrentTile != null && target.CurrentTile != null
-            && grid.Distance(enemy.CurrentTile, target.CurrentTile) <= 1)
-        {
-            int dmg = 5;
-            target.ApplyDamage(dmg);
+        // ── Re-validate after movement; target or enemy may have died via hazards ──
+        if (!IsValidActor(enemy) || !IsValidActor(target)) return;
 
-            string atkMsg = $"{enemy.Name} attacks {target.Name} for {dmg} damage. ({target.Stats.Health}/{target.Stats.MaxHealth} HP remaining)";
-            GD.Print(atkMsg);
-            combatUI?.AppendActionLog(atkMsg);
-
-            RefreshSelectedUnitUI();
-            RefreshEnemyRoster();
-            RefreshPlayerUnitBar();
-            await ToSignal(GetTree().CreateTimer(0.35f), "timeout");
-        }
+        // ── Attack if now adjacent ──
+        if (grid.Distance(enemy.CurrentTile, target.CurrentTile) <= 1)
+            await PerformAttack(enemy, target);
     }
+
+    private async System.Threading.Tasks.Task PerformAttack(Unit enemy, Unit target)
+    {
+        const int dmg = 5;
+
+        // Log attack first, then apply damage
+        string msg = $"{enemy.Name} attacks {target.Name} for {dmg} damage.";
+        GD.Print(msg);
+        combatUI?.AppendActionLog(msg);
+
+        target.ApplyDamage(dmg);
+
+        // HP-remaining suffix as a separate line, so death messages can interleave naturally
+        string hpMsg = $"  ({target.Stats.Health}/{target.Stats.MaxHealth} HP remaining)";
+        GD.Print(hpMsg);
+
+        RefreshSelectedUnitUI();
+        RefreshEnemyRoster();
+        RefreshPlayerUnitBar();
+        RefreshDeckCounts();
+        await ToSignal(GetTree().CreateTimer(0.35f), "timeout");
+    }
+
+    private bool IsValidActor(Unit u) =>
+        u != null && IsInstanceValid(u) && u.Stats.IsAlive && u.CurrentTile != null;
 
     private void ApplyHazardDamage(List<Unit> units)
     {
@@ -779,6 +796,69 @@ public partial class GameRunner : Node3D
                 string msg = $"{unit.Name} takes {hazardDmg} damage from {unit.CurrentTile.ElementType} terrain!";
                 GD.Print(msg);
                 combatUI?.AppendActionLog(msg);
+            }
+        }
+    }
+
+    private void HandleUnitDeath(Unit unit)
+    {
+        if (unit == null) return;
+
+        string deathMsg = $"{unit.Name} has died.";
+        GD.Print(deathMsg);
+        combatUI?.AppendActionLog(deathMsg);
+
+        // Make sure the unit's logical death cleanup ran
+        if (!unit.IsDeathQueued)
+            unit.Die();
+
+        // Clear any selection pointing at this unit
+        if (selectedUnit == unit)
+        {
+            selectedUnit.SetSelected(false);
+            selectedUnit = null;
+            ClearMoveTiles();
+            ClearTargetHighlight();
+        }
+        if (inspectedEnemyUnit == unit)
+        {
+            inspectedEnemyUnit.SetSelected(false);
+            inspectedEnemyUnit = null;
+        }
+        if (_hoveredUnit == unit)
+            _hoveredUnit = null;
+
+        // Refresh UI so dead units disappear from bars/rosters
+        RefreshSelectedUnitUI();
+        RefreshPlayerUnitBar();
+        RefreshEnemyRoster();
+    }
+
+    private void PruneDeadUnits()
+    {
+        PruneList(playerUnits);
+        PruneList(enemyUnits);
+
+        // Also prune State.UnitsInPlay since effects iterate it
+        State.UnitsInPlay.RemoveAll(u => u == null || !IsInstanceValid(u) || !u.Stats.IsAlive);
+        _pruneNeeded = true;
+    }
+
+    private void PruneList(List<Unit> list)
+    {
+        for (int i = list.Count - 1; i >= 0; i--)
+        {
+            var u = list[i];
+            if (u == null || !IsInstanceValid(u))
+            {
+                list.RemoveAt(i);
+                continue;
+            }
+            if (!u.Stats.IsAlive)
+            {
+                list.RemoveAt(i);
+                // Now safe to actually free the node — nothing references it
+                u.QueueFree();
             }
         }
     }
@@ -1052,6 +1132,7 @@ public partial class GameRunner : Node3D
         unit.StartShield        = shield;
 
         AddChild(unit);
+        unit.OnDied += HandleUnitDeath;
         unit.PlaceOnTile(tile);
 
         if (side == HexGridManager.SpawnSide.Player)
@@ -1068,11 +1149,16 @@ public partial class GameRunner : Node3D
 
     private Unit FindNearestPlayerUnit(Unit enemy)
     {
+        if (enemy == null || !IsInstanceValid(enemy) || enemy.CurrentTile == null)
+            return null;
+
         Unit best     = null;
         int  bestDist = int.MaxValue;
         foreach (var player in playerUnits)
         {
-            if (player == null || !player.Stats.IsAlive || player.CurrentTile == null) continue;
+            if (player == null || !IsInstanceValid(player)) continue;
+            if (!player.Stats.IsAlive || player.CurrentTile == null) continue;
+
             int dist = grid.Distance(enemy.CurrentTile, player.CurrentTile);
             if (dist < bestDist) { bestDist = dist; best = player; }
         }
@@ -1725,16 +1811,4 @@ public partial class GameRunner : Node3D
 
         return coords;
     }
-
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // Unchanged/old code below
-    // ═══════════════════════════════════════════════════════════════════════
-
-    private void PruneDeadUnits()
-    {
-        playerUnits.RemoveAll(u => u == null || !u.Stats.IsAlive);
-        enemyUnits.RemoveAll(u => u == null || !u.Stats.IsAlive);
-    }
-
 }

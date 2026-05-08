@@ -11,8 +11,13 @@ public static class POIGenerator
     /// Scatter POIs across the grid. Call after grid generation, before fog init.
     /// </summary>
     public static void Generate(OverworldHexGrid grid, int combatCount = 10, 
-                                int restCount = 4, int narrativeCount = 3)
+                                int restCount = 4, int narrativeCount = 3,
+                                int seed = 0)
     {
+        var rng = new RandomNumberGenerator();
+        if (seed != 0) rng.Seed = (ulong)seed;
+        else rng.Randomize();
+
         var candidates = new List<Vector2I>();
         var placed = new List<Vector2I>();
 
@@ -30,7 +35,7 @@ public static class POIGenerator
             candidates.Add(coord);
         }
 
-        Shuffle(candidates);
+        Shuffle(candidates, rng);
 
         // Place combat POIs
         int combatPlaced = 0;
@@ -91,6 +96,15 @@ public static class POIGenerator
         GD.Print($"POIs placed: {combatPlaced} combat, {restPlaced} rest, {narrativePlaced} narrative");
     }
 
+        private static void Shuffle<T>(List<T> list, RandomNumberGenerator rng)
+    {
+        for (int i = list.Count - 1; i > 0; i--)
+        {
+            int j = (int)(rng.Randi() % (uint)(i + 1));
+            (list[i], list[j]) = (list[j], list[i]);
+        }
+    }
+
     private static bool IsSpacedEnough(Vector2I coord, List<Vector2I> existing, 
                                         OverworldHexGrid grid, int minDist)
     {
@@ -100,14 +114,5 @@ public static class POIGenerator
                 return false;
         }
         return true;
-    }
-
-    private static void Shuffle(List<Vector2I> list)
-    {
-        for (int i = list.Count - 1; i > 0; i--)
-        {
-            int j = (int)(GD.Randi() % (uint)(i + 1));
-            (list[i], list[j]) = (list[j], list[i]);
-        }
     }
 }

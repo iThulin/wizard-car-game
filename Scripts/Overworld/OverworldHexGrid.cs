@@ -8,10 +8,12 @@ using System.Collections.Generic;
 /// </summary>
 public partial class OverworldHexGrid : Node2D
 {
+    [Export] public int Seed = 0;  // 0 = random
     [Export] public int GridWidth = 15;
     [Export] public int GridHeight = 15;
 
     // ── Runtime data ────────────────────────────────────────────────────
+    private RandomNumberGenerator _rng;
     public Dictionary<Vector2I, OverworldHex> Hexes { get; private set; } = new();
     public Vector2I EntryCoord { get; private set; }
     public Vector2I ObjectiveCoord { get; private set; }
@@ -26,12 +28,14 @@ public partial class OverworldHexGrid : Node2D
 
     public override void _Ready()
     {
-        _hexSize = OverworldHex.GetHexSize();
-        // Flat-top hex spacing:
-        //   horizontal center-to-center = 1.5 * size
-        //   vertical center-to-center   = sqrt(3) * size
-        _hexWidth = _hexSize * 1.5f;
-        _hexHeight = _hexSize * Mathf.Sqrt(3f);
+        _rng = new RandomNumberGenerator();
+        if (Seed != 0)
+            _rng.Seed = (ulong)Seed;
+        else
+        {
+            _rng.Randomize();
+            Seed = (int)_rng.Randi(); // capture the random seed so HashCoord can use it
+        }
 
         GenerateGrid();
     }
@@ -384,7 +388,7 @@ public partial class OverworldHexGrid : Node2D
 
     private int HashCoord(int q, int r)
     {
-        int h = q * 374761393 + r * 668265263;
+        int h = q * 374761393 + r * 668265263 + Seed * 2147483647;
         h = (h ^ (h >> 13)) * 1274126177;
         return Math.Abs(h);
     }
@@ -484,49 +488,5 @@ public partial class OverworldHexGrid : Node2D
                 result.Add(kvp.Key);
         }
         return result;
-    }
-
-    // ── Placeholder terrain (replace with region definitions in Phase 2) ─
-
- private OverworldHex.TerrainType GetPlaceholderTerrain(int q, int r)
-    {
-        int hash = HashCoord(q, r);
-
-        // Water — create a river-like barrier through the middle
-        // Snakes vertically around column 7-8 area
-        int riverCenter = 7 + (hash % 3 - 1); // wobbles between 6-8
-
-        if (q >= riverCenter && q <= riverCenter + 1 && r % 3 != 0)
-        {
-            // Leave gaps every 3 rows so the river is crossable
-            if (hash % 7 < 5) // ~70% water in the river band
-                return OverworldHex.TerrainType.Water;
-        }
-
-        // Small lake in the upper area
-        if (q >= 10 && q <= 12 && r >= 2 && r <= 4 && hash % 4 < 2)
-            return OverworldHex.TerrainType.Water;
-
-        // Roads along the horizontal middle band
-        if (r >= GridHeight / 2 - 1 && r <= GridHeight / 2 + 1 && hash % 5 < 2)
-            return OverworldHex.TerrainType.Road;
-
-        // Mountain cluster in the upper right
-        if (q >= 11 && r <= 5 && hash % 4 == 0)
-            return OverworldHex.TerrainType.Mountain;
-
-        // Distribute remaining terrain with more variety
-        return (hash % 12) switch
-        {
-            0 or 1 or 2     => OverworldHex.TerrainType.Grassland,
-            3 or 4           => OverworldHex.TerrainType.Forest,
-            5                => OverworldHex.TerrainType.Ruins,
-            6                => OverworldHex.TerrainType.Mountain,
-            7                => OverworldHex.TerrainType.ArcaneGround,
-            8                => OverworldHex.TerrainType.Swamp,
-            9                => OverworldHex.TerrainType.Volcanic,
-            10 or 11         => OverworldHex.TerrainType.Forest,
-            _                => OverworldHex.TerrainType.Grassland
-        };
     }
 }

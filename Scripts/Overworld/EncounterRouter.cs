@@ -13,18 +13,13 @@ public partial class EncounterRouter : Node
     [Export] public string CombatScenePath = "res://Scenes/Combat/Battlefield.tscn";
     [Export] public string OverworldScenePath = "res://Scenes/Overworld/OverworldScene.tscn";
 
-    // ── Singleton access ────────────────────────────────────────────────
-    // EncounterRouter lives outside both scenes so it survives the swap.
-    // It's added to the tree root as an autoload-style persistent node.
     public static EncounterRouter Instance { get; private set; }
 
-    // ── Stored overworld state (restored after combat) ──────────────────
     public bool HasPendingReturn { get; set; } = false;
     public bool CombatWon { get; set; }
     public int GoldReward { get; set; }
     public int DamageTaken { get; set; }
 
-    // Overworld state to restore
     public int SavedStepsRemaining;
     public int SavedCurrentHP;
     public int SavedGoldEarned;
@@ -32,9 +27,11 @@ public partial class EncounterRouter : Node
     public Vector2I SavedPartyCoord;
     public Vector2I SavedCombatHexCoord;
 
-    // Fog state: which hexes have been revealed
+    // ── Seed for deterministic map regeneration after combat ────────────
+    public int SavedRunSeed;
+    public bool HasSavedSeed = false;
+
     public System.Collections.Generic.Dictionary<Vector2I, OverworldHex.FogState> SavedFogStates = new();
-    // POI state: which POIs have been consumed
     public System.Collections.Generic.Dictionary<Vector2I, bool> SavedPOIConsumed = new();
 
     public override void _Ready()

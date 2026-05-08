@@ -369,12 +369,13 @@ public static class CardScriptRegistry
         });
 
         // AoE selector:
-        // { "type": "aoe", "radius": n, "enemies_only": bool }
+        // { "type": "aoe", "radius": n, "enemies_only": bool, "include_tiles": bool }
         RegisterTargeter("aoe", n =>
         {
             int radius = n.TryGetProperty("radius", out var r) ? r.GetInt32() : 1;
             bool enemiesOnly = n.TryGetProperty("enemies_only", out var eo) && eo.GetBoolean();
-            return new SelectAreaTarget(radius, enemiesOnly, false);
+            bool includeTiles = n.TryGetProperty("include_tiles", out var it) && it.GetBoolean();
+            return new SelectAreaTarget(radius, enemiesOnly, includeTiles);
         });
 
         // Cone selector:
