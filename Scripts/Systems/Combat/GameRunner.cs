@@ -49,6 +49,8 @@ public partial class GameRunner : Node3D
     // ── Tile highlighting state ─────────────────────────────────────────────
     private HashSet<Vector2I> _targetHighlightTiles = new();
     private CardHalf _lastHighlightedHalf = null;
+    private bool _isCardBeingDragged = false;
+    private CardHalf _draggedHalf = null;
 
     // ── Phase ───────────────────────────────────────────────────────────────
     public enum CombatPhase { Deployment, PlayerTurn, EnemyTurn, Victory, Defeat }
@@ -95,6 +97,7 @@ public partial class GameRunner : Node3D
         if (deckUiManager != null)
         {
             deckUiManager.CardHalfHovered += OnCardHalfHovered;
+            
             deckUiManager.SetManaProvider(() => selectedUnit?.Stats.Mana ?? 0);
         }
         else
@@ -103,11 +106,18 @@ public partial class GameRunner : Node3D
         }
 
         dropper = GetNodeOrNull<CardDropHandler>("../CardDropHandler");
-        if (dropper == null)
-            GD.PrintErr("CardDropHandler not found. Fix the node path in GameRunner.");
-        else
+        if (dropper != null)
+        {
             dropper.Connect(CardDropHandler.SignalName.CardDroppedOnTile,
                 new Callable(this, nameof(OnCardDroppedOnTile)));
+            
+            dropper.CardDragStarted += OnCardDragStarted;
+            dropper.CardDragEnded   += OnCardDragEnded;
+        }
+        else
+        {
+            GD.PrintErr("CardDropHandler not found. Fix the node path in GameRunner.");
+        }
 
         combatUI = GetNodeOrNull<CombatUI>(CombatUIPath);
         if (combatUI == null)
@@ -1366,13 +1376,14 @@ public partial class GameRunner : Node3D
 
     private void OnCardHalfHovered(CardUi cardUi, bool isTop, bool isEntering)
     {
-        //GD.Print($"[Highlight] OnCardHalfHovered: phase={currentPhase} isEntering={isEntering} card={cardUi?.Name}");
         if (currentPhase != CombatPhase.PlayerTurn) return;
+
+        // Lock during drag — ignore hover changes on other cards entirely
+        if (_isCardBeingDragged) return;
 
         if (isEntering)
         {
             var half = isTop ? cardUi.TopHalf : cardUi.BottomHalf;
-            //GD.Print($"[Highlight] Showing highlight for half={half?.Name} targeting={half?.Targeting?.GetType().Name}");
             ShowTargetHighlight(half);
         }
         else
@@ -1383,7 +1394,10 @@ public partial class GameRunner : Node3D
 
     private void OnCardDroppedOnTile(CardUi cardUi, bool isTop, HexTile tile)
     {
+        _isCardBeingDragged = false;
+        _draggedHalf = null;
         ClearTargetHighlight();
+
         if (isInDeploymentPhase) { GD.Print("Cannot cast during deployment."); return; }
 
         var half = isTop ? cardUi.TopHalf : cardUi.BottomHalf;
@@ -1548,6 +1562,21 @@ public partial class GameRunner : Node3D
             deckUiManager?.RefreshAffordability();
             RefreshDeckCounts();
         }
+    }
+
+    private void OnCardDragStarted(CardUi cardUi, bool isTop)
+    {
+        _isCardBeingDragged = true;
+        var half = isTop ? cardUi.TopHalf : cardUi.BottomHalf;
+        _draggedHalf = half;
+        ShowTargetHighlight(half);
+    }
+
+    private void OnCardDragEnded()
+    {
+        _isCardBeingDragged = false;
+        _draggedHalf = null;
+        ClearTargetHighlight();
     }
 
     private void OnGameEvent(GameEvent ge)

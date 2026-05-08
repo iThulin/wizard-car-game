@@ -5,8 +5,17 @@ public partial class CardDropHandler : Node3D
     private Camera3D camera;
     public HexTile CurrentHoveredTile { get; private set; }
 
+    // Tracks last-frame drag state so we can detect transitions
+    private bool _wasDragging = false;
+
     [Signal]
     public delegate void CardDroppedOnTileEventHandler(CardUi cardUi, bool isTop, HexTile tile);
+
+    [Signal]
+    public delegate void CardDragStartedEventHandler(CardUi cardUi, bool isTop);
+
+    [Signal]
+    public delegate void CardDragEndedEventHandler();
 
     public override void _Ready()
     {
@@ -17,7 +26,25 @@ public partial class CardDropHandler : Node3D
 
     public override void _Process(double delta)
     {
-        if (!DragPayloadManager.IsDragging || camera == null)
+        bool isDragging = DragPayloadManager.IsDragging;
+
+        // Detect drag start
+        if (isDragging && !_wasDragging)
+        {
+            var cardUi = DragPayloadManager.DraggedCard;
+            bool isTop = DragPayloadManager.IsTopHalf;
+            if (cardUi != null)
+                EmitSignal(SignalName.CardDragStarted, cardUi, isTop);
+        }
+        // Detect drag end (without a drop — i.e. cancelled)
+        else if (!isDragging && _wasDragging)
+        {
+            EmitSignal(SignalName.CardDragEnded);
+        }
+
+        _wasDragging = isDragging;
+
+        if (!isDragging || camera == null)
         {
             if (CurrentHoveredTile != null) ClearHoverHighlight();
             return;
@@ -37,22 +64,25 @@ public partial class CardDropHandler : Node3D
     {
         if (!DragPayloadManager.IsDragging) return;
 
-        // Trust CurrentHoveredTile — it's updated every frame by _Process.
-        // No need to re-raycast here.
-        var tile = CurrentHoveredTile;
-        if (tile == null) return;
-
         var cardUi = DragPayloadManager.DraggedCard;
         bool isTop = DragPayloadManager.IsTopHalf;
-        if (cardUi == null) return;
+        var tile = CurrentHoveredTile;
 
-        var halfName = (isTop ? cardUi.TopHalf : cardUi.BottomHalf)?.Name ?? "(null half)";
-        GD.Print($"Card dropped on tile {tile.Axial} — Playing {halfName}");
-
-        EmitSignal(SignalName.CardDroppedOnTile, cardUi, isTop, tile);
-
+        // Always reset drag state at the end of an attempt
         DragPayloadManager.IsDragging = false;
         ClearHoverHighlight();
+
+        // Fire the cast attempt only if a valid tile was hovered
+        if (tile != null && cardUi != null)
+        {
+            var halfName = (isTop ? cardUi.TopHalf : cardUi.BottomHalf)?.Name ?? "(null half)";
+            GD.Print($"Card dropped on tile {tile.Axial} — Playing {halfName}");
+            EmitSignal(SignalName.CardDroppedOnTile, cardUi, isTop, tile);
+        }
+
+        // Always snap the card back visually. If the cast succeeded, the deck
+        // manager will animate it to the discard pile from there.
+        cardUi?.EndDrag();
     }
 
     private void ClearHoverHighlight()
@@ -61,7 +91,6 @@ public partial class CardDropHandler : Node3D
         CurrentHoveredTile = null;
     }
 
-    // Single shared raycast used by both _Process and any future callers
     private HexTile RaycastToHexTile()
     {
         if (camera == null) return null;
@@ -74,7 +103,7 @@ public partial class CardDropHandler : Node3D
         {
             From = from,
             To = to,
-            CollisionMask = 1  // tiles only
+            CollisionMask = 1
         });
 
         if (!result.TryGetValue("collider", out var colliderVar)) return null;
