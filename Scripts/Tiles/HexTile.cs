@@ -35,6 +35,7 @@ public partial class HexTile : Node3D
     private bool rangeBorderHighlighted = false;
     private Color rangeColor = new Color(1.0f, 0.7f, 0.3f, 1f);
     private Color rangeBorderColor = new Color(1.0f, 0.5f, 0.1f, 1f);
+    [Export] public Color DragHoverColor = new Color(1.0f, 0.85f, 0.2f, 1f);
 
     public override void _Ready()
     {
@@ -242,6 +243,15 @@ public partial class HexTile : Node3D
             material.AlbedoColor = rangeBorderColor;
         else if (interior)
             material.AlbedoColor = rangeColor;
+    }
+
+    public void SetDragHoverHighlight(bool on)
+    {
+        if (material == null) return;
+        if (on)
+            material.AlbedoColor = DragHoverColor;
+        else
+            RefreshVisualState(); // restore base/range/target state
     }
 
     public void RefreshVisualState()

@@ -1313,8 +1313,39 @@ public partial class GameRunner : Node3D
             return;
         }
 
+        // --- Determine targets based on card's targeting type ---
         var targets = new TargetSet();
-        targets.Items.Add(tile);
+        switch (half.Targeting)
+        {
+            case SelectUnitTarget:
+                // Find whatever unit is standing on the dropped tile
+                var unit = State.UnitsInPlay
+                    .FirstOrDefault(u => u?.CurrentTile?.Axial == tile.Axial 
+                                    && u.Stats.IsAlive);
+                if (unit == null)
+                {
+                    combatUI?.AppendActionLog("No valid unit on that tile.");
+                    return;
+                }
+                targets.Items.Add(unit);  // Unit, not HexTile
+                break;
+
+            case SelectTileTarget:
+            case SelectAreaTarget:
+            case SelectConeTarget:
+            case SelectRingTarget:
+                targets.Items.Add(tile);  // TileData or HexTile is correct here
+                break;
+
+            case SelectSelfTarget:
+            case SelectGlobalTarget:
+                // These ignore targets entirely, pass nothing
+                break;
+
+            default:
+                targets.Items.Add(tile);  // safe fallback
+                break;
+        }
 
         if (!CheckCastRequirements(half, targets, out var failMsg))
         {

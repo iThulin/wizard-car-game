@@ -754,7 +754,11 @@ public partial class CardUi : Control
         _cardTween.TweenProperty(this, "scale", new Vector2(0.92f, 0.92f), 0.12f);
         _cardTween.TweenProperty(this, "modulate", new Color(1.1f, 1.1f, 1.1f, 0.85f), 0.12f);
         ZIndex = 200;
-    }
+
+        // Notify GameRunner to show range highlight for the dragged half
+        var half = _dragTopCard ? TopHalf : BottomHalf;
+        EmitSignal(SignalName.CardHalfHovered, this, _dragTopCard, true);
+        }
 
     public override Variant _GetDragData(Vector2 atPosition)
     {
