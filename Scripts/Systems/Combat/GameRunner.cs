@@ -783,30 +783,33 @@ public partial class GameRunner : Node3D
 
     private void ApplyHazardDamage(List<Unit> units)
     {
-        foreach (var unit in units)
+        // Snapshot to avoid issues if a death modifies the list (e.g. summons)
+        var snapshot = units.ToList();
+
+        foreach (var unit in snapshot)
         {
             if (unit == null || !IsInstanceValid(unit) || !unit.Stats.IsAlive)
                 continue;
 
             if (unit.CurrentTile == null) continue;
+            if (!unit.CurrentTile.IsHazardous) continue;
 
-            if (unit.CurrentTile.IsHazardous)
-            {
-                // Base hazard damage — fire/lava tiles deal 3
-                int hazardDmg = 3;
+            // Capture everything we need from the tile BEFORE damage —
+            // ApplyDamage may kill the unit and null out CurrentTile.
+            var elementType = unit.CurrentTile.ElementType;
+            var elementStrength = unit.CurrentTile.ElementStrength;
+            var unitName = unit.Name;
 
-                // Scale by element strength if available
-                if (unit.CurrentTile.ElementStrength > 0)
-                    hazardDmg = (int)(hazardDmg * unit.CurrentTile.ElementStrength);
+            int hazardDmg = 3;
+            if (elementStrength > 0)
+                hazardDmg = (int)(hazardDmg * elementStrength);
+            hazardDmg = Math.Max(1, hazardDmg);
 
-                hazardDmg = Math.Max(1, hazardDmg);
+            unit.ApplyDamage(hazardDmg);
 
-                unit.ApplyDamage(hazardDmg);
-
-                string msg = $"{unit.Name} takes {hazardDmg} damage from {unit.CurrentTile.ElementType} terrain!";
-                GD.Print(msg);
-                combatUI?.AppendActionLog(msg);
-            }
+            string msg = $"{unitName} takes {hazardDmg} damage from {elementType} terrain!";
+            GD.Print(msg);
+            combatUI?.AppendActionLog(msg);
         }
     }
 

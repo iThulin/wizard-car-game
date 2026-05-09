@@ -1,4 +1,5 @@
 using Godot;
+using System.Collections.Generic;
 
 /// <summary>
 /// Manages a single exploration run: step budget, input routing,
@@ -24,6 +25,8 @@ public partial class RunManager : Node2D
     private OverworldPartyToken _party;
     private Camera2D _camera;
     private RegionDefinition _region;
+    private NarrativeEncounterPanel _narrativePanel;
+    private List<NarrativeEncounterData> _encounterPool;
 
     // ── UI ───────────────────────────────────────────────────────────────
     private Label _stepLabel;
@@ -140,6 +143,15 @@ public partial class RunManager : Node2D
             _party.Initialize(_grid, _fog, _grid.EntryCoord);
             ShowInfo("Explore the map. Reach the golden objective marker.");
         }
+
+        // ── Narrative encounter panel ───────────────────────────────────
+        _narrativePanel = new NarrativeEncounterPanel { Visible = false };
+        canvas.AddChild(_narrativePanel);
+
+        // Load encounter pool for this region
+        _encounterPool = NarrativeEncounterLoader.LoadForRegion(regionId);
+        GD.Print($"RunManager: Loaded {_encounterPool.Count} narrative encounters " +
+                 $"for region '{regionId}'.");
 
         // ── Wire signals ────────────────────────────────────────────────────
         _grid.HexClicked += OnHexClicked;
@@ -336,31 +348,9 @@ public partial class RunManager : Node2D
                 GoldEarned += 100;
                 EndRun(true);
                 break;
-                        case OverworldHex.POIType.Narrative:
-                // Phase 1 stub — simple text event with a small reward
-                string[] events = {
-                    "You find ancient runes carved into a standing stone. (+20 gold)",
-                    "A wandering scholar shares a fragment of forgotten lore. (+15 gold)",
-                    "Remnants of a battlefield. Among the debris, something glints. (+25 gold)",
-                    "A shrine to a forgotten god. You feel a moment of peace. (+10 HP)",
-                    "Carved into the cave wall: a map fragment showing nearby terrain. (+30 gold)",
-                };
-                string chosen = events[(int)(GD.Randi() % (uint)events.Length)];
-                
-                if (chosen.Contains("+10 HP"))
-                {
-                    CurrentHP = Mathf.Min(CurrentHP + 10, MaxHP);
-                }
-                else
-                {
-                    int gold = 15 + (int)(GD.Randf() * 15);
-                    GoldEarned += gold;
-                }
-                
-                hex.POIConsumed = true;
-                hex.RefreshVisuals();
-                ShowInfo(chosen);
-                UpdateUI();
+
+            case OverworldHex.POIType.Narrative:
+                TriggerNarrativeEncounter(hex, coord);
                 break;
         }
     }
@@ -424,6 +414,75 @@ public partial class RunManager : Node2D
 
         ShowInfo("Entering combat...");
         router.StartCombat(this, hexCoord);
+    }
+
+    private void TriggerNarrativeEncounter(OverworldHex hex, Vector2I coord)
+    {
+        string terrainName = hex.Terrain.ToString();
+        var completedIds = SaveManager.ActiveSave?.CompletedEvents;
+
+        var encounter = NarrativeEncounterLoader.PickRandom(
+            _encounterPool, terrainName, completedIds);
+
+        if (encounter == null)
+        {
+            // Pool exhausted — fall back to a small reward
+            int gold = 15 + (int)(GD.Randf() * 20);
+            GoldEarned += gold;
+            hex.POIConsumed = true;
+            hex.RefreshVisuals();
+            ShowInfo($"You find something of value here. (+{gold} gold)");
+            UpdateUI();
+            return;
+        }
+
+        // Mark consumed immediately so re-entering doesn't re-trigger
+        hex.POIConsumed = true;
+        hex.RefreshVisuals();
+
+        _narrativePanel.ShowEncounter(encounter);
+        _narrativePanel.OnCompleted = (choice) => OnNarrativeCompleted(encounter, choice);
+    }
+
+    private void OnNarrativeCompleted(NarrativeEncounterData encounter, EncounterChoice choice)
+    {
+        if (choice == null) return;
+
+        if (choice.GoldDelta != 0)
+            GoldEarned = Mathf.Max(0, GoldEarned + choice.GoldDelta);
+
+        if (choice.HPDelta != 0)
+        {
+            CurrentHP = Mathf.Clamp(CurrentHP + choice.HPDelta, 0, MaxHP);
+            if (CurrentHP <= 0)
+            {
+                EndRun(false);
+                return;
+            }
+        }
+
+        if (choice.StepDelta != 0)
+            StepsRemaining = Mathf.Max(0, StepsRemaining + choice.StepDelta);
+
+        // Track completed unique encounters in save data
+        if (SaveManager.ActiveSave != null && !string.IsNullOrEmpty(encounter.Id))
+        {
+            if (!SaveManager.ActiveSave.CompletedEvents.Contains(encounter.Id))
+                SaveManager.ActiveSave.CompletedEvents.Add(encounter.Id);
+        }
+
+        // Apply any flags set by the choice
+        if (choice.SetFlags != null && SaveManager.ActiveSave != null)
+        {
+            foreach (var flag in choice.SetFlags)
+            {
+                if (!SaveManager.ActiveSave.CompletedEvents.Contains(flag))
+                    SaveManager.ActiveSave.CompletedEvents.Add(flag);
+            }
+        }
+
+        ShowInfo($"Encounter resolved.");
+        UpdateUI();
     }
 
     private void EndRun(bool reachedObjective)
