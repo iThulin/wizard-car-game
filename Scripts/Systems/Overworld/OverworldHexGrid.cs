@@ -45,6 +45,7 @@ public partial class OverworldHexGrid : Node2D
     /// </summary>
     public void GenerateGrid()
     {
+        GD.Print($"GenerateGrid called from:\n{System.Environment.StackTrace}");
         foreach (var hex in Hexes.Values)
             hex.QueueFree();
         Hexes.Clear();

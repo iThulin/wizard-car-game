@@ -1,0 +1,42 @@
+{
+  "id": "generic_merchant",
+  "title": "The Wandering Merchant",
+  "npcName": "Aldric the Merchant",
+  "archetype": "Merchant",
+  "factionId": "merchant_guild",
+  "openingText": "Aldric spreads his hands across a table covered in goods and ledgers. 'You've caught me at a good time,' he says. 'I've wares and I've needs, and I suspect we might find some common ground. Let's talk terms.'",
+  "startingTension": 4,
+  "basePatience": 8,
+  "dialogueCordial": "Now this I can work with. You drive a fair bargain — I'll remember this.",
+  "dialogueStrained": "I hear you. Whether I agree is another matter.",
+  "dialogueHostile": "Watch yourself. I've dealt with rougher than you, and I didn't get rich by being pushed around.",
+  "dialogueWalkaway": "This isn't worth my time. Good day.",
+  "dialogueAccept": "Pleasure doing business. Come find me again when you need something.",
+  "terms": [
+    {
+      "id": "gold_payment",
+      "description": "Aldric will pay 50 gold for safe passage intel about the region.",
+      "favorPlayer": true,
+      "isHidden": false,
+      "goldDelta": 50,
+      "reputationDelta": 0
+    },
+    {
+      "id": "supply_discount",
+      "description": "Future goods from Aldric are sold at a 10% discount (tracked as faction rep).",
+      "favorPlayer": true,
+      "isHidden": false,
+      "goldDelta": 0,
+      "reputationDelta": 1,
+      "factionId": "merchant_guild"
+    },
+    {
+      "id": "hidden_fee",
+      "description": "A 'processing fee' of 15 gold — buried in the small print.",
+      "favorPlayer": false,
+      "isHidden": true,
+      "goldDelta": -15,
+      "reputationDelta": 0
+    }
+  ]
+}
