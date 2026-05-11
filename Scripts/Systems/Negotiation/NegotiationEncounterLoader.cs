@@ -16,6 +16,7 @@ public static class NegotiationEncounterLoader
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         IncludeFields = true,
+        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
     };
 
     public static NegotiationEncounterData Load(string id)
@@ -53,21 +54,24 @@ public static class NegotiationEncounterLoader
     /// </summary>
     public static NegotiationEncounterData PickForTerrain(string terrain, string regionId)
     {
-        // Phase 2: simple pool. Phase 3: terrain/region affinity system.
-        var candidates = new List<string>();
+        // Try region-specific commander first (high-stakes encounter)
+        // Then fall back to generic merchant
+        var candidates = new List<string>
+        {
+            $"{regionId}_commander",
+            "generic_merchant",
+        };
 
-        // Always try region-specific encounters first
-        candidates.Add($"{regionId}_merchant");
-        candidates.Add($"{regionId}_commander");
-        candidates.Add("generic_merchant");
-
+        // Randomize between available options so you don't always get the same one
+        var available = new List<NegotiationEncounterData>();
         foreach (var id in candidates)
         {
             var data = Load(id);
-            if (data != null) return data;
+            if (data != null) available.Add(data);
         }
 
-        return null;
+        if (available.Count == 0) return null;
+        return available[(int)(GD.Randi() % (uint)available.Count)];
     }
 
     public static void ClearCache() => _cache.Clear();

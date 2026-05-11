@@ -68,8 +68,9 @@ public partial class RunManager : Node2D
             // Sync step budget from region
             StepBudget = _region.StepBudget;
             GD.Print($"RunManager: Loaded region '{_region.DisplayName}' " +
-                     $"(StepBudget={StepBudget}, POIs: {_region.CombatPOICount}/" +
-                     $"{_region.RestPOICount}/{_region.NarrativePOICount})");
+                    $"(StepBudget={StepBudget}, POIs: {_region.CombatPOICount}/" +
+                    $"{_region.RestPOICount}/{_region.NarrativePOICount}/" +
+                    $"{_region.NegotiationPOICount})");
         }
 
         // ── Build the grid with that seed ───────────────────────────────────
@@ -282,9 +283,8 @@ public partial class RunManager : Node2D
         GD.Print("RunManager: Created EncounterRouter on tree root.");
     }
 
-    private void OnPartyMoved(Vector2I newCoord, Vector2I oldCoord)
+ private void OnPartyMoved(Vector2I newCoord, Vector2I oldCoord)
     {
-        // Get terrain cost for the hex we just moved INTO
         int stepCost = 1;
         int hpDrain = 0;
 
@@ -295,7 +295,7 @@ public partial class RunManager : Node2D
         }
 
         // Debug: unlimited steps skips all step/exhaustion logic
-        if (!PlayerSession.DebugMode || !PlayerSession.UnlimitedSteps)
+        if (!(PlayerSession.DebugMode && PlayerSession.UnlimitedSteps))
         {
             if (StepsRemaining > 0)
             {
@@ -322,36 +322,6 @@ public partial class RunManager : Node2D
                     EndRun(false);
                     return;
                 }
-            }
-        }
-
-        // Normal step and terrain HP drain logic
-        if (StepsRemaining > 0)
-        {
-            StepsRemaining = Mathf.Max(0, StepsRemaining - stepCost);
-        }
-        else
-        {
-            // Exhaustion
-            CurrentHP -= ExhaustionDamagePerStep;
-            if (CurrentHP <= 0)
-            {
-                CurrentHP = 0;
-                EndRun(false);
-                return;
-            }
-        }
-
-        // Terrain HP drain (swamp, volcanic)
-        if (hpDrain > 0)
-        {
-            CurrentHP -= hpDrain;
-            ShowInfo($"Hazardous terrain! Lost {hpDrain} HP.");
-            if (CurrentHP <= 0)
-            {
-                CurrentHP = 0;
-                EndRun(false);
-                return;
             }
         }
 
@@ -693,7 +663,9 @@ public partial class RunManager : Node2D
 
     private void UpdateUI()
     {
-        _stepLabel.Text = $"Steps: {StepsRemaining} / {StepBudget}";
+        _stepLabel.Text = (PlayerSession.DebugMode && PlayerSession.UnlimitedSteps)
+            ? "Steps: ∞ [DEBUG]"
+            : $"Steps: {StepsRemaining} / {StepBudget}";
         _stepLabel.Modulate = StepsRemaining > 5
             ? Colors.White
             : new Color(1f, 0.4f, 0.4f);

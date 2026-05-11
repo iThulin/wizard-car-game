@@ -82,6 +82,18 @@ public static class POIGenerator
             }
         }
 
+        // Second pass: place remaining narrative POIs anywhere
+        foreach (var coord in candidates)
+        {
+            if (narrativePlaced >= narrativeCount) break;
+            if (placed.Contains(coord)) continue;
+            if (!IsSpacedEnough(coord, placed, grid, 2)) continue;
+
+            grid.Hexes[coord].POI = OverworldHex.POIType.Narrative;
+            placed.Add(coord);
+            narrativePlaced++;
+        }
+
         // Place negotiation POIs — prefer road hexes
         int negPlaced = 0;
         foreach (var coord in candidates)
@@ -110,7 +122,8 @@ public static class POIGenerator
             negPlaced++;
         }
 
-        GD.Print($"POIs placed: {combatPlaced} combat, {restPlaced} rest, {narrativePlaced} narrative");
+        GD.Print($"POIs placed: {combatPlaced} combat, {restPlaced} rest, " +
+            $"{narrativePlaced} narrative, {negPlaced} negotiation");
     }
 
         private static void Shuffle<T>(List<T> list, RandomNumberGenerator rng)

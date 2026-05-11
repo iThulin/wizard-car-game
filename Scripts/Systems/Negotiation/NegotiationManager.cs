@@ -9,7 +9,7 @@ using System.Linq;
 /// Drives NegotiationState state machine.
 /// Writes results back to EncounterRouter on completion.
 /// </summary>
-public partial class NegotiationScene : Control
+public partial class NegotiationManager : Control
 {
     private NegotiationState _state;
     private NegotiationEncounterData _data;
@@ -372,18 +372,23 @@ public partial class NegotiationScene : Control
             var hbox = new HBoxContainer();
             hbox.AddThemeConstantOverride("separation", 8);
 
+            // Icon — fixed width so it doesn't expand
             var icon = new Label
             {
                 Text = term.FavorPlayer ? "✓" : "✗",
+                CustomMinimumSize = new Vector2(20, 0),
+                SizeFlagsHorizontal = SizeFlags.ShrinkBegin,
             };
             icon.AddThemeColorOverride("font_color",
                 term.FavorPlayer ? new Color(0.4f, 0.9f, 0.4f) : new Color(0.9f, 0.4f, 0.4f));
             hbox.AddChild(icon);
 
+            // Description — expands to fill remaining width and wraps properly
             var desc = new Label
             {
                 Text = term.Description,
                 AutowrapMode = TextServer.AutowrapMode.WordSmart,
+                SizeFlagsHorizontal = SizeFlags.ExpandFill,
             };
             desc.AddThemeFontSizeOverride("font_size", 14);
             hbox.AddChild(desc);
@@ -391,13 +396,14 @@ public partial class NegotiationScene : Control
             _termsContainer.AddChild(hbox);
         }
 
-        // Show how many hidden terms remain
+        // Hidden terms count
         int hiddenCount = _state.Terms.Count(t => t.IsHidden && !t.IsAccepted);
         if (hiddenCount > 0)
         {
             var hiddenLabel = new Label
             {
                 Text = $"[{hiddenCount} hidden term{(hiddenCount > 1 ? "s" : "")}]",
+                SizeFlagsHorizontal = SizeFlags.ExpandFill,
             };
             hiddenLabel.AddThemeColorOverride("font_color", new Color(0.6f, 0.6f, 0.7f));
             hiddenLabel.AddThemeFontSizeOverride("font_size", 13);
