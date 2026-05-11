@@ -808,4 +808,9 @@ public partial class CardUi : Control
         DragPayloadManager.IsDragging = false;
         EmitSignal(SignalName.CardDropped);
     }
+
+    public void EndDrag()
+    {
+        SnapBack();
+    }
 }

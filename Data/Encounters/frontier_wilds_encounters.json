@@ -1,0 +1,108 @@
+[
+    {
+      "id": "standing_stones_ritual",
+      "title": "The Standing Stones",
+      "body": "A circle of ancient stones pulses with residual magic. Runes carved into their faces depict a ritual you half-recognize from your studies. The air hums with potential.",
+      "terrainTags": ["ArcaneGround", "Ruins"],
+      "regionTags": ["frontier_wilds"],
+      "choices": [
+        {
+          "label": "Attempt the ritual",
+          "resultText": "The magic responds. Power floods through your party — at a cost.",
+          "hpDelta": -15,
+          "stepDelta": 4
+        },
+        {
+          "label": "Study the runes carefully",
+          "resultText": "Hours of study yield a fragment of lost knowledge. You feel sharper.",
+          "goldDelta": 40,
+          "stepDelta": -1
+        },
+        {
+          "label": "Disturb nothing and leave",
+          "resultText": "Some doors are best left closed."
+        }
+      ]
+    },
+    {
+      "id": "forest_spirit",
+      "title": "Voice in the Deep Wood",
+      "body": "Something old speaks from the treeline — not in words, but in impressions. It is not hostile. It is curious. It has been watching your party for some time.",
+      "terrainTags": ["Forest"],
+      "regionTags": ["frontier_wilds"],
+      "choices": [
+        {
+          "label": "Speak with it openly",
+          "resultText": "It shows you a safe path through the forest. The trees seem to part.",
+          "stepDelta": 3
+        },
+        {
+          "label": "Offer it something from your supplies",
+          "resultText": "It accepts. In return, it marks a cache of ancient coin.",
+          "goldDelta": 50,
+          "hpDelta": -5
+        },
+        {
+          "label": "Ignore it and push on",
+          "resultText": "The presence follows for a while, then fades. The forest feels heavier afterward.",
+          "hpDelta": -5
+        }
+      ]
+    },
+    {
+      "id": "ruined_watchtower",
+      "title": "The Ruined Watchtower",
+      "body": "The old watchtower's upper floors have collapsed, but the base is solid. From what remains of the staircase you can see clear to the horizon.",
+      "terrainTags": ["Ruins"],
+      "regionTags": ["frontier_wilds"],
+      "choices": [
+        {
+          "label": "Climb for a better view",
+          "resultText": "The climb is treacherous but worth it. You map the nearby terrain clearly.",
+          "hpDelta": -5,
+          "stepDelta": 3
+        },
+        {
+          "label": "Search the base for useful debris",
+          "resultText": "Beneath old rubble: a lockbox with coin inside.",
+          "goldDelta": 30
+        },
+        {
+          "label": "Rest in the sheltered base",
+          "resultText": "The stone walls block the wind. You recover before pushing on.",
+          "hpDelta": 25
+        }
+      ]
+    },
+    {
+      "id": "trapped_adventurer",
+      "title": "Trapped Beneath the Stones",
+      "body": "A hand reaches from beneath a fallen arch. An adventurer — alive, barely — trapped under rubble. They're carrying gear that looks expensive.",
+      "terrainTags": [],
+      "regionTags": ["frontier_wilds"],
+      "choices": [
+        {
+          "label": "Help them out — use full strength",
+          "resultText": "They're free. They press coin into your hand before staggering off.",
+          "goldDelta": 40,
+          "hpDelta": -10,
+          "stepDelta": -1
+        },
+        {
+          "label": "Help them out — take it slow",
+          "resultText": "A careful approach. They're grateful, and no one gets hurt.",
+          "goldDelta": 25,
+          "stepDelta": -2
+        },
+        {
+          "label": "Take their gear first, then help",
+          "resultText": "They can't stop you. Afterwards they limp away without a word.",
+          "goldDelta": 60
+        },
+        {
+          "label": "Leave them",
+          "resultText": "You move on. You try not to think about the sound of them calling after you."
+        }
+      ]
+    }
+  ]

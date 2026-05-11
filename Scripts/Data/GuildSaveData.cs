@@ -18,6 +18,9 @@ public class GuildSaveData
     // ── Wizard ──────────────────────────────────────────────────────────
     public string SelectedSchool = "Elementalist";
 
+    // ── Region ──────────────────────────────────────────────────────────
+    public string CurrentRegionId = "frontier_wilds"; 
+
     // ── Economy ─────────────────────────────────────────────────────────
     public int Gold = 0;
 
@@ -29,7 +32,9 @@ public class GuildSaveData
     public int TotalEncountersWon = 0;
 
     // ── Companions ──────────────────────────────────────────────────────
-    public List<CompanionSaveData> Companions = new();
+    public List<Companion> Companions = new();
+    public List<string> ActivePartyCompanionIds = new();
+    public int MaxPartySize = 2;
 
     // ── Buildings ────────────────────────────────────────────────────────
     public List<BuildingSaveData> Buildings = new();
@@ -48,22 +53,6 @@ public class GuildSaveData
     public string CharterAlignment = "";        // Order, Chaos, Balance
     public int SeasonalThreatLevel = 0;
     public Dictionary<string, int> FragmentProgress = new();
-}
-
-/// <summary>
-/// Save data for a single companion.
-/// </summary>
-public class CompanionSaveData
-{
-    public string Id = "";
-    public string Name = "";
-    public string School = "";
-    public string PersonalityTrait = "";
-    public int Loyalty = 50;            // 0-100
-    public int ArcStage = 0;            // 0 = not started, 1-3 = in progress, 4 = complete
-    public bool IsRecruited = false;
-    public bool IsPermadead = false;
-    public List<string> UnlockedCards = new();
 }
 
 /// <summary>

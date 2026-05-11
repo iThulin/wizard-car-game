@@ -49,6 +49,8 @@ public partial class GameRunner : Node3D
     // ── Tile highlighting state ─────────────────────────────────────────────
     private HashSet<Vector2I> _targetHighlightTiles = new();
     private CardHalf _lastHighlightedHalf = null;
+    private bool _isCardBeingDragged = false;
+    private CardHalf _draggedHalf = null;
 
     // ── Phase ───────────────────────────────────────────────────────────────
     public enum CombatPhase { Deployment, PlayerTurn, EnemyTurn, Victory, Defeat }
@@ -95,6 +97,7 @@ public partial class GameRunner : Node3D
         if (deckUiManager != null)
         {
             deckUiManager.CardHalfHovered += OnCardHalfHovered;
+            
             deckUiManager.SetManaProvider(() => selectedUnit?.Stats.Mana ?? 0);
         }
         else
@@ -103,11 +106,18 @@ public partial class GameRunner : Node3D
         }
 
         dropper = GetNodeOrNull<CardDropHandler>("../CardDropHandler");
-        if (dropper == null)
-            GD.PrintErr("CardDropHandler not found. Fix the node path in GameRunner.");
-        else
+        if (dropper != null)
+        {
             dropper.Connect(CardDropHandler.SignalName.CardDroppedOnTile,
                 new Callable(this, nameof(OnCardDroppedOnTile)));
+            
+            dropper.CardDragStarted += OnCardDragStarted;
+            dropper.CardDragEnded   += OnCardDragEnded;
+        }
+        else
+        {
+            GD.PrintErr("CardDropHandler not found. Fix the node path in GameRunner.");
+        }
 
         combatUI = GetNodeOrNull<CombatUI>(CombatUIPath);
         if (combatUI == null)
@@ -194,22 +204,58 @@ public partial class GameRunner : Node3D
 
     private void InitializeUnitDecks()
     {
+        // Get cards from active party companions (added to the wizard's deck)
+        var companionCards = BuildCompanionCardList();
+
+        bool injectedCompanionCards = false;
+
         foreach (var unit in playerUnits)
         {
             if (unit == null) continue;
 
-            // Create deck data for this unit
             unit.DeckData = new UnitDeckData(unit.School, 5);
-            unit.DeckData.Initialize(PlayerSession.DeckSize);
 
-            GD.Print($"Deck built for {unit.Name}: {unit.DeckData.TotalCards} cards ({unit.School})");
+            if (!injectedCompanionCards && companionCards.Count > 0)
+            {
+                // First unit gets a school deck PLUS companion cards
+                var schoolDeck = CardDatabase.BuildRandomDeck(unit.School, PlayerSession.DeckSize);
+                schoolDeck.AddRange(companionCards);
+                unit.DeckData.Initialize(schoolDeck);
+                injectedCompanionCards = true;
+                GD.Print($"Deck built for {unit.Name}: {unit.DeckData.TotalCards} cards " +
+                         $"({unit.School}, {companionCards.Count} from companions)");
+            }
+            else
+            {
+                unit.DeckData.Initialize(PlayerSession.DeckSize);
+                GD.Print($"Deck built for {unit.Name}: {unit.DeckData.TotalCards} cards ({unit.School})");
+            }
         }
 
-        // Set the first unit's deck as active
         if (playerUnits.Count > 0 && playerUnits[0].DeckData != null)
-        {
             deckManager.SetActiveDeck(playerUnits[0].DeckData);
+    }
+
+     private List<Card> BuildCompanionCardList()
+    {
+        var result = new List<Card>();
+        var party = CompanionRoster.GetActiveParty();
+
+        foreach (var companion in party)
+        {
+            foreach (var cardName in companion.ContributedCardIds)
+            {
+                var bp = CardDatabase.GetByName(cardName);
+                if (bp == null)
+                {
+                    GD.PrintErr($"Companion '{companion.Name}' references missing card '{cardName}'");
+                    continue;
+                }
+                result.Add(CardDatabase.Instantiate(bp));
+            }
         }
+
+        return result;
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -773,30 +819,33 @@ public partial class GameRunner : Node3D
 
     private void ApplyHazardDamage(List<Unit> units)
     {
-        foreach (var unit in units)
+        // Snapshot to avoid issues if a death modifies the list (e.g. summons)
+        var snapshot = units.ToList();
+
+        foreach (var unit in snapshot)
         {
             if (unit == null || !IsInstanceValid(unit) || !unit.Stats.IsAlive)
                 continue;
 
             if (unit.CurrentTile == null) continue;
+            if (!unit.CurrentTile.IsHazardous) continue;
 
-            if (unit.CurrentTile.IsHazardous)
-            {
-                // Base hazard damage — fire/lava tiles deal 3
-                int hazardDmg = 3;
+            // Capture everything we need from the tile BEFORE damage —
+            // ApplyDamage may kill the unit and null out CurrentTile.
+            var elementType = unit.CurrentTile.ElementType;
+            var elementStrength = unit.CurrentTile.ElementStrength;
+            var unitName = unit.Name;
 
-                // Scale by element strength if available
-                if (unit.CurrentTile.ElementStrength > 0)
-                    hazardDmg = (int)(hazardDmg * unit.CurrentTile.ElementStrength);
+            int hazardDmg = 3;
+            if (elementStrength > 0)
+                hazardDmg = (int)(hazardDmg * elementStrength);
+            hazardDmg = Math.Max(1, hazardDmg);
 
-                hazardDmg = Math.Max(1, hazardDmg);
+            unit.ApplyDamage(hazardDmg);
 
-                unit.ApplyDamage(hazardDmg);
-
-                string msg = $"{unit.Name} takes {hazardDmg} damage from {unit.CurrentTile.ElementType} terrain!";
-                GD.Print(msg);
-                combatUI?.AppendActionLog(msg);
-            }
+            string msg = $"{unitName} takes {hazardDmg} damage from {elementType} terrain!";
+            GD.Print(msg);
+            combatUI?.AppendActionLog(msg);
         }
     }
 
@@ -1366,13 +1415,14 @@ public partial class GameRunner : Node3D
 
     private void OnCardHalfHovered(CardUi cardUi, bool isTop, bool isEntering)
     {
-        //GD.Print($"[Highlight] OnCardHalfHovered: phase={currentPhase} isEntering={isEntering} card={cardUi?.Name}");
         if (currentPhase != CombatPhase.PlayerTurn) return;
+
+        // Lock during drag — ignore hover changes on other cards entirely
+        if (_isCardBeingDragged) return;
 
         if (isEntering)
         {
             var half = isTop ? cardUi.TopHalf : cardUi.BottomHalf;
-            //GD.Print($"[Highlight] Showing highlight for half={half?.Name} targeting={half?.Targeting?.GetType().Name}");
             ShowTargetHighlight(half);
         }
         else
@@ -1383,7 +1433,10 @@ public partial class GameRunner : Node3D
 
     private void OnCardDroppedOnTile(CardUi cardUi, bool isTop, HexTile tile)
     {
+        _isCardBeingDragged = false;
+        _draggedHalf = null;
         ClearTargetHighlight();
+
         if (isInDeploymentPhase) { GD.Print("Cannot cast during deployment."); return; }
 
         var half = isTop ? cardUi.TopHalf : cardUi.BottomHalf;
@@ -1548,6 +1601,21 @@ public partial class GameRunner : Node3D
             deckUiManager?.RefreshAffordability();
             RefreshDeckCounts();
         }
+    }
+
+    private void OnCardDragStarted(CardUi cardUi, bool isTop)
+    {
+        _isCardBeingDragged = true;
+        var half = isTop ? cardUi.TopHalf : cardUi.BottomHalf;
+        _draggedHalf = half;
+        ShowTargetHighlight(half);
+    }
+
+    private void OnCardDragEnded()
+    {
+        _isCardBeingDragged = false;
+        _draggedHalf = null;
+        ClearTargetHighlight();
     }
 
     private void OnGameEvent(GameEvent ge)
