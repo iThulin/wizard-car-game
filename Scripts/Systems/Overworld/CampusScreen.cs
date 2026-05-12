@@ -47,6 +47,8 @@ public partial class CampusScreen : Control
         {
             Color = new Color(0.09f, 0.08f, 0.13f),
             AnchorRight = 1f, AnchorBottom = 1f,
+            GrowHorizontal = GrowDirection.Both,
+            GrowVertical = GrowDirection.Both,
         };
         AddChild(bg);
 
@@ -121,7 +123,10 @@ public partial class CampusScreen : Control
     private void BuildGuildTab()
     {
         var scroll = new ScrollContainer { Name = "Guild" };
+        scroll.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         scroll.SizeFlagsVertical = SizeFlags.ExpandFill;
+        scroll.AnchorRight = 1f;
+        scroll.AnchorBottom = 1f;
         _tabs.AddChild(scroll);
 
         var layout = new VBoxContainer();
@@ -265,7 +270,11 @@ public partial class CampusScreen : Control
     private void BuildCompanionsTab()
     {
         var scroll = new ScrollContainer { Name = "Companions" };
+        scroll.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         scroll.SizeFlagsVertical = SizeFlags.ExpandFill;
+        scroll.AnchorRight = 1f;
+        scroll.AnchorBottom = 1f;
+
         _tabs.AddChild(scroll);
 
         var margins = MakeMargins(24, 16);
@@ -296,7 +305,10 @@ public partial class CampusScreen : Control
     private void BuildCampusTab()
     {
         var scroll = new ScrollContainer { Name = "Campus" };
+        scroll.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         scroll.SizeFlagsVertical = SizeFlags.ExpandFill;
+        scroll.AnchorRight = 1f;
+        scroll.AnchorBottom = 1f;
         _tabs.AddChild(scroll);
 
         var margins = MakeMargins(24, 16);
@@ -327,6 +339,10 @@ public partial class CampusScreen : Control
     private void BuildExpeditionTab()
     {
         var scroll = new ScrollContainer { Name = "Expedition" };
+        scroll.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        scroll.SizeFlagsVertical = SizeFlags.ExpandFill;
+        scroll.AnchorRight = 1f;
+        scroll.AnchorBottom = 1f;
         _tabs.AddChild(scroll);
 
         var margins = MakeMargins(24, 16);
@@ -861,7 +877,7 @@ public partial class CampusScreen : Control
         m.AddThemeConstantOverride("margin_top", vertical);
         m.AddThemeConstantOverride("margin_bottom", vertical);
         m.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        m.SizeFlagsVertical = SizeFlags.ExpandFill;
+        m.SizeFlagsVertical = SizeFlags.ShrinkBegin;
         return m;
     }
 
