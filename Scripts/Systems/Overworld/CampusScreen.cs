@@ -43,10 +43,11 @@ public partial class CampusScreen : Control
     public override void _Ready()
     {
         CardLoaderV2.LoadCardsFromJson("res://Data/Cards");
+        CallDeferred(nameof(BuildUI));
+    }
 
-        // Fill the viewport
-        SetAnchorsPreset(LayoutPreset.FullRect);
-
+    private void BuildUI()
+    {
         // Background
         var bg = new ColorRect { Color = new Color(0.09f, 0.08f, 0.13f) };
         bg.SetAnchorsPreset(LayoutPreset.FullRect);
