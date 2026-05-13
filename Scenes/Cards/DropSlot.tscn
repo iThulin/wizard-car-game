@@ -1,4 +1,4 @@
-[gd_scene load_steps=2 format=3 uid="uid://csdmm1n6b4hoe"]
+[gd_scene format=3 uid="uid://csdmm1n6b4hoe"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_uhxab"]
 border_width_left = 10

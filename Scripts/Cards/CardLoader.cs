@@ -6,8 +6,7 @@ using System.Collections.Generic;
 //
 // This is idempotent — safe to call from as many _Ready
 // methods as you want. Subsequent calls after cards are loaded
-// are a no-op. This avoids the "each scene has its own guard
-// block" fragility that CSV loading suffered from.
+// are a no-op.
 // ============================================================
 
 public static class CardLoaderV2
@@ -39,7 +38,7 @@ public static class CardLoaderV2
                  $"Total blueprints: {CardDatabase.Blueprints.Count}");
     }
 
-    // Force-reload — use from dev tools, not gameplay.
+    // Force-reload (use from dev tools, not gameplay)
     public static void Reload(string directoryPath)
     {
         CardDatabase.Blueprints.Clear();
