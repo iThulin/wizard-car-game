@@ -6,7 +6,7 @@ using System.Collections.Generic;
 /// POI triggering, and run completion detection.
 /// Attach this to the root of your OverworldScene.
 /// </summary>
-public partial class RunManager : Node2D
+public partial class OverworldRunManager : Node2D
 {
     [Export] public int StepBudget = 20;
     [Export] public int ExhaustionDamagePerStep = 10;

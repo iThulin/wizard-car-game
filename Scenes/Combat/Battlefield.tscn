@@ -4,18 +4,16 @@
 [ext_resource type="Script" uid="uid://cmy15kdfht3q1" path="res://Scripts/Cards/DeckManager.cs" id="2_tfvp6"]
 [ext_resource type="Script" uid="uid://c07b4kiher343" path="res://Scripts/UI/DeckUiManager.cs" id="3_pqsji"]
 [ext_resource type="PackedScene" uid="uid://iuge2orfh1hw" path="res://Scenes/Cards/CardUI.tscn" id="4_f341a"]
-[ext_resource type="PackedScene" uid="uid://csdmm1n6b4hoe" path="res://Scenes/DropSlot.tscn" id="5_tyao7"]
+[ext_resource type="PackedScene" path="res://Scenes/Cards/DropSlot.tscn" id="5_fcnvh"]
 [ext_resource type="Script" uid="uid://dqk28nqqm6ql4" path="res://Scripts/Systems/Combat/HexGridManager.cs" id="6_duw5d"]
 [ext_resource type="PackedScene" uid="uid://kr82jj8kd6i1" path="res://Scenes/Combat/HexTile.tscn" id="7_vjrxi"]
-[ext_resource type="PackedScene" uid="uid://dpnt6dp1jietn" path="res://Scenes/Combat/HexTile_Stone_Blocker.tscn" id="8_qd0yx"]
-[ext_resource type="PackedScene" uid="uid://csb2mcllkxlj6" path="res://Scenes/Combat/HexTile_Crystal_Blocker.tscn" id="9_uihwe"]
+[ext_resource type="PackedScene" uid="uid://dpnt6dp1jietn" path="res://Scenes/Combat/Summons/HexTile_Stone_Blocker.tscn" id="8_qd0yx"]
+[ext_resource type="PackedScene" uid="uid://csb2mcllkxlj6" path="res://Scenes/Combat/Summons/HexTile_Crystal_Blocker.tscn" id="9_uihwe"]
 [ext_resource type="Script" uid="uid://wqtdv0uvn5b3" path="res://Scripts/UI/CameraController.cs" id="10_cdchv"]
 [ext_resource type="Script" uid="uid://7xc312fm8dtm" path="res://Scripts/Cards/CardDropHandler.cs" id="11_mdga3"]
-[ext_resource type="Environment" uid="uid://dogyy6kgno8jm" path="res://Scenes/Combat/Combat_Environment.tres" id="11_tfvp6"]
-[ext_resource type="Script" uid="uid://cgjk3uj7xgowv" path="res://Scripts/Systems/Combat/GameRunner.cs" id="12_6yewk"]
-[ext_resource type="PackedScene" uid="uid://bb7yljiwkjvgm" path="res://Scenes/Combat/Players/Unit.tscn" id="13_golrv"]
-[ext_resource type="PackedScene" uid="uid://chfd280du8r83" path="res://Scenes/Combat/Monsters/TargetDummy.tscn" id="14_jroeh"]
-[ext_resource type="PackedScene" uid="uid://p86b1f6aanue" path="res://Scenes/Combat/CombatUI.tscn" id="15_3dugr"]
+[ext_resource type="Script" uid="uid://ba84w4qhnvtux" path="res://Scripts/Systems/Combat/CombatManager.cs" id="12_7b6bt"]
+[ext_resource type="Environment" path="res://Assets/Combat_Environment.tres" id="13_tfvp6"]
+[ext_resource type="Script" uid="uid://bpk5ndfmasfh0" path="res://Scripts/UI/CombatUI.cs" id="14_pqsji"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_h4djk"]
 albedo_color = Color(0.357868, 0.30020714, 0.22991636, 1)
@@ -97,7 +95,7 @@ text = "#"
 position = Vector2(960, 1080)
 script = ExtResource("3_pqsji")
 CardUIPackedScene = ExtResource("4_f341a")
-DropSlotScene = ExtResource("5_tyao7")
+DropSlotScene = ExtResource("5_fcnvh")
 
 [node name="DrawButton" type="Button" parent="DeckUI" unique_id=563659168]
 offset_left = 1.0
@@ -161,17 +159,15 @@ MaxPitch = 87.5
 [node name="CameraPivot" type="Node3D" parent="CameraController" unique_id=890489313]
 
 [node name="Camera3D" type="Camera3D" parent="CameraController/CameraPivot" unique_id=1378309163]
-environment = ExtResource("11_tfvp6")
 
 [node name="CardDropHandler" type="Node3D" parent="." unique_id=333756922]
 script = ExtResource("11_mdga3")
 
 [node name="GameRunner" type="Node3D" parent="." unique_id=1742499247]
-script = ExtResource("12_6yewk")
-PlayerUnitScene = ExtResource("13_golrv")
-DummyUnitScene = ExtResource("14_jroeh")
+script = ExtResource("12_7b6bt")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=2122826708]
-environment = ExtResource("11_tfvp6")
+environment = ExtResource("13_tfvp6")
 
-[node name="CombatUI" parent="." unique_id=393889926 instance=ExtResource("15_3dugr")]
+[node name="CombatUI" parent="." unique_id=393889926]
+script = ExtResource("14_pqsji")

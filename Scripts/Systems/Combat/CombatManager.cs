@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public partial class GameRunner : Node3D
+public partial class CombatManager : Node3D
 {
     // ── Scene references ────────────────────────────────────────────────────
     [Export] public PackedScene PlayerUnitScene;

@@ -45,7 +45,7 @@ public partial class EncounterRouter : Node
     /// Called by RunManager to start a combat encounter.
     /// Saves overworld state, then swaps to the combat scene.
     /// </summary>
-    public void StartCombat(RunManager runManager, Vector2I combatHexCoord)
+    public void StartCombat(OverworldRunManager runManager, Vector2I combatHexCoord)
     {
         // ── Save overworld state ────────────────────────────────────────
         SavedStepsRemaining = runManager.StepsRemaining;

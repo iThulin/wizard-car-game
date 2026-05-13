@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://cwuubbch02nc6" path="res://Scripts/Tiles/HexTile.cs" id="1_y3rtd"]
 [ext_resource type="CylinderMesh" uid="uid://c6txik1r44jjl" path="res://Assets/UI Asset/Hex_mesh.tres" id="2_1spyd"]
-[ext_resource type="Shape3D" uid="uid://b60tsccwqe5vl" path="res://Scenes/Combat/HexTile_collider.tres" id="3_7nvip"]
+[ext_resource type="Shape3D" path="res://Assets/Terrain Asset/HexTile_collider.tres" id="3_ebiwm"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1spyd"]
 albedo_color = Color(0.522904, 0.55825, 0.306631, 1)
@@ -20,7 +20,7 @@ surface_material_override/0 = SubResource("StandardMaterial3D_1spyd")
 [node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=2034632664]
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D" unique_id=1112261517]
-shape = ExtResource("3_7nvip")
+shape = ExtResource("3_ebiwm")
 
 [node name="CoordLabel" type="Label3D" parent="." unique_id=1061788109]
 transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0.277201, 0)
@@ -32,4 +32,4 @@ text = "Test
 [node name="Area3D" type="Area3D" parent="." unique_id=962639784]
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Area3D" unique_id=1257839623]
-shape = ExtResource("3_7nvip")
+shape = ExtResource("3_ebiwm")

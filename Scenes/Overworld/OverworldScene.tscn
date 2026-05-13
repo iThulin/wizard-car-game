@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://cc7c2gp06c1vg"]
 
-[ext_resource type="Script" uid="uid://crtb0r1clrfvc" path="res://Scripts/Overworld/RunManager.cs" id="1_qlysn"]
+[ext_resource type="Script" uid="uid://blxpo12xa642r" path="res://Scripts/Systems/Overworld/OverworldRunManager.cs" id="1_0xyk2"]
 
 [node name="Node2D" type="Node2D" unique_id=588557054]
-script = ExtResource("1_qlysn")
+script = ExtResource("1_0xyk2")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1288284325]
 position = Vector2(-16, -11)
