@@ -8,41 +8,41 @@ public partial class CombatManager : Node3D
     // ── Scene references ────────────────────────────────────────────────────
     [Export] public PackedScene PlayerUnitScene;
     [Export] public PackedScene DummyUnitScene;
-    [Export] public NodePath GridPath      = "../HexGridManager";
-    [Export] public NodePath CombatUIPath  = "../CombatUI";
+    [Export] public NodePath GridPath = "../HexGridManager";
+    [Export] public NodePath CombatUIPath = "../CombatUI";
 
     // ── Core state ──────────────────────────────────────────────────────────
     public GameState State;
     private Entity Me, Opp;
-    private List<Card>       _compiled = new();
-    private DeckManager      deckManager;
-    private DeckUiManager  deckUiManager;
-    private CardDropHandler  dropper;
-    private HexGridManager   grid;
-    private CombatUI         combatUI;
+    private List<Card> _compiled = new();
+    private DeckManager deckManager;
+    private DeckUiManager deckUiManager;
+    private CardDropHandler dropper;
+    private HexGridManager grid;
+    private CombatUI combatUI;
 
     // ── Deployment phase ────────────────────────────────────────────────────
-    [Export] public bool EnableDeploymentPhase    = true;
+    [Export] public bool EnableDeploymentPhase = true;
     [Export] public bool AutoStartAfterDeployment = true;
-    private bool                         isInDeploymentPhase = false;
-    private Unit                         selectedDeployUnit  = null;
-    private HashSet<Vector2I>            playerDeployCoords  = new();
-    private Dictionary<Unit, Vector2I>   originalDeployCoords = new();
+    private bool isInDeploymentPhase = false;
+    private Unit selectedDeployUnit = null;
+    private HashSet<Vector2I> playerDeployCoords = new();
+    private Dictionary<Unit, Vector2I> originalDeployCoords = new();
 
     // ── Unit lists ──────────────────────────────────────────────────────────
     [Export] public int TestPlayerCount = 2;
-    [Export] public int TestEnemyCount  = 3;
+    [Export] public int TestEnemyCount = 3;
 
-    private Unit       playerUnit;   // primary player unit (kept for mana logic)
-    private Unit       dummyUnit;    // primary enemy unit  (kept for existing refs)
+    private Unit playerUnit;   // primary player unit (kept for mana logic)
+    private Unit dummyUnit;    // primary enemy unit  (kept for existing refs)
     private List<Unit> playerUnits = new();
-    private List<Unit> enemyUnits  = new();
+    private List<Unit> enemyUnits = new();
     private bool _pruneNeeded;
 
     // ── Selection state ─────────────────────────────────────────────────────
-    private Unit               selectedUnit       = null;
-    private Unit               inspectedEnemyUnit = null;   
-    private HashSet<Vector2I>  currentMoveTiles   = new();
+    private Unit selectedUnit = null;
+    private Unit inspectedEnemyUnit = null;
+    private HashSet<Vector2I> currentMoveTiles = new();
     private Unit _hoveredUnit = null;
     private SchoolAttunementUI schoolAttunementUI;
 
@@ -54,9 +54,9 @@ public partial class CombatManager : Node3D
 
     // ── Phase ───────────────────────────────────────────────────────────────
     public enum CombatPhase { Deployment, PlayerTurn, EnemyTurn, Victory, Defeat }
-    private CombatPhase currentPhase    = CombatPhase.Deployment;
-    private int         roundNumber     = 1;
-    private bool        enemyPhaseRunning = false;
+    private CombatPhase currentPhase = CombatPhase.Deployment;
+    private int roundNumber = 1;
+    private bool enemyPhaseRunning = false;
 
     // ── Run summary data (for post-run screen) ───────────────────────────────
     [Signal] public delegate void CombatCompletedEventHandler(bool playerWon);
@@ -97,7 +97,7 @@ public partial class CombatManager : Node3D
         if (deckUiManager != null)
         {
             deckUiManager.CardHalfHovered += OnCardHalfHovered;
-            
+
             deckUiManager.SetManaProvider(() => selectedUnit?.Stats.Mana ?? 0);
         }
         else
@@ -110,9 +110,9 @@ public partial class CombatManager : Node3D
         {
             dropper.Connect(CardDropHandler.SignalName.CardDroppedOnTile,
                 new Callable(this, nameof(OnCardDroppedOnTile)));
-            
+
             dropper.CardDragStarted += OnCardDragStarted;
-            dropper.CardDragEnded   += OnCardDragEnded;
+            dropper.CardDragEnded += OnCardDragEnded;
         }
         else
         {
@@ -126,10 +126,10 @@ public partial class CombatManager : Node3D
         if (combatUI != null)
         {
             combatUI.ConfirmDeploymentPressed += OnConfirmDeploymentPressed;
-            combatUI.EndTurnPressed           += OnEndTurnPressed;
+            combatUI.EndTurnPressed += OnEndTurnPressed;
 
             // NEW – unit bar buttons select the corresponding unit
-            combatUI.UnitButtonPressed  += OnUnitBarButtonPressed;
+            combatUI.UnitButtonPressed += OnUnitBarButtonPressed;
             // NEW – enemy roster buttons inspect the corresponding enemy
             combatUI.EnemyButtonPressed += OnEnemyRosterButtonPressed;
         }
@@ -138,7 +138,8 @@ public partial class CombatManager : Node3D
         schoolAttunementUI = new SchoolAttunementUI();
         schoolAttunementUI.SetAnchorsPreset(Control.LayoutPreset.TopLeft);
         schoolAttunementUI.Position = new Vector2(0, 162);
-        combatUI.AddChild(schoolAttunementUI);
+        if (combatUI != null)
+            combatUI.AddChild(schoolAttunementUI);
 
         if (playerUnit != null)
             State.Mana[Me] = playerUnit.Stats.Mana;
@@ -178,7 +179,7 @@ public partial class CombatManager : Node3D
 
         Vector2 mousePos = GetViewport().GetMousePosition();
         Vector3 from = camera.ProjectRayOrigin(mousePos);
-        Vector3 to   = from + camera.ProjectRayNormal(mousePos) * 1000f;
+        Vector3 to = from + camera.ProjectRayNormal(mousePos) * 1000f;
 
         var result = GetWorld3D().DirectSpaceState
             .IntersectRay(PhysicsRayQueryParameters3D.Create(from, to));
@@ -236,7 +237,7 @@ public partial class CombatManager : Node3D
             deckManager.SetActiveDeck(playerUnits[0].DeckData);
     }
 
-     private List<Card> BuildCompanionCardList()
+    private List<Card> BuildCompanionCardList()
     {
         var result = new List<Card>();
         var party = CompanionRoster.GetActiveParty();
@@ -361,8 +362,8 @@ public partial class CombatManager : Node3D
             inspectedEnemyUnit.SetSelected(false);  // ← ADD THIS
         if (selectedUnit != null)
             selectedUnit.SetSelected(false);
-        selectedUnit        = null;
-        inspectedEnemyUnit  = enemy;
+        selectedUnit = null;
+        inspectedEnemyUnit = enemy;
         inspectedEnemyUnit.SetSelected(true);       // ← ADD THIS
         ClearMoveTiles();
         RefreshSelectedUnitUI();
@@ -413,7 +414,7 @@ public partial class CombatManager : Node3D
 
         Vector2 mousePos = GetViewport().GetMousePosition();
         Vector3 from = camera.ProjectRayOrigin(mousePos);
-        Vector3 to   = from + camera.ProjectRayNormal(mousePos) * 1000f;
+        Vector3 to = from + camera.ProjectRayNormal(mousePos) * 1000f;
 
         var spaceState = GetWorld3D().DirectSpaceState;
         var result = spaceState.IntersectRay(PhysicsRayQueryParameters3D.Create(from, to));
@@ -462,7 +463,7 @@ public partial class CombatManager : Node3D
 
         if (selectedUnit != null)
             selectedUnit.SetSelected(false);
-        selectedUnit       = null;
+        selectedUnit = null;
         inspectedEnemyUnit = enemy;
         inspectedEnemyUnit.SetSelected(true);   // ← ADD THIS
         ClearMoveTiles();
@@ -479,7 +480,7 @@ public partial class CombatManager : Node3D
 
         Vector2 mousePos = GetViewport().GetMousePosition();
         Vector3 from = camera.ProjectRayOrigin(mousePos);
-        Vector3 to   = from + camera.ProjectRayNormal(mousePos) * 1000f;
+        Vector3 to = from + camera.ProjectRayNormal(mousePos) * 1000f;
 
         var result = GetWorld3D().DirectSpaceState
             .IntersectRay(PhysicsRayQueryParameters3D.Create(from, to));
@@ -587,14 +588,14 @@ public partial class CombatManager : Node3D
             grid.GetTileView(coord)?.SetMoveHighlight(false);
         currentMoveTiles.Clear();
     }
-    
+
     // ═══════════════════════════════════════════════════════════════════════
     // Turn flow
     // ═══════════════════════════════════════════════════════════════════════
 
     private void StartPlayerTurn()
     {
-        currentPhase      = CombatPhase.PlayerTurn;
+        currentPhase = CombatPhase.PlayerTurn;
         enemyPhaseRunning = false;
 
         foreach (var unit in playerUnits)
@@ -653,7 +654,7 @@ public partial class CombatManager : Node3D
         RefreshAllUI();
     }
 
-   private void EndPlayerTurn()
+    private void EndPlayerTurn()
     {
         if (currentPhase != CombatPhase.PlayerTurn) return;
         selectedUnit = null;
@@ -674,7 +675,7 @@ public partial class CombatManager : Node3D
     {
         if (enemyPhaseRunning) return;
 
-        currentPhase      = CombatPhase.EnemyTurn;
+        currentPhase = CombatPhase.EnemyTurn;
         enemyPhaseRunning = true;
 
         foreach (var unit in enemyUnits)
@@ -745,7 +746,7 @@ public partial class CombatManager : Node3D
         GD.Print("=== Enemy Turn End ===");
         enemyPhaseRunning = false;
     }
-        
+
     private async System.Threading.Tasks.Task ActEnemyUnit(Unit enemy, Unit target)
     {
         if (!IsValidActor(enemy) || !IsValidActor(target)) return;
@@ -918,8 +919,8 @@ public partial class CombatManager : Node3D
 
     private bool CheckCombatEnd()
     {
-        bool allEnemiesDead  = true;
-        bool allPlayersDead  = true;
+        bool allEnemiesDead = true;
+        bool allPlayersDead = true;
 
         foreach (var u in enemyUnits)
             if (u != null && u.Stats.IsAlive) { allEnemiesDead = false; break; }
@@ -983,13 +984,13 @@ public partial class CombatManager : Node3D
     {
         if (e is InputEventKey key && key.Pressed)
         {
-            if (key.Keycode == Key.Enter)    { EndDeploymentPhase();       return; }
+            if (key.Keycode == Key.Enter) { EndDeploymentPhase(); return; }
             if (key.Keycode == Key.Backspace) { ResetDeploymentPositions(); return; }
         }
 
         if (e is InputEventMouseButton mb && mb.Pressed)
         {
-            if (mb.ButtonIndex == MouseButton.Left)  { TryHandleDeploymentClick(); return; }
+            if (mb.ButtonIndex == MouseButton.Left) { TryHandleDeploymentClick(); return; }
             if (mb.ButtonIndex == MouseButton.Right) { ClearDeploymentSelection(); GD.Print("Deployment selection cleared."); }
         }
     }
@@ -1001,7 +1002,7 @@ public partial class CombatManager : Node3D
 
         Vector2 mousePos = GetViewport().GetMousePosition();
         Vector3 from = camera.ProjectRayOrigin(mousePos);
-        Vector3 to   = from + camera.ProjectRayNormal(mousePos) * 1000f;
+        Vector3 to = from + camera.ProjectRayNormal(mousePos) * 1000f;
 
         var result = GetWorld3D().DirectSpaceState
             .IntersectRay(PhysicsRayQueryParameters3D.Create(from, to));
@@ -1011,7 +1012,7 @@ public partial class CombatManager : Node3D
         Node current = cv.AsGodotObject() as Node;
         while (current != null)
         {
-            if (current is Unit unit)  { TrySelectDeploymentUnit(unit); return; }
+            if (current is Unit unit) { TrySelectDeploymentUnit(unit); return; }
             if (current is HexTile tile) { TryPlaceDeploymentUnit(tile); return; }
             current = current.GetParent();
         }
@@ -1129,14 +1130,14 @@ public partial class CombatManager : Node3D
         }
 
         playerUnit = playerUnits[0];
-        dummyUnit  = enemyUnits[0];
+        dummyUnit = enemyUnits[0];
 
-        State.Grid       = grid;
+        State.Grid = grid;
         State.PlayerUnit = playerUnit;
-        State.EnemyUnit  = dummyUnit;
+        State.EnemyUnit = dummyUnit;
         State.UnitsInPlay.Clear();
         foreach (var u in playerUnits) State.UnitsInPlay.Add(u);
-        foreach (var u in enemyUnits)  State.UnitsInPlay.Add(u);
+        foreach (var u in enemyUnits) State.UnitsInPlay.Add(u);
 
         GD.Print($"Spawned {playerUnits.Count} player unit(s) and {enemyUnits.Count} enemy unit(s).");
 
@@ -1181,14 +1182,14 @@ public partial class CombatManager : Node3D
         var unit = scene.Instantiate<Unit>();
 
         unit.IsPlayerControlled = isPlayerControlled;
-        unit.TeamId             = teamId;
-        unit.StartMaxHealth     = maxHealth;
-        unit.StartHealth        = health;
-        unit.StartBaseSpeed     = baseSpeed;
-        unit.StartMaxMana       = maxMana;
-        unit.StartMana          = mana;
-        unit.StartArmor         = armor;
-        unit.StartShield        = shield;
+        unit.TeamId = teamId;
+        unit.StartMaxHealth = maxHealth;
+        unit.StartHealth = health;
+        unit.StartBaseSpeed = baseSpeed;
+        unit.StartMaxMana = maxMana;
+        unit.StartMana = mana;
+        unit.StartArmor = armor;
+        unit.StartShield = shield;
 
         AddChild(unit);
         unit.OnDied += HandleUnitDeath;
@@ -1223,8 +1224,8 @@ public partial class CombatManager : Node3D
         if (enemy == null || !IsInstanceValid(enemy) || enemy.CurrentTile == null)
             return null;
 
-        Unit best     = null;
-        int  bestDist = int.MaxValue;
+        Unit best = null;
+        int bestDist = int.MaxValue;
         foreach (var player in playerUnits)
         {
             if (player == null || !IsInstanceValid(player)) continue;
@@ -1236,7 +1237,7 @@ public partial class CombatManager : Node3D
         return best;
     }
 
-        private void RegisterSummonHandler()
+    private void RegisterSummonHandler()
     {
         State.OnSummonRequested = (unitKind, tile, teamId) =>
         {
@@ -1253,7 +1254,7 @@ public partial class CombatManager : Node3D
                 case "boulder":
                     scene = DummyUnitScene;
                     hp = 12;
-                    speed = 0; 
+                    speed = 0;
                     armor = 5;
                     break;
 
@@ -1606,7 +1607,7 @@ public partial class CombatManager : Node3D
             // Resolve the stack immediatly
             while (!State.Stack.IsEmpty)
                 State.Resolver.ResolveTop(State);
-            
+
             RefreshEnemyRoster();
 
             // Discard the card immediately on successful cast
@@ -1655,10 +1656,10 @@ public partial class CombatManager : Node3D
     void Pass()
     {
         var advanced = State.Priority.PassPriority(State);
-        if (!advanced) GD.Print($"Pass. Priority → {(State.Priority.PriorityHolder==Me?"Me":"Opp")}");
+        if (!advanced) GD.Print($"Pass. Priority → {(State.Priority.PriorityHolder == Me ? "Me" : "Opp")}");
     }
 
-     void ResolveTop()
+    void ResolveTop()
     {
         if (State.Stack.IsEmpty) { GD.Print("Stack empty."); return; }
         GD.Print($"Resolving top… (stack size before: {State.StackCount()})");
@@ -1784,8 +1785,8 @@ public partial class CombatManager : Node3D
             // Highlight matching element tiles
             TileElementType needed = et.Element.ToLowerInvariant() switch
             {
-                "fire"  => TileElementType.Fire,
-                "ice"   => TileElementType.Frost,
+                "fire" => TileElementType.Fire,
+                "ice" => TileElementType.Frost,
                 "storm" => TileElementType.Lightning,
                 "stone" => TileElementType.Earth,
                 _ => TileElementType.None

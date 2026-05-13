@@ -2,7 +2,8 @@
 
 [ext_resource type="Script" uid="uid://cwuubbch02nc6" path="res://Scripts/Tiles/HexTile.cs" id="1_y3rtd"]
 [ext_resource type="CylinderMesh" uid="uid://c6txik1r44jjl" path="res://Assets/UI Asset/Hex_mesh.tres" id="2_1spyd"]
-[ext_resource type="Shape3D" path="res://Assets/Terrain Asset/HexTile_collider.tres" id="3_ebiwm"]
+[ext_resource type="PackedScene" path="res://Scenes/Combat/ImbuementOverlay.tscn" id="2_62qp0"]
+[ext_resource type="Shape3D" uid="uid://cm7xlobr45paf" path="res://Scenes/Combat/HexTile_collider.tres" id="3_ebiwm"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1spyd"]
 albedo_color = Color(0.522904, 0.55825, 0.306631, 1)
@@ -11,6 +12,7 @@ roughness = 0.85
 [node name="HexTile" type="Node3D" unique_id=783053476]
 script = ExtResource("1_y3rtd")
 HoverColor = Color(0.345098, 0.470588, 0.337255, 1)
+ImbuementOverlayScene = ExtResource("2_62qp0")
 
 [node name="HexMesh" type="MeshInstance3D" parent="." unique_id=858530921]
 transform = Transform3D(0.86602527, 0, 0.50000024, 0, 3, 0, -0.50000024, 0, 0.86602527, 0, -0.25, 0)
