@@ -1144,6 +1144,14 @@ public partial class CombatManager : Node3D
             if (unit != null) playerUnits.Add(unit);
         }
 
+        for (int i = 0; i < TestEnemyCount; i++)
+        {
+            var unit = SpawnUnitFromSide(HexGridManager.SpawnSide.Enemy, DummyUnitScene,
+                teamId: 1, isPlayerControlled: false, namePrefix: "Enemy",
+                maxHealth: 30, health: 30, baseSpeed: 2, maxMana: 0, mana: 0, armor: 0, shield: 0);
+            if (unit != null) enemyUnits.Add(unit);
+        }
+
         for (int i = 0; i < enemyUnits.Count; i++)
         {
             enemyUnits[i].SetBodyColor(UITheme.EnemyUnitColors[i % UITheme.EnemyUnitColors.Length]);
@@ -1154,21 +1162,6 @@ public partial class CombatManager : Node3D
         {
             GD.PrintErr("Failed to spawn at least one player and one enemy.");
             return;
-        }
-
-        // Distinct colors for each enemy so they're visually differentiable
-        var enemyColors = new Color[]
-        {
-            new Color(1.0f, 0.25f, 0.25f), // red
-            new Color(1.0f, 0.55f, 0.1f),  // orange
-            new Color(0.8f, 0.2f, 0.9f),   // purple
-            new Color(0.2f, 0.8f, 0.9f),   // cyan
-            new Color(0.9f, 0.9f, 0.1f),   // yellow
-        };
-        for (int i = 0; i < enemyUnits.Count; i++)
-        {
-            enemyUnits[i].SetBodyColor(enemyColors[i % enemyColors.Length]);
-            enemyUnits[i].RefreshNameLabel();
         }
 
         playerUnit = playerUnits[0];

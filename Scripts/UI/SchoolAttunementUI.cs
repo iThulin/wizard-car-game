@@ -50,7 +50,7 @@ public partial class SchoolAttunementUI : PanelContainer
 		// Match SelectedUnitPanel: solid black, 2px expand margins
 		var style = new StyleBoxFlat
 		{
-			BgColor = UITheme.SurfaceDark,
+			BgColor = UITheme.WorldBase,
 			ExpandMarginLeft = UITheme.PaddingSmall / 2,
 			ExpandMarginTop = UITheme.PaddingSmall / 2,
 			ExpandMarginRight = UITheme.PaddingSmall / 2,
