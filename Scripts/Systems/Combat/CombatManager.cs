@@ -32,10 +32,13 @@ public partial class CombatManager : Node3D
     // stores the pending enemy spawn parameters so we can defer spawning until after the player commits their deployment.
     private struct PendingEnemySpawn
     {
+        public EnemyArchetype Archetype;  // ← drives stats, AI, and intel label
         public int MaxHealth;
         public int Health;
         public int BaseSpeed;
         public int Armor;
+        public int AttackRange;           // ← needed by ranged AI
+        public int AttackDamage;          // ← archetype-specific damage
         public Color BodyColor;
         public string NamePrefix;
     }
@@ -349,6 +352,12 @@ public partial class CombatManager : Node3D
 
     private void RefreshEnemyRoster()
     {
+        // During deployment, enemies don't exist yet — keep the intel panel visible.
+        if (isInDeploymentPhase)
+        {
+            combatUI?.ShowEnemyIntel(BuildEnemyIntel());
+            return;
+        }
         combatUI?.RefreshEnemyRoster(enemyUnits);
     }
 
@@ -796,30 +805,217 @@ public partial class CombatManager : Node3D
         enemyPhaseRunning = false;
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // Enemy AI — archetype-driven behaviours
+    // ═══════════════════════════════════════════════════════════════════════
+
     private async System.Threading.Tasks.Task ActEnemyUnit(Unit enemy, Unit target)
+    {
+        if (!IsValidActor(enemy) || !IsValidActor(target)) return;
+
+        switch (enemy.EnemyArchetype)
+        {
+            case EnemyArchetype.Soldier:
+                await ActSoldier(enemy, target);
+                break;
+            case EnemyArchetype.Brute:
+                await ActBrute(enemy);
+                break;
+            case EnemyArchetype.Defender:
+                await ActDefender(enemy, target);
+                break;
+            case EnemyArchetype.Ranger:
+                await ActRanger(enemy, target);
+                break;
+            case EnemyArchetype.Wizard:
+                await ActWizard(enemy, target);
+                break;
+            default:
+                await ActSoldier(enemy, target);
+                break;
+        }
+    }
+
+    // ── Soldier: move toward nearest, attack adjacent ────────────────────
+
+    private async System.Threading.Tasks.Task ActSoldier(Unit enemy, Unit target)
     {
         if (!IsValidActor(enemy) || !IsValidActor(target)) return;
 
         int dist = grid.Distance(enemy.CurrentTile, target.CurrentTile);
 
-        // ── Attack if already adjacent ──
         if (dist <= 1)
         {
             await PerformAttack(enemy, target);
             return;
         }
 
-        // ── Move toward target ──
+        await MoveToward(enemy, target);
+
+        if (!IsValidActor(enemy) || !IsValidActor(target)) return;
+        if (grid.Distance(enemy.CurrentTile, target.CurrentTile) <= 1)
+            await PerformAttack(enemy, target);
+    }
+
+    // ── Brute: target the highest-HP player unit, then close and attack ──
+
+    private async System.Threading.Tasks.Task ActBrute(Unit enemy)
+    {
+        // Re-pick target: highest current HP among living player units
+        Unit target = null;
+        int bestHp = -1;
+        foreach (var u in playerUnits)
+        {
+            if (u == null || !IsInstanceValid(u) || !u.Stats.IsAlive) continue;
+            if (u.Stats.Health > bestHp) { bestHp = u.Stats.Health; target = u; }
+        }
+
+        if (target == null || !IsValidActor(target)) return;
+        if (!IsValidActor(enemy)) return;
+
+        int dist = grid.Distance(enemy.CurrentTile, target.CurrentTile);
+
+        if (dist <= 1)
+        {
+            await PerformAttack(enemy, target);
+            return;
+        }
+
+        await MoveToward(enemy, target);
+
+        if (!IsValidActor(enemy) || !IsValidActor(target)) return;
+        if (grid.Distance(enemy.CurrentTile, target.CurrentTile) <= 1)
+            await PerformAttack(enemy, target);
+    }
+
+    // ── Defender: hold position, only advance if player within 2 tiles ──
+
+    private async System.Threading.Tasks.Task ActDefender(Unit enemy, Unit target)
+    {
+        if (!IsValidActor(enemy) || !IsValidActor(target)) return;
+
+        int dist = grid.Distance(enemy.CurrentTile, target.CurrentTile);
+
+        // Attack if adjacent
+        if (dist <= 1)
+        {
+            await PerformAttack(enemy, target);
+            return;
+        }
+
+        // Only move if the player is close — otherwise hold ground
+        if (dist <= 2)
+        {
+            await MoveToward(enemy, target);
+
+            if (!IsValidActor(enemy) || !IsValidActor(target)) return;
+            if (grid.Distance(enemy.CurrentTile, target.CurrentTile) <= 1)
+                await PerformAttack(enemy, target);
+        }
+        else
+        {
+            string holdMsg = $"{enemy.Name} holds position.";
+            GD.Print(holdMsg);
+            combatUI?.AppendActionLog(holdMsg);
+        }
+    }
+
+    // ── Ranger: maintain preferred distance, shoot without closing ───────
+
+    private async System.Threading.Tasks.Task ActRanger(Unit enemy, Unit target)
+    {
+        if (!IsValidActor(enemy) || !IsValidActor(target)) return;
+
+        int dist = grid.Distance(enemy.CurrentTile, target.CurrentTile);
+        int preferred = enemy.AttackRange; // preferred engagement distance = attack range
+        int minDist = preferred - 1;     // won't close beyond this
+
+        // If target is within attack range, shoot — no need to move
+        if (dist <= enemy.AttackRange && dist >= minDist)
+        {
+            await PerformRangedAttack(enemy, target);
+            return;
+        }
+
+        // If target is too close, back away
+        if (dist < minDist)
+        {
+            await MoveAwayFrom(enemy, target, minDist);
+            if (!IsValidActor(enemy) || !IsValidActor(target)) return;
+            // Shoot if we ended up in range
+            if (grid.Distance(enemy.CurrentTile, target.CurrentTile) <= enemy.AttackRange)
+                await PerformRangedAttack(enemy, target);
+            return;
+        }
+
+        // Target is out of range — move closer to preferred distance
+        await MoveToDistance(enemy, target, preferred);
+        if (!IsValidActor(enemy) || !IsValidActor(target)) return;
+        if (grid.Distance(enemy.CurrentTile, target.CurrentTile) <= enemy.AttackRange)
+            await PerformRangedAttack(enemy, target);
+    }
+
+    // ── Wizard: charge every other turn, then deal high damage + debuff ──
+
+    private async System.Threading.Tasks.Task ActWizard(Unit enemy, Unit target)
+    {
+        if (!IsValidActor(enemy) || !IsValidActor(target)) return;
+
+        // Stay at max range — never close
+        int dist = grid.Distance(enemy.CurrentTile, target.CurrentTile);
+        if (dist < enemy.AttackRange)
+            await MoveAwayFrom(enemy, target, enemy.AttackRange);
+
+        if (!IsValidActor(enemy) || !IsValidActor(target)) return;
+
+        // Charge mechanic: WizardCharging tracks the odd/even turn.
+        // True = was charging last turn → fire now. False = charging this turn.
+        bool wasCharging = enemy.HasStatus("wizard_charging");
+
+        if (wasCharging)
+        {
+            // Fire charged shot
+            string chargeMsg = $"{enemy.Name} releases a charged blast!";
+            GD.Print(chargeMsg);
+            combatUI?.AppendActionLog(chargeMsg);
+            await PerformRangedAttack(enemy, target, bonusDamage: 0); // damage already in AttackDamage
+
+            // Apply slow debuff to target
+            if (IsValidActor(target))
+            {
+                target.ApplyStatus("slowed", 1);
+                string debuffMsg = $"{target.Name} is slowed by arcane energy!";
+                GD.Print(debuffMsg);
+                combatUI?.AppendActionLog(debuffMsg);
+            }
+            // Clear charging status (it was consumed)
+            // No need to remove — it will expire naturally on next TickStatuses
+        }
+        else
+        {
+            // Begin charging
+            enemy.ApplyStatus("wizard_charging", 2); // duration 2 so it persists into next turn
+            string chargeMsg = $"{enemy.Name} begins channelling...";
+            GD.Print(chargeMsg);
+            combatUI?.AppendActionLog(chargeMsg);
+        }
+    }
+
+    // ── Shared movement helpers ───────────────────────────────────────────
+
+    /// Move one step toward target (existing behaviour, extracted).
+    private async System.Threading.Tasks.Task MoveToward(Unit enemy, Unit target)
+    {
         var moveOptions = grid.GetReachableTiles(enemy);
         Vector2I bestMove = enemy.CurrentTile.Axial;
-        int bestDist = dist;
+        int bestDist = grid.Distance(enemy.CurrentTile, target.CurrentTile);
 
         foreach (var coord in moveOptions)
         {
             var tile = grid.GetTile(coord);
             if (tile == null) continue;
-            int newDist = grid.Distance(tile, target.CurrentTile);
-            if (newDist < bestDist) { bestDist = newDist; bestMove = coord; }
+            int d = grid.Distance(tile, target.CurrentTile);
+            if (d < bestDist) { bestDist = d; bestMove = coord; }
         }
 
         if (bestMove != enemy.CurrentTile.Axial)
@@ -827,33 +1023,112 @@ public partial class CombatManager : Node3D
             var tile = grid.GetTile(bestMove);
             if (tile != null && enemy.TryMoveTo(grid, tile))
             {
-                string moveMsg = $"{enemy.Name} moves toward {target.Name}.";
-                GD.Print(moveMsg);
-                combatUI?.AppendActionLog(moveMsg);
+                string msg = $"{enemy.Name} moves toward {target.Name}.";
+                GD.Print(msg);
+                combatUI?.AppendActionLog(msg);
                 await ToSignal(GetTree().CreateTimer(0.35f), "timeout");
             }
         }
-
-        // ── Re-validate after movement; target or enemy may have died via hazards ──
-        if (!IsValidActor(enemy) || !IsValidActor(target)) return;
-
-        // ── Attack if now adjacent ──
-        if (grid.Distance(enemy.CurrentTile, target.CurrentTile) <= 1)
-            await PerformAttack(enemy, target);
     }
+
+    /// Move to a specific distance from target (Ranger kiting).
+    private async System.Threading.Tasks.Task MoveToDistance(Unit enemy, Unit target, int desiredDist)
+    {
+        var moveOptions = grid.GetReachableTiles(enemy);
+        Vector2I bestMove = enemy.CurrentTile.Axial;
+        int currentDelta = Math.Abs(grid.Distance(enemy.CurrentTile, target.CurrentTile) - desiredDist);
+        int bestDelta = currentDelta;
+
+        foreach (var coord in moveOptions)
+        {
+            var tile = grid.GetTile(coord);
+            if (tile == null) continue;
+            int delta = Math.Abs(grid.Distance(tile, target.CurrentTile) - desiredDist);
+            if (delta < bestDelta) { bestDelta = delta; bestMove = coord; }
+        }
+
+        if (bestMove != enemy.CurrentTile.Axial)
+        {
+            var tile = grid.GetTile(bestMove);
+            if (tile != null && enemy.TryMoveTo(grid, tile))
+            {
+                string msg = $"{enemy.Name} repositions.";
+                GD.Print(msg);
+                combatUI?.AppendActionLog(msg);
+                await ToSignal(GetTree().CreateTimer(0.35f), "timeout");
+            }
+        }
+    }
+
+    /// Move away from target until at least minDist away (Ranger/Wizard retreat).
+    private async System.Threading.Tasks.Task MoveAwayFrom(Unit enemy, Unit target, int minDist)
+    {
+        var moveOptions = grid.GetReachableTiles(enemy);
+        Vector2I bestMove = enemy.CurrentTile.Axial;
+        int bestDist = grid.Distance(enemy.CurrentTile, target.CurrentTile);
+
+        foreach (var coord in moveOptions)
+        {
+            var tile = grid.GetTile(coord);
+            if (tile == null) continue;
+            int d = grid.Distance(tile, target.CurrentTile);
+            if (d > bestDist) { bestDist = d; bestMove = coord; }
+        }
+
+        if (bestMove != enemy.CurrentTile.Axial)
+        {
+            var tile = grid.GetTile(bestMove);
+            if (tile != null && enemy.TryMoveTo(grid, tile))
+            {
+                string msg = $"{enemy.Name} falls back.";
+                GD.Print(msg);
+                combatUI?.AppendActionLog(msg);
+                await ToSignal(GetTree().CreateTimer(0.35f), "timeout");
+            }
+        }
+    }
+
+    // ── Attack execution ─────────────────────────────────────────────────
 
     private async System.Threading.Tasks.Task PerformAttack(Unit enemy, Unit target)
     {
-        const int dmg = 5;
+        int dmg = enemy.AttackDamage > 0 ? enemy.AttackDamage : 5;
 
-        // Log attack first, then apply damage
         string msg = $"{enemy.Name} attacks {target.Name} for {dmg} damage.";
         GD.Print(msg);
         combatUI?.AppendActionLog(msg);
 
         target.ApplyDamage(dmg);
 
-        // HP-remaining suffix as a separate line, so death messages can interleave naturally
+        string hpMsg = $"  ({target.Stats.Health}/{target.Stats.MaxHealth} HP remaining)";
+        GD.Print(hpMsg);
+
+        RefreshSelectedUnitUI();
+        RefreshEnemyRoster();
+        RefreshPlayerUnitBar();
+        RefreshDeckCounts();
+        await ToSignal(GetTree().CreateTimer(0.35f), "timeout");
+    }
+
+    private async System.Threading.Tasks.Task PerformRangedAttack(Unit enemy, Unit target, int bonusDamage = 0)
+    {
+        if (!IsValidActor(enemy) || !IsValidActor(target)) return;
+
+        int dist = grid.Distance(enemy.CurrentTile, target.CurrentTile);
+        if (dist > enemy.AttackRange)
+        {
+            GD.Print($"{enemy.Name} — target out of range for ranged attack.");
+            return;
+        }
+
+        int dmg = (enemy.AttackDamage > 0 ? enemy.AttackDamage : 4) + bonusDamage;
+
+        string msg = $"{enemy.Name} shoots {target.Name} for {dmg} damage.";
+        GD.Print(msg);
+        combatUI?.AppendActionLog(msg);
+
+        target.ApplyDamage(dmg);
+
         string hpMsg = $"  ({target.Stats.Health}/{target.Stats.MaxHealth} HP remaining)";
         GD.Print(hpMsg);
 
@@ -1010,6 +1285,16 @@ public partial class CombatManager : Node3D
         GD.Print("Deployment phase started. Select a friendly unit and place it. Press Enter to confirm.");
         currentPhase = CombatPhase.Deployment;
         RefreshAllUI();
+
+        // Deferred so it fires after the deferred RefreshPhaseUI/RefreshSelectedUnitUI
+        // calls in _Ready() have settled — otherwise RefreshAllUI overwrites it.
+        CallDeferred(nameof(ShowDeploymentIntel));
+    }
+
+    private void ShowDeploymentIntel()
+    {
+        if (isInDeploymentPhase)
+            combatUI?.ShowEnemyIntel(BuildEnemyIntel());
     }
 
     private void EndDeploymentPhase()
@@ -1268,31 +1553,10 @@ public partial class CombatManager : Node3D
             if (unit != null) playerUnits.Add(unit);
         }
 
-        // ── Queue enemies for deferred spawn ──────────────────────────────────
-        // Enemies are NOT placed on the grid yet. They will be spawned reactively
-        // in SpawnAndPlaceEnemies(), called from EndDeploymentPhase(), so the
-        // enemy formation responds to where the player placed their units.
-        pendingEnemySpawns.Clear();
-        var enemyColors = new Color[]
-        {
-            new Color(1.0f, 0.25f, 0.25f),
-            new Color(1.0f, 0.55f, 0.1f),
-            new Color(0.8f, 0.2f, 0.9f),
-            new Color(0.2f, 0.8f, 0.9f),
-            new Color(0.9f, 0.9f, 0.1f),
-        };
-        for (int i = 0; i < TestEnemyCount; i++)
-        {
-            pendingEnemySpawns.Add(new PendingEnemySpawn
-            {
-                MaxHealth = 30,
-                Health = 30,
-                BaseSpeed = 2,
-                Armor = 0,
-                BodyColor = enemyColors[i % enemyColors.Length],
-                NamePrefix = "Enemy",
-            });
-        }
+        // Default encounter composition — will be replaced by EncounterDefinition
+        // in Step 2 of the architecture plan. For now, a fixed mix that exercises
+        // all five archetypes when TestEnemyCount >= 3.
+        QueueDefaultEncounter();
 
         if (playerUnits.Count == 0)
         {
@@ -1340,6 +1604,63 @@ public partial class CombatManager : Node3D
             {
                 StartDeploymentPhase();
             }
+        }
+    }
+
+    private List<EnemyIntelEntry> BuildEnemyIntel()
+    {
+        var entries = new List<EnemyIntelEntry>();
+        foreach (var p in pendingEnemySpawns)
+        {
+            entries.Add(new EnemyIntelEntry
+            {
+                ThreatLabel = EnemyArchetypeData.GetThreatLabel(p.Archetype),
+                MaxHealth = p.MaxHealth,
+                BaseSpeed = p.BaseSpeed,
+                Armor = p.Armor,
+                BodyColor = p.BodyColor,
+            });
+        }
+        return entries;
+    }
+
+    /// <summary>
+    /// Builds a default encounter composition from the archetype roster.
+    /// Replace this with EncounterDefinition data when that system is built.
+    /// </summary>
+    private void QueueDefaultEncounter()
+    {
+        pendingEnemySpawns.Clear();
+
+        // Default mix: one Soldier, one Ranger, one Wizard.
+        // Gives immediate variety and exercises all three AI behaviours.
+        // Swap these out per encounter type once EncounterDefinition exists.
+        var composition = new EnemyArchetype[]
+        {
+            EnemyArchetype.Soldier,
+            EnemyArchetype.Ranger,
+            EnemyArchetype.Wizard,
+        };
+
+        // Trim or pad to TestEnemyCount so the inspector export still controls battle size
+        int count = Mathf.Min(TestEnemyCount, composition.Length);
+
+        for (int i = 0; i < count; i++)
+        {
+            var archetype = composition[i];
+            int hp = EnemyArchetypeData.GetMaxHealth(archetype);
+            pendingEnemySpawns.Add(new PendingEnemySpawn
+            {
+                Archetype = archetype,
+                MaxHealth = hp,
+                Health = hp,
+                BaseSpeed = EnemyArchetypeData.GetBaseSpeed(archetype),
+                Armor = EnemyArchetypeData.GetArmor(archetype),
+                AttackRange = EnemyArchetypeData.GetAttackRange(archetype),
+                AttackDamage = EnemyArchetypeData.GetAttackDamage(archetype),
+                BodyColor = EnemyArchetypeData.GetBodyColor(archetype),
+                NamePrefix = EnemyArchetypeData.GetThreatLabel(archetype),
+            });
         }
     }
 
@@ -1406,9 +1727,12 @@ public partial class CombatManager : Node3D
 
             AddChild(unit);
             unit.OnDied += HandleUnitDeath;
-            unit.PlaceOnTile(tile); // ← this sets tile.Occupant correctly via TrySetOccupant
+            unit.PlaceOnTile(tile);
 
             unit.Name = $"{p.NamePrefix}_{i + 1}";
+            unit.EnemyArchetype = p.Archetype;      // ← store so AI can read it
+            unit.AttackRange = p.AttackRange;    // ← store attack range
+            unit.AttackDamage = p.AttackDamage;   // ← store attack damage
             unit.SetBodyColor(p.BodyColor);
             unit.RefreshNameLabel();
 

@@ -47,6 +47,12 @@ public partial class Unit : Node3D
     public ISchoolAttunement Attunement { get; private set; }
     [Export] public CardSchool School = CardSchool.Generic;
 
+    // ── Combat archetype (set by CombatManager at spawn time) ───────────────
+    public EnemyArchetype EnemyArchetype = EnemyArchetype.Soldier;
+    public int AttackRange = 1;   // 1 = melee; >1 = ranged
+    public int AttackDamage = 5;   // base damage per attack
+
+
     // Runtime stats
     public Stats Stats = new Stats();
     public UnitDeckData DeckData { get; set; }

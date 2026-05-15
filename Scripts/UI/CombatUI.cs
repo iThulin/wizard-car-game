@@ -44,8 +44,7 @@ public partial class CombatUI : CanvasLayer
 	private PopupPanel _deckPopup;
 	private ItemList _deckList;
 
-	// ─────────────────────────────────────────────────────────────────────────
-
+	// ── Internal state ───────────────────────────────────────────────────────
 	private bool _nodesCached = false;
 	private readonly Queue<string> _logLines = new();
 
@@ -257,6 +256,58 @@ public partial class CombatUI : CanvasLayer
 
 			_enemyRosterBox.AddChild(row);
 		}
+	}
+
+	// ── Enemy Intel (shown during deployment instead of live roster) ──────────
+
+	/// <summary>
+	/// Replaces the enemy roster with a pre-combat intel summary built from
+	/// pending spawn data. No live Unit references needed.
+	/// </summary>
+	public void ShowEnemyIntel(List<EnemyIntelEntry> entries)
+	{
+		CacheNodes();
+		if (_enemyRosterBox == null) return;
+
+		foreach (Node child in _enemyRosterBox.GetChildren())
+			child.QueueFree();
+
+		// Header
+		var header = new Label();
+		header.Text = "─ ENEMY INTEL ─";
+		header.HorizontalAlignment = HorizontalAlignment.Center;
+		header.AddThemeColorOverride("font_color", new Color(0.9f, 0.7f, 0.2f));
+		_enemyRosterBox.AddChild(header);
+
+		foreach (var entry in entries)
+		{
+			var row = new HBoxContainer();
+			row.AddThemeConstantOverride("separation", 6);
+
+			// Colour swatch matching the enemy's body colour
+			var swatch = new ColorRect();
+			swatch.Color = entry.BodyColor;
+			swatch.CustomMinimumSize = new Vector2(10, 20);
+			row.AddChild(swatch);
+
+			// Threat label + stats
+			var lbl = new Label();
+			lbl.Text = $"{entry.ThreatLabel}  HP:{entry.MaxHealth}  SPD:{entry.BaseSpeed}";
+			if (entry.Armor > 0)
+				lbl.Text += $"  ARM:{entry.Armor}";
+			lbl.CustomMinimumSize = new Vector2(160, 0);
+			row.AddChild(lbl);
+
+			_enemyRosterBox.AddChild(row);
+		}
+
+		// Footer hint
+		var hint = new Label();
+		hint.Text = "Formation unknown until deployment ends.";
+		hint.AutowrapMode = TextServer.AutowrapMode.Word;
+		hint.CustomMinimumSize = new Vector2(180, 0);
+		hint.AddThemeColorOverride("font_color", new Color(0.55f, 0.55f, 0.55f));
+		_enemyRosterBox.AddChild(hint);
 	}
 
 	// ── Player Unit Bar ──────────────────────────────────────────────────────
