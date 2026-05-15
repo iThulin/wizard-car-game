@@ -642,6 +642,10 @@ public partial class CombatManager : Node3D
             }
         }
 
+        // Prune before ticking persistent effects so freed units don't
+        // appear in UnitsInPlay when Maelstrom iterates it.
+        PruneDeadUnits();
+
         // Tick persistent effects AFTER units have started their turn
         if (State.ActiveEffects != null)
         {
@@ -1556,7 +1560,10 @@ public partial class CombatManager : Node3D
         // Default encounter composition — will be replaced by EncounterDefinition
         // in Step 2 of the architecture plan. For now, a fixed mix that exercises
         // all five archetypes when TestEnemyCount >= 3.
-        QueueDefaultEncounter();
+        if (EncounterContextCarrier.HasEncounter)
+            QueueEncounterFromContext(EncounterContextCarrier.Current);
+        else
+            QueueDefaultEncounter();
 
         if (playerUnits.Count == 0)
         {
@@ -1643,6 +1650,8 @@ public partial class CombatManager : Node3D
         };
 
         // Trim or pad to TestEnemyCount so the inspector export still controls battle size
+        // TestEnemyCount caps the fallback only.
+        // Real encounters from EncounterContext use their own enemy list length.
         int count = Mathf.Min(TestEnemyCount, composition.Length);
 
         for (int i = 0; i < count; i++)
@@ -1662,6 +1671,40 @@ public partial class CombatManager : Node3D
                 NamePrefix = EnemyArchetypeData.GetThreatLabel(archetype),
             });
         }
+    }
+
+    /// <summary>
+    /// Populates pendingEnemySpawns from an EncounterDefinition provided
+    /// by EncounterRouter via EncounterContext. Replaces QueueDefaultEncounter
+    /// when a real overworld encounter is in progress.
+    /// </summary>
+    private void QueueEncounterFromContext(EncounterDefinition def)
+    {
+        pendingEnemySpawns.Clear();
+
+        foreach (var slot in def.Enemies)
+        {
+            var archetype = slot.Archetype;
+            float mult = slot.DifficultyMult;
+
+            int hp = Mathf.RoundToInt(EnemyArchetypeData.GetMaxHealth(archetype) * mult);
+
+            pendingEnemySpawns.Add(new PendingEnemySpawn
+            {
+                Archetype = archetype,
+                MaxHealth = hp,
+                Health = hp,
+                BaseSpeed = EnemyArchetypeData.GetBaseSpeed(archetype),
+                Armor = EnemyArchetypeData.GetArmor(archetype),
+                AttackRange = EnemyArchetypeData.GetAttackRange(archetype),
+                AttackDamage = EnemyArchetypeData.GetAttackDamage(archetype),
+                BodyColor = EnemyArchetypeData.GetBodyColor(archetype),
+                NamePrefix = EnemyArchetypeData.GetThreatLabel(archetype),
+            });
+        }
+
+        GD.Print($"[Encounter] Loaded '{def.DisplayName}' — " +
+                 $"{pendingEnemySpawns.Count} enemies from {def.RegionId}/{def.Tier}");
     }
 
     /// <summary>

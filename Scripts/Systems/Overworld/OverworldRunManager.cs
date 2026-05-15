@@ -39,6 +39,8 @@ public partial class OverworldRunManager : Node2D
     // ── Accessors for EncounterRouter ───────────────────────────────────
     public Vector2I GetPartyCoord() => _party.CurrentCoord;
     public OverworldHexGrid GetGrid() => _grid;
+    public string GetRegionId() => _region?.Id ?? "frontier_wilds";
+    public RegionDefinition GetRegion() => _region;
 
     public override void _Ready()
     {
@@ -463,8 +465,22 @@ public partial class OverworldRunManager : Node2D
             return;
         }
 
+        // Determine tier and terrain from the hex being entered
+        string terrainType = "Grassland";
+        var tier = EncounterTier.Battle; // default
+
+        if (_grid.Hexes.TryGetValue(hexCoord, out var hex))
+        {
+            terrainType = hex.Terrain.ToString();
+
+            // Map POI sub-type to tier — expand when POI sub-types are richer
+            // For now all Combat POIs default to Battle; add Skirmish/Siege
+            // when POIType gains sub-types in Phase 3.
+            tier = EncounterTier.Battle;
+        }
+
         ShowInfo("Entering combat...");
-        router.StartCombat(this, hexCoord);
+        router.StartCombat(this, hexCoord, tier, terrainType);
     }
 
     private void TriggerNarrativeEncounter(OverworldHex hex, Vector2I coord)

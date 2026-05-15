@@ -1,52 +1,251 @@
 {
-    "id": "frontier_wilds",
-    "displayName": "Frontier Wilds",
-    "description": "Dense wilderness beyond the guild's reach. Ancient ruins dot the landscape, half-swallowed by forest.",
-    "schoolAffinity": "Elementalist",
-    "atmosphere": "Hostile",
-    "gridWidth": 15,
-    "gridHeight": 15,
-    "stepBudget": 22,
-    "combatPOICount": 10,
-    "restPOICount": 4,
-    "narrativePOICount": 3,
-    "negotiationPOICount": 2,
-    "hasRiver": true,
-    "hasMountainRange": false,
-    "hasRoads": true,
-    "riverCrossingCount": 2,
-    "enemyDifficultyMult": 1.0,
-    "goldRewardMult": 1.0,
-    "biomes": [
-      {
-        "name": "Deep Forest",
-        "centerQ": 3, "centerR": 3, "radius": 4,
-        "primaryTerrain": "Forest", "secondaryTerrain": "Swamp"
-      },
-      {
-        "name": "Ruins Complex",
-        "centerQ": 8, "centerR": 2, "radius": 3,
-        "primaryTerrain": "Ruins", "secondaryTerrain": "ArcaneGround"
-      },
-      {
-        "name": "Volcanic Zone",
-        "centerQ": 12, "centerR": 11, "radius": 3,
-        "primaryTerrain": "Volcanic", "secondaryTerrain": "Mountain"
-      },
-      {
-        "name": "Swamp Basin",
-        "centerQ": 3, "centerR": 11, "radius": 3,
-        "primaryTerrain": "Swamp", "secondaryTerrain": "Forest"
-      },
-      {
-        "name": "Arcane Nexus",
-        "centerQ": 12, "centerR": 5, "radius": 3,
-        "primaryTerrain": "ArcaneGround", "secondaryTerrain": "Ruins"
-      },
-      {
-        "name": "Mountain Highlands",
-        "centerQ": 11, "centerR": 1, "radius": 3,
-        "primaryTerrain": "Mountain", "secondaryTerrain": "Grassland"
-      }
-    ]
-  }
+	"id": "frontier_wilds",
+	"displayName": "Frontier Wilds",
+	"description": "Dense wilderness beyond the guild's reach. Ancient ruins dot the landscape, half-swallowed by forest.",
+	"schoolAffinity": "Elementalist",
+	"atmosphere": "Hostile",
+	"gridWidth": 15,
+	"gridHeight": 15,
+	"stepBudget": 22,
+	"combatPOICount": 10,
+	"restPOICount": 4,
+	"narrativePOICount": 3,
+	"negotiationPOICount": 2,
+	"hasRiver": true,
+	"hasMountainRange": false,
+	"hasRoads": true,
+	"riverCrossingCount": 2,
+	"enemyDifficultyMult": 1.0,
+	"goldRewardMult": 1.0,
+	"biomes": [
+		{
+			"name": "Deep Forest",
+			"centerQ": 3,
+			"centerR": 3,
+			"radius": 4,
+			"primaryTerrain": "Forest",
+			"secondaryTerrain": "Swamp"
+		},
+		{
+			"name": "Ruins Complex",
+			"centerQ": 8,
+			"centerR": 2,
+			"radius": 3,
+			"primaryTerrain": "Ruins",
+			"secondaryTerrain": "ArcaneGround"
+		},
+		{
+			"name": "Volcanic Zone",
+			"centerQ": 12,
+			"centerR": 11,
+			"radius": 3,
+			"primaryTerrain": "Volcanic",
+			"secondaryTerrain": "Mountain"
+		},
+		{
+			"name": "Swamp Basin",
+			"centerQ": 3,
+			"centerR": 11,
+			"radius": 3,
+			"primaryTerrain": "Swamp",
+			"secondaryTerrain": "Forest"
+		},
+		{
+			"name": "Arcane Nexus",
+			"centerQ": 12,
+			"centerR": 5,
+			"radius": 3,
+			"primaryTerrain": "ArcaneGround",
+			"secondaryTerrain": "Ruins"
+		},
+		{
+			"name": "Mountain Highlands",
+			"centerQ": 11,
+			"centerR": 1,
+			"radius": 3,
+			"primaryTerrain": "Mountain",
+			"secondaryTerrain": "Grassland"
+		}
+	],
+	"encounterPools": {
+		"skirmish": [
+			{
+				"name": "patrol",
+				"enemies": [
+					{
+						"archetype": "Soldier"
+					},
+					{
+						"archetype": "Ranger"
+					}
+				]
+			},
+			{
+				"name": "scouts",
+				"enemies": [
+					{
+						"archetype": "Ranger"
+					},
+					{
+						"archetype": "Ranger"
+					}
+				]
+			},
+			{
+				"name": "vanguard",
+				"enemies": [
+					{
+						"archetype": "Soldier"
+					},
+					{
+						"archetype": "Soldier"
+					}
+				]
+			}
+		],
+		"battle": [
+			{
+				"name": "war_band",
+				"enemies": [
+					{
+						"archetype": "Soldier"
+					},
+					{
+						"archetype": "Soldier"
+					},
+					{
+						"archetype": "Ranger"
+					}
+				]
+			},
+			{
+				"name": "ambush_hunters",
+				"enemies": [
+					{
+						"archetype": "Ranger"
+					},
+					{
+						"archetype": "Ranger"
+					},
+					{
+						"archetype": "Wizard"
+					}
+				]
+			},
+			{
+				"name": "war_coven",
+				"enemies": [
+					{
+						"archetype": "Soldier"
+					},
+					{
+						"archetype": "Brute"
+					},
+					{
+						"archetype": "Wizard"
+					}
+				]
+			},
+			{
+				"name": "fortified_patrol",
+				"enemies": [
+					{
+						"archetype": "Defender"
+					},
+					{
+						"archetype": "Soldier"
+					},
+					{
+						"archetype": "Ranger"
+					}
+				]
+			}
+		],
+		"siege": [
+			{
+				"name": "warlord_retinue",
+				"enemies": [
+					{
+						"archetype": "Brute"
+					},
+					{
+						"archetype": "Defender"
+					},
+					{
+						"archetype": "Soldier"
+					},
+					{
+						"archetype": "Ranger"
+					}
+				]
+			},
+			{
+				"name": "arcane_host",
+				"enemies": [
+					{
+						"archetype": "Soldier"
+					},
+					{
+						"archetype": "Defender"
+					},
+					{
+						"archetype": "Wizard"
+					},
+					{
+						"archetype": "Wizard"
+					}
+				]
+			},
+			{
+				"name": "overwhelming_force",
+				"enemies": [
+					{
+						"archetype": "Brute"
+					},
+					{
+						"archetype": "Soldier"
+					},
+					{
+						"archetype": "Soldier"
+					},
+					{
+						"archetype": "Ranger"
+					},
+					{
+						"archetype": "Wizard"
+					}
+				]
+			}
+		],
+		"ambush": [
+			{
+				"name": "forest_ambush",
+				"enemies": [
+					{
+						"archetype": "Ranger"
+					},
+					{
+						"archetype": "Soldier"
+					},
+					{
+						"archetype": "Soldier"
+					}
+				]
+			},
+			{
+				"name": "ruins_trap",
+				"enemies": [
+					{
+						"archetype": "Wizard"
+					},
+					{
+						"archetype": "Soldier"
+					},
+					{
+						"archetype": "Ranger"
+					}
+				]
+			}
+		]
+	}
+}

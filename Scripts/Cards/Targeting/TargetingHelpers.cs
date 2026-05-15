@@ -15,15 +15,17 @@ public static class TargetingHelpers
     {
         if (s == null || caster == null) return null;
 
+        // ActiveCasterUnit is the authoritative source when set —
+        // it correctly tracks which player unit is acting each cast.
+        if (s.ActiveCasterUnit != null) return s.ActiveCasterUnit;
+
         if (caster == s.PlayerA) return s.PlayerUnit;
         if (caster == s.PlayerB) return s.EnemyUnit;
 
         if (s.UnitsInPlay != null)
         {
             foreach (var u in s.UnitsInPlay)
-            {
                 if (u != null && u.Name == caster.Name) return u;
-            }
         }
         return null;
     }

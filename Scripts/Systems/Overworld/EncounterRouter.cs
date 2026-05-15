@@ -45,7 +45,11 @@ public partial class EncounterRouter : Node
     /// Called by RunManager to start a combat encounter.
     /// Saves overworld state, then swaps to the combat scene.
     /// </summary>
-    public void StartCombat(OverworldRunManager runManager, Vector2I combatHexCoord)
+    public void StartCombat(
+        OverworldRunManager runManager,
+        Vector2I combatHexCoord,
+        EncounterTier tier = EncounterTier.Battle,
+        string terrainType = "Grassland")
     {
         // ── Save overworld state ────────────────────────────────────────
         SavedStepsRemaining = runManager.StepsRemaining;
@@ -70,6 +74,15 @@ public partial class EncounterRouter : Node
         GD.Print($"EncounterRouter: Saved overworld state. Party at {SavedPartyCoord}, " +
                  $"Steps: {SavedStepsRemaining}, HP: {SavedCurrentHP}");
 
+        // ── Build encounter definition from region pool ──────────────────
+        string regionId = runManager.GetRegionId();
+        float diffMult = runManager.GetRegion()?.EnemyDifficultyMult ?? 1.0f;
+
+        var encounterDef = EncounterPoolLoader.Pick(regionId, tier, terrainType, diffMult);
+        EncounterContextCarrier.Set(encounterDef);
+
+        GD.Print($"EncounterRouter: Encounter set — {encounterDef.DisplayName} " +
+                 $"({encounterDef.Tier}, {encounterDef.Enemies.Count} enemies)");
         // ── Swap to combat scene ────────────────────────────────────────
         GetTree().ChangeSceneToFile(CombatScenePath);
     }
@@ -80,6 +93,7 @@ public partial class EncounterRouter : Node
     /// </summary>
     public void OnCombatFinished(bool playerWon)
     {
+        EncounterContextCarrier.Clear();
         CombatWon = playerWon;
         GoldReward = playerWon ? 30 + (int)(GD.Randf() * 50) : 0;
         DamageTaken = playerWon ? (int)(GD.Randf() * 20) : 30;

@@ -71,7 +71,9 @@ public class MaelstromEffect : PersistentEffect
         // Deal damage and push enemies clockwise
         foreach (var unit in s.UnitsInPlay)
         {
-            if (unit == null || !unit.Stats.IsAlive || unit.CurrentTile == null)
+            if (unit == null || !Godot.GodotObject.IsInstanceValid(unit))
+                continue;
+            if (!unit.Stats.IsAlive || unit.CurrentTile == null)
                 continue;
             if (ownerUnit != null && unit.TeamId == ownerUnit.TeamId) continue;
 
@@ -81,6 +83,10 @@ public class MaelstromEffect : PersistentEffect
             // Deal damage
             unit.ApplyDamage(Damage);
             s.Log($"[Maelstrom] {unit.Name} takes {Damage} damage.");
+
+            // Re-check after damage — unit may have died and CurrentTile nulled
+            if (!Godot.GodotObject.IsInstanceValid(unit) || !unit.Stats.IsAlive || unit.CurrentTile == null)
+                continue;
 
             // Push clockwise — find the neighbor in rotation direction
             var current = unit.CurrentTile.Axial;
