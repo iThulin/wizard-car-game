@@ -29,6 +29,18 @@ public partial class CombatManager : Node3D
     private HashSet<Vector2I> playerDeployCoords = new();
     private Dictionary<Unit, Vector2I> originalDeployCoords = new();
 
+    // stores the pending enemy spawn parameters so we can defer spawning until after the player commits their deployment.
+    private struct PendingEnemySpawn
+    {
+        public int MaxHealth;
+        public int Health;
+        public int BaseSpeed;
+        public int Armor;
+        public Color BodyColor;
+        public string NamePrefix;
+    }
+    private List<PendingEnemySpawn> pendingEnemySpawns = new();
+
     // ── Unit lists ──────────────────────────────────────────────────────────
     [Export] public int TestPlayerCount = 2;
     [Export] public int TestEnemyCount = 3;
@@ -1005,9 +1017,18 @@ public partial class CombatManager : Node3D
         isInDeploymentPhase = false;
         ClearDeploymentSelection();
         HighlightDeploymentTiles(false);
-        GD.Print("Deployment phase ended.");
+        GD.Print("Deployment phase ended. Spawning enemies reactively...");
+
+        // ── Change 1: reactive enemy spawn ───────────────────────────────
+        SpawnAndPlaceEnemies();
+
+        // ── Change 3: attunement seed from starting tile ─────────────────
+        SeedAttunementFromStartingTile();
+
         RefreshPhaseUI();
         RefreshSelectedUnitUI();
+        RefreshEnemyRoster();
+
         if (AutoStartAfterDeployment) StartPlayerTurn();
     }
 
@@ -1106,6 +1127,42 @@ public partial class CombatManager : Node3D
             grid.GetTileView(coord)?.SetDeploymentHighlight(enabled);
     }
 
+    /// <summary>
+    /// After deployment is committed, give each player unit 1 free attunement
+    /// charge based on the terrain type of their starting tile.
+    /// Only fires for schools that have an active ISchoolAttunement.
+    /// </summary>
+    private void SeedAttunementFromStartingTile()
+    {
+        foreach (var unit in playerUnits)
+        {
+            if (unit?.Attunement == null) continue;
+            if (unit.CurrentTile == null) continue;
+
+            // Only Elementalists have elemental attunement seeding
+            if (unit.Attunement is not ElementalAttunement ea) continue;
+
+            ElementTag? element = unit.CurrentTile.TerrainType switch
+            {
+                TileTerrainType.Lava => ElementTag.Fire,
+                TileTerrainType.Stone => ElementTag.Earth,
+                TileTerrainType.Ice => ElementTag.Ice,
+                TileTerrainType.Arcane => ElementTag.Storm,
+                _ => null
+            };
+
+            if (element == null) continue;
+
+            // Simulate casting a spell with that element tag to go through
+            // the proper opposition logic and fire OnChargeChanged events
+            ea.OnSpellCast(new[] { element.Value.ToString().ToLowerInvariant() });
+
+            GD.Print($"[Deploy] {unit.Name} seeded 1 {element} charge from {unit.CurrentTile.TerrainType} tile.");
+        }
+
+        schoolAttunementUI?.Refresh();
+    }
+
     // ═══════════════════════════════════════════════════════════════════════
     // Unit spawning
     // ═══════════════════════════════════════════════════════════════════════
@@ -1113,10 +1170,77 @@ public partial class CombatManager : Node3D
     private void BuildPlayerDeploymentArea()
     {
         playerDeployCoords.Clear();
+
+        // Gather everything inside the defined spawn zone first
+        var baseZoneTiles = new List<TileData>();
         foreach (var zone in grid.SpawnZones)
-            if (zone.Side == HexGridManager.SpawnSide.Player)
-                foreach (var coord in zone.Tiles)
+        {
+            if (zone.Side != HexGridManager.SpawnSide.Player) continue;
+            foreach (var coord in zone.Tiles)
+            {
+                var td = grid.GetTile(coord);
+                if (td != null && td.IsWalkable && !td.IsBlocked)
+                {
+                    baseZoneTiles.Add(td);
                     playerDeployCoords.Add(coord);
+                }
+            }
+        }
+
+        // If the zone already has variety, we're done
+        if (HasTerrainVariety(playerDeployCoords))
+            return;
+
+        // Otherwise, expand outward one ring looking for different terrain types.
+        // We cap expansion at 3 extra tiles so the zone doesn't grow too large.
+        var alreadySeen = new HashSet<Vector2I>(playerDeployCoords);
+        var candidates = new List<TileData>();
+
+        foreach (var coord in playerDeployCoords.ToList())
+        {
+            foreach (var neighbor in grid.GetNeighborCoords(coord))
+            {
+                if (alreadySeen.Contains(neighbor)) continue;
+                alreadySeen.Add(neighbor);
+
+                var td = grid.GetTile(neighbor);
+                if (td == null || !td.IsWalkable || td.IsBlocked) continue;
+                candidates.Add(td);
+            }
+        }
+
+        // Prioritise tiles whose terrain type isn't already represented
+        var existingTypes = new HashSet<TileTerrainType>(
+            playerDeployCoords.Select(c => grid.GetTile(c)?.TerrainType ?? TileTerrainType.Grass));
+
+        candidates.Sort((a, b) =>
+        {
+            bool aIsNew = !existingTypes.Contains(a.TerrainType);
+            bool bIsNew = !existingTypes.Contains(b.TerrainType);
+            if (aIsNew && !bIsNew) return -1;
+            if (!aIsNew && bIsNew) return 1;
+            return 0;
+        });
+
+        int added = 0;
+        foreach (var td in candidates)
+        {
+            if (added >= 3) break;
+            playerDeployCoords.Add(td.Axial);
+            added++;
+        }
+    }
+
+    private bool HasTerrainVariety(HashSet<Vector2I> coords)
+    {
+        var types = new HashSet<TileTerrainType>();
+        foreach (var c in coords)
+        {
+            var td = grid.GetTile(c);
+            if (td != null) types.Add(td.TerrainType);
+            if (types.Count >= 2) return true;
+        }
+        return false;
     }
 
     private void SpawnTestUnits()
@@ -1144,37 +1268,54 @@ public partial class CombatManager : Node3D
             if (unit != null) playerUnits.Add(unit);
         }
 
+        // ── Queue enemies for deferred spawn ──────────────────────────────────
+        // Enemies are NOT placed on the grid yet. They will be spawned reactively
+        // in SpawnAndPlaceEnemies(), called from EndDeploymentPhase(), so the
+        // enemy formation responds to where the player placed their units.
+        pendingEnemySpawns.Clear();
+        var enemyColors = new Color[]
+        {
+            new Color(1.0f, 0.25f, 0.25f),
+            new Color(1.0f, 0.55f, 0.1f),
+            new Color(0.8f, 0.2f, 0.9f),
+            new Color(0.2f, 0.8f, 0.9f),
+            new Color(0.9f, 0.9f, 0.1f),
+        };
         for (int i = 0; i < TestEnemyCount; i++)
         {
-            var unit = SpawnUnitFromSide(HexGridManager.SpawnSide.Enemy, DummyUnitScene,
-                teamId: 1, isPlayerControlled: false, namePrefix: "Enemy",
-                maxHealth: 30, health: 30, baseSpeed: 2, maxMana: 0, mana: 0, armor: 0, shield: 0);
-            if (unit != null) enemyUnits.Add(unit);
+            pendingEnemySpawns.Add(new PendingEnemySpawn
+            {
+                MaxHealth = 30,
+                Health = 30,
+                BaseSpeed = 2,
+                Armor = 0,
+                BodyColor = enemyColors[i % enemyColors.Length],
+                NamePrefix = "Enemy",
+            });
         }
 
-        for (int i = 0; i < enemyUnits.Count; i++)
+        if (playerUnits.Count == 0)
         {
-            enemyUnits[i].SetBodyColor(UITheme.EnemyUnitColors[i % UITheme.EnemyUnitColors.Length]);
-            enemyUnits[i].RefreshNameLabel();
+            GD.PrintErr("Failed to spawn any player units.");
+            return;
         }
 
-        if (playerUnits.Count == 0 || enemyUnits.Count == 0)
+        if (pendingEnemySpawns.Count == 0)
         {
-            GD.PrintErr("Failed to spawn at least one player and one enemy.");
+            GD.PrintErr("No enemy spawns queued.");
             return;
         }
 
         playerUnit = playerUnits[0];
-        dummyUnit = enemyUnits[0];
+        // dummyUnit / enemyUnits are wired after enemy spawn in SpawnAndPlaceEnemies()
 
         State.Grid = grid;
         State.PlayerUnit = playerUnit;
-        State.EnemyUnit = dummyUnit;
+        // State.EnemyUnit set after enemy spawn
         State.UnitsInPlay.Clear();
         foreach (var u in playerUnits) State.UnitsInPlay.Add(u);
-        foreach (var u in enemyUnits) State.UnitsInPlay.Add(u);
 
-        GD.Print($"Spawned {playerUnits.Count} player unit(s) and {enemyUnits.Count} enemy unit(s).");
+        GD.Print($"Spawned {playerUnits.Count} player unit(s). Enemies pending deployment commit.");
 
         BuildPlayerDeploymentArea();
 
@@ -1200,6 +1341,107 @@ public partial class CombatManager : Node3D
                 StartDeploymentPhase();
             }
         }
+    }
+
+    /// <summary>
+    /// Spawns enemy units after the player has committed their deployment.
+    /// The enemy AI places units reactively — it reads where the player's
+    /// units ended up and tries to counter the formation.
+    /// </summary>
+    private void SpawnAndPlaceEnemies()
+    {
+        enemyUnits.Clear();
+
+        var enemyZoneTiles = new List<TileData>();
+        var claimed = new HashSet<Vector2I>(); // ← track tiles we've already assigned
+
+        foreach (var zone in grid.SpawnZones)
+        {
+            if (zone.Side != HexGridManager.SpawnSide.Enemy) continue;
+            foreach (var coord in zone.Tiles)
+            {
+                var td = grid.GetTile(coord);
+                if (td != null && td.IsWalkable && !td.IsBlocked && !td.IsOccupied)
+                    enemyZoneTiles.Add(td);
+            }
+        }
+
+        Vector2I playerCentroid = ComputePlayerCentroid();
+
+        enemyZoneTiles.Sort((a, b) =>
+            grid.Distance(a.Axial, playerCentroid)
+                .CompareTo(grid.Distance(b.Axial, playerCentroid)));
+
+        var sorted = pendingEnemySpawns
+            .OrderByDescending(p => p.BaseSpeed)
+            .ToList();
+
+        // Filter to only unclaimed tiles before assigning
+        var availableTiles = enemyZoneTiles
+            .Where(td => !claimed.Contains(td.Axial))
+            .ToList();
+
+        for (int i = 0; i < sorted.Count; i++)
+        {
+            if (i >= availableTiles.Count)
+            {
+                GD.PrintErr($"Not enough enemy zone tiles for all pending spawns (wanted {sorted.Count}, have {availableTiles.Count})");
+                break;
+            }
+
+            var p = sorted[i];
+            var tile = availableTiles[i];
+            claimed.Add(tile.Axial); // ← mark claimed locally instead of writing IsOccupied
+
+            var unit = DummyUnitScene.Instantiate<Unit>();
+            unit.IsPlayerControlled = false;
+            unit.TeamId = 1;
+            unit.StartMaxHealth = p.MaxHealth;
+            unit.StartHealth = p.Health;
+            unit.StartBaseSpeed = p.BaseSpeed;
+            unit.StartMaxMana = 0;
+            unit.StartMana = 0;
+            unit.StartArmor = p.Armor;
+            unit.StartShield = 0;
+
+            AddChild(unit);
+            unit.OnDied += HandleUnitDeath;
+            unit.PlaceOnTile(tile); // ← this sets tile.Occupant correctly via TrySetOccupant
+
+            unit.Name = $"{p.NamePrefix}_{i + 1}";
+            unit.SetBodyColor(p.BodyColor);
+            unit.RefreshNameLabel();
+
+            enemyUnits.Add(unit);
+        }
+
+        if (enemyUnits.Count > 0)
+        {
+            dummyUnit = enemyUnits[0];
+            State.EnemyUnit = dummyUnit;
+        }
+
+        foreach (var u in enemyUnits)
+            State.UnitsInPlay.Add(u);
+
+        GD.Print($"Reactively spawned {enemyUnits.Count} enemy unit(s) based on player formation.");
+        RefreshEnemyRoster();
+    }
+
+    /// Returns the axial centroid of all living player units.
+    private Vector2I ComputePlayerCentroid()
+    {
+        if (playerUnits.Count == 0) return Vector2I.Zero;
+        int q = 0, r = 0;
+        int count = 0;
+        foreach (var u in playerUnits)
+        {
+            if (u?.CurrentTile == null) continue;
+            q += u.CurrentTile.Axial.X;
+            r += u.CurrentTile.Axial.Y;
+            count++;
+        }
+        return count == 0 ? Vector2I.Zero : new Vector2I(q / count, r / count);
     }
 
     private Unit SpawnUnitFromSide(
@@ -1245,13 +1487,14 @@ public partial class CombatManager : Node3D
     private void AutoPlaceUnits()
     {
         GD.Print("[Debug] Auto-placing units, skipping deployment.");
-        // Player units stay on their spawn tiles — deployment is already done by SpawnUnits
-        // Just confirm placement
         foreach (var unit in playerUnits)
         {
             if (unit?.CurrentTile != null)
                 GD.Print($"[Debug] {unit.Name} auto-placed at {unit.CurrentTile.Axial}");
         }
+        // Enemies still need to be spawned even in debug mode
+        SpawnAndPlaceEnemies();
+        SeedAttunementFromStartingTile();
     }
 
     private Unit FindNearestPlayerUnit(Unit enemy)
