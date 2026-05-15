@@ -44,12 +44,12 @@ public partial class OverworldHex : Node2D
         for (int i = 0; i < 6; i++)
             borderPoints[i] = points[i];
         borderPoints[6] = points[0]; // close the loop
-        
+
         var border = new Line2D
         {
             Points = borderPoints,
-            Width = 1.5f,
-            DefaultColor = new Color(0.2f, 0.2f, 0.25f, 0.6f),
+            Width = UITheme.HexBorderWidth,
+            DefaultColor = UITheme.HexBorderColor,
             ZIndex = 1
         };
         AddChild(border);
@@ -97,24 +97,24 @@ public partial class OverworldHex : Node2D
         // Brighter, more saturated terrain palette with clear visual identity
         _polygon.Color = Terrain switch
         {
-            TerrainType.Grassland    => new Color(0.42f, 0.72f, 0.32f),  // vivid green
-            TerrainType.Forest       => new Color(0.15f, 0.50f, 0.18f),  // deep forest green
-            TerrainType.Road         => new Color(0.82f, 0.75f, 0.58f),  // warm tan
-            TerrainType.Ruins        => new Color(0.58f, 0.50f, 0.42f),  // warm brown-grey
-            TerrainType.Mountain     => new Color(0.65f, 0.63f, 0.60f),  // light stone grey
-            TerrainType.Swamp        => new Color(0.38f, 0.50f, 0.28f),  // olive murk
-            TerrainType.ArcaneGround => new Color(0.55f, 0.38f, 0.78f),  // rich purple
-            TerrainType.Volcanic     => new Color(0.75f, 0.30f, 0.12f),  // deep orange-red
-            TerrainType.Water        => new Color(0.22f, 0.50f, 0.82f),  // bright blue
+            TerrainType.Grassland => UITheme.TerrainGrassland,
+            TerrainType.Forest => UITheme.TerrainForest,
+            TerrainType.Road => UITheme.TerrainRoad,
+            TerrainType.Ruins => UITheme.TerrainRuins,
+            TerrainType.Mountain => UITheme.TerrainMountain,
+            TerrainType.Swamp => UITheme.TerrainSwamp,
+            TerrainType.ArcaneGround => UITheme.TerrainArcaneGround,
+            TerrainType.Volcanic => UITheme.TerrainVolcanic,
+            TerrainType.Water => UITheme.TerrainWater,
             _ => Colors.Gray
         };
 
         // Fog overlay — less oppressive, more readable
         _fogOverlay.Color = Fog switch
         {
-            FogState.Hidden     => new Color(0.12f, 0.12f, 0.18f, 0.88f), // dark but not black
-            FogState.Silhouette => new Color(0.12f, 0.12f, 0.18f, 0.45f), // clearly see terrain color
-            FogState.Revealed   => new Color(0, 0, 0, 0),                  // fully clear
+            FogState.Hidden => UITheme.FogHidden,
+            FogState.Silhouette => UITheme.FogSilhouette,
+            FogState.Revealed => UITheme.FogRevealed,
             _ => Colors.Black
         };
 
@@ -125,11 +125,11 @@ public partial class OverworldHex : Node2D
         {
             _poiMarker.Color = POI switch
             {
-                POIType.Combat    => new Color(0.95f, 0.20f, 0.20f),  // bright red
-                POIType.Rest      => new Color(0.20f, 0.80f, 0.95f),  // cyan
-                POIType.Objective => new Color(1.0f, 0.90f, 0.15f),   // bright gold
-                POIType.Narrative => new Color(0.75f, 0.50f, 1.0f),   // purple
-                POIType.Negotiation => new Color(0.2f, 0.75f, 0.55f), // teal
+                POIType.Combat => UITheme.POICombat,
+                POIType.Rest => UITheme.POIRest,
+                POIType.Objective => UITheme.POIObjective,
+                POIType.Narrative => UITheme.POINarrative,
+                POIType.Negotiation => UITheme.POINegotiation,
                 _ => Colors.White
             };
         }

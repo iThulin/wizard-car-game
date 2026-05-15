@@ -32,6 +32,7 @@ public partial class DeckManager : Node2D
     {
         _activeDeck = deck;
         uiManager?.SafeRefreshUI();
+        CallDeferred(nameof(DeferredRefreshDiscardFlags));
     }
 
     public UnitDeckData GetActiveDeck() => _activeDeck;
@@ -78,6 +79,7 @@ public partial class DeckManager : Node2D
         if (_activeDeck.Hand.Remove(card))
             GD.Print($"Removed card: {card.TopHalf?.Name ?? card.CardName}");
         uiManager?.SafeRefreshUI();
+        CallDeferred(nameof(DeferredRefreshDiscardFlags));
     }
 
     public void Reshuffle()
@@ -91,6 +93,7 @@ public partial class DeckManager : Node2D
         if (_activeDeck == null) return;
         _activeDeck.Discard(card);
         uiManager?.SafeRefreshUI();
+        CallDeferred(nameof(DeferredRefreshDiscardFlags));
     }
 
     public void PrintDeckState()

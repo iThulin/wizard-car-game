@@ -703,19 +703,17 @@ public sealed class ManaGainEffect : EffectBase
 {
 	public int Amount;
 	public ManaGainEffect(int a) { Amount = a; }
+
 	public override void Resolve(GameState s, Entity caster, TargetSet targets, EffectSnapshot snap)
 	{
-		if (s.Mana.ContainsKey(caster))
-		{
-			s.Mana[caster] += Amount;
-			s.Log($"[ManaGain] {caster.Name} gains {Amount} mana (now {s.Mana[caster]}).");
-		}
-
-		// Also sync to the actual Unit so the health bar updates
 		var casterUnit = FindCasterUnit(s, caster);
 		if (casterUnit != null)
 		{
 			casterUnit.GainMana(Amount);
+			// Keep GameState.Mana in sync for cost checking
+			if (s.Mana.ContainsKey(caster))
+				s.Mana[caster] = casterUnit.Stats.Mana;
+			s.Log($"[ManaGain] {casterUnit.Name} gains {Amount} mana (now {casterUnit.Stats.Mana}/{casterUnit.Stats.MaxMana}).");
 		}
 	}
 }

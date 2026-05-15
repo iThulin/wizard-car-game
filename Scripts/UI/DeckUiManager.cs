@@ -164,12 +164,12 @@ public partial class DeckUiManager : Node2D
 
 		Vector2 screenSize = GetViewport().GetVisibleRect().Size;
 
-		float radius = screenSize.Y * 2.3f;
-		Vector2 arcCenter = new Vector2(screenSize.X / 2f, screenSize.Y + radius * 0.6f);
+		float radius = screenSize.Y * UITheme.HandArcRadiusScale;
+		Vector2 arcCenter = new Vector2(screenSize.X / 2f, screenSize.Y + radius * UITheme.HandArcCenterYScale);
 
-		float maxArcSpanDeg = 30f;
-		float minArcSpanDeg = 1f;
-		float stepPerCard = 5f;
+		float maxArcSpanDeg = UITheme.HandArcMaxSpanDeg;
+		float minArcSpanDeg = UITheme.HandArcMinSpanDeg;
+		float stepPerCard = UITheme.HandArcStepPerCard;
 		float arcSpanDeg = Mathf.Min(maxArcSpanDeg, stepPerCard * (count - 1));
 
 		arcSpanDeg = Mathf.Max(minArcSpanDeg, arcSpanDeg);
@@ -194,7 +194,7 @@ public partial class DeckUiManager : Node2D
 				card.Rotation = angle;
 
 				if (card is CardUi cardUi)
-    				cardUi.SetRestTransform(card.Position, card.Rotation);
+					cardUi.SetRestTransform(card.Position, card.Rotation);
 			}
 		}
 		UpdateCardCounts();
@@ -229,11 +229,13 @@ public partial class DeckUiManager : Node2D
 		var tween = cardUi.CreateTween().SetParallel(true);
 		tween.SetEase(Tween.EaseType.In).SetTrans(Tween.TransitionType.Cubic);
 		tween.TweenProperty(cardUi, "position",
-			cardUi.Position + new Vector2(0, screenSize.Y * 0.3f), 0.28f);
+			cardUi.Position + new Vector2(0, screenSize.Y * UITheme.DiscardAnimDropScale),
+			UITheme.DiscardAnimDuration);
 		tween.TweenProperty(cardUi, "modulate",
-			new Color(1, 1, 1, 0f), 0.22f);
+			new Color(1, 1, 1, 0f), UITheme.DiscardFadeDuration);
 		tween.TweenProperty(cardUi, "scale",
-			new Vector2(0.85f, 0.85f), 0.28f);
+			new Vector2(UITheme.DiscardEndScale, UITheme.DiscardEndScale),
+			UITheme.DiscardAnimDuration);
 	}
 
 	private Func<int> _getMana;
@@ -265,7 +267,9 @@ public partial class DeckUiManager : Node2D
 
 			int dist = i - hoveredIndex;
 			// Push neighbors outward by up to 18px, falling off with distance
-			float push = isEntering ? 18f / Mathf.Abs(dist) * Mathf.Sign(dist) : 0f;
+			float push = isEntering
+				? UITheme.HandNeighborPushPx / Mathf.Abs(dist) * Mathf.Sign(dist)
+				: 0f;
 
 			var tween = neighbor.CreateTween();
 			tween.SetEase(Tween.EaseType.Out).SetTrans(Tween.TransitionType.Cubic);
@@ -281,5 +285,5 @@ public partial class DeckUiManager : Node2D
 	{
 		EmitSignal(SignalName.CardHalfHovered, cardUi, isTop, isEntering);
 	}
-	
+
 }

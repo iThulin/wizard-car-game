@@ -81,10 +81,14 @@ public partial class HealthBarRoot : Node3D
     public void SetMana(int current, int max)
     {
         if (!IsInstanceValid(this)) return;
+
+        // Bar always shows full when at or above max
         float pct = max <= 0 ? 0f : Mathf.Clamp((float)current / max, 0f, 1f);
         ResizeBar(_manaFill, _manaFillOriginX, pct);
+
+        // Text shows overflow clearly
         if (_manaText != null)
-            _manaText.Text = $"MP {current}/{max}";
+            _manaText.Text = current > max ? $"MP {current}/{max}!" : $"MP {current}/{max}";
     }
 
     public void SetArmor(int current, int max)

@@ -121,7 +121,7 @@ public partial class HexGridManager : Node3D
         public Vector2I Anchor;
         public List<Vector2I> Tiles = new();
     }
-    
+
     public enum DensityMode
     {
         Preset,
@@ -137,7 +137,7 @@ public partial class HexGridManager : Node3D
     }
 
     // Structures
-    
+
     public override void _Ready()
     {
         GenerateMap();
@@ -226,7 +226,7 @@ public partial class HexGridManager : Node3D
 
         return candidates[(int)(GD.Randi() % (uint)candidates.Count)];
     }
-    
+
     private Vector2I GetMidpoint(Vector2I a, Vector2I b)
     {
         return new Vector2I((a.X + b.X) / 2, (a.Y + b.Y) / 2);
@@ -297,7 +297,7 @@ public partial class HexGridManager : Node3D
         SpawnObstacleVisuals();
         SpawnTerrainProps();
         RefreshAllTileLabels();
-        
+
     }
 
     private void GenerateBaseGrid()
@@ -370,7 +370,7 @@ public partial class HexGridManager : Node3D
                 break;
         }
     }
-    
+
     private void ApplyTileHeights()
     {
         foreach (var tile in Tiles.Values)
@@ -500,11 +500,20 @@ public partial class HexGridManager : Node3D
         Vector2I playerAnchor = FindSpawnAnchor(SpawnSide.Player);
         Vector2I enemyAnchor = FindSpawnAnchor(SpawnSide.Enemy);
 
-        SpawnZones.Add(BuildSpawnZone(playerAnchor, SpawnSide.Player, 0, PlayerSpawnCount));
-        SpawnZones.Add(BuildSpawnZone(enemyAnchor, SpawnSide.Enemy, 1, EnemySpawnCount));
+        GD.Print($"[SpawnPlan] Player anchor: {playerAnchor}, Enemy anchor: {enemyAnchor}");
+
+        var playerZone = BuildSpawnZone(playerAnchor, SpawnSide.Player, 0, PlayerSpawnCount);
+        var enemyZone = BuildSpawnZone(enemyAnchor, SpawnSide.Enemy, 1, EnemySpawnCount);
+
+        GD.Print($"[SpawnPlan] Player zone tiles: {playerZone.Tiles.Count}, Enemy zone tiles: {enemyZone.Tiles.Count}");
+
+        SpawnZones.Add(playerZone);
+        SpawnZones.Add(enemyZone);
 
         ReserveSpawnZones();
         BuildSpawnSlotsFromZones();
+
+        GD.Print($"[SpawnPlan] Total spawn slots: {SpawnSlots.Count}");
     }
 
     private void DetermineLayoutAnchors()
@@ -530,7 +539,7 @@ public partial class HexGridManager : Node3D
                 break;
         }
     }
-    
+
     // Tile Visuals
 
     private void SpawnObstacleVisuals()
@@ -584,43 +593,17 @@ public partial class HexGridManager : Node3D
         Material terrainMaterial = null;
         Color color = Colors.White;
 
-        switch (tile.TerrainType)
+        color = tile.TerrainType switch
         {
-            case TileTerrainType.Grass:
-                terrainMaterial = GrassMaterial;
-                color = new Color(0.45f, 0.75f, 0.45f);
-                break;
-
-            case TileTerrainType.Forest:
-                terrainMaterial = ForestMaterial != null ? ForestMaterial : GrassMaterial;
-                color = new Color(0.2f, 0.5f, 0.2f);
-                break;
-
-            case TileTerrainType.Stone:
-                terrainMaterial = StoneMaterial;
-                color = new Color(0.5f, 0.5f, 0.55f);
-                break;
-
-            case TileTerrainType.Water:
-                terrainMaterial = WaterMaterial;
-                color = new Color(0.2f, 0.45f, 0.85f);
-                break;
-
-            case TileTerrainType.Lava:
-                terrainMaterial = LavaMaterial;
-                color = new Color(0.9f, 0.3f, 0.1f);
-                break;
-
-            case TileTerrainType.Arcane:
-                terrainMaterial = ArcaneMaterial;
-                color = new Color(0.55f, 0.25f, 0.8f);
-                break;
-
-            case TileTerrainType.Ice:
-                terrainMaterial = IceMaterial;
-                color = new Color(0.7f, 0.9f, 1.0f);
-                break;
-        }
+            TileTerrainType.Grass => UITheme.CombatTileGrass,
+            TileTerrainType.Forest => UITheme.CombatTileForest,
+            TileTerrainType.Stone => UITheme.CombatTileStone,
+            TileTerrainType.Water => UITheme.CombatTileWater,
+            TileTerrainType.Lava => UITheme.CombatTileLava,
+            TileTerrainType.Arcane => UITheme.CombatTileArcane,
+            TileTerrainType.Ice => UITheme.CombatTileIce,
+            _ => Colors.White
+        };
 
         if (terrainMaterial != null)
             tile.TileView.SetMaterial(terrainMaterial);
@@ -629,10 +612,10 @@ public partial class HexGridManager : Node3D
         bool inEnemySpawn = IsTileInSpawnSide(tile.Axial, SpawnSide.Enemy);
 
         if (inPlayerSpawn)
-            color = color.Lerp(new Color(0.2f, 0.8f, 1.0f), 0.35f);
+            color = color.Lerp(UITheme.SpawnTintPlayer, UITheme.SpawnTintStrength);
 
         if (inEnemySpawn)
-            color = color.Lerp(new Color(1.0f, 0.3f, 0.3f), 0.35f);
+            color = color.Lerp(UITheme.SpawnTintEnemy, UITheme.SpawnTintStrength);
 
         tile.TileView.SetBaseColor(color);
         tile.TileView.SetElement(tile.ElementType);
@@ -741,7 +724,7 @@ public partial class HexGridManager : Node3D
     }
 
     // Tile Props
-    
+
     private void SpawnTerrainProps()
     {
         ClearTerrainProps();
@@ -818,7 +801,7 @@ public partial class HexGridManager : Node3D
 
 
     // Paint Terrain and Features
-    
+
     private void PaintTerrainPatch(Vector2I center, TileTerrainType terrain, int radius, float edgeChance = 0.75f)
     {
         foreach (var kvp in Tiles)
@@ -1282,7 +1265,7 @@ public partial class HexGridManager : Node3D
     }
 
     // Player and Enemy Spawns
-    
+
     private List<Vector2I> GetSideCandidates(SpawnSide side)
     {
         var result = new List<Vector2I>();
@@ -1358,6 +1341,20 @@ public partial class HexGridManager : Node3D
         if (candidates.Count > 0)
             return candidates[0];
 
+        // After the existing fallback:
+        if (candidates.Count > 0)
+            return candidates[0];
+
+        // Nuclear fallback — scan entire correct half for ANY walkable tile
+        GD.PrintErr($"[SpawnPlan] No spawn anchor found for {side} — using emergency fallback.");
+        foreach (var coord in Tiles.Keys)
+        {
+            if (side == SpawnSide.Player && coord.X > GridWidth / 2) continue;
+            if (side == SpawnSide.Enemy && coord.X < GridWidth / 2) continue;
+            if (IsValidSpawnTile(coord)) return coord;
+        }
+
+        GD.PrintErr($"[SpawnPlan] CRITICAL: No valid spawn tile found for {side}.");
         return Vector2I.Zero;
     }
 
@@ -1398,7 +1395,7 @@ public partial class HexGridManager : Node3D
 
         return zone;
     }
-    
+
     private void BuildSpawnSlotsFromZones()
     {
         SpawnSlots.Clear();
@@ -1435,7 +1432,7 @@ public partial class HexGridManager : Node3D
             return;
 
         var playerZone = SpawnZones.Find(z => z.Side == SpawnSide.Player);
-        var enemyZone  = SpawnZones.Find(z => z.Side == SpawnSide.Enemy);
+        var enemyZone = SpawnZones.Find(z => z.Side == SpawnSide.Enemy);
 
         if (playerZone == null || enemyZone == null)
         {
@@ -1515,7 +1512,7 @@ public partial class HexGridManager : Node3D
 
         return count;
     }
-    
+
     public SpawnSlot ClaimNextSpawnSlot(SpawnSide side)
     {
         foreach (var slot in SpawnSlots)
@@ -1559,7 +1556,7 @@ public partial class HexGridManager : Node3D
     {
         return Mathf.RoundToInt(Mathf.Lerp(minCount, maxCount, TerrainDensity));
     }
-    
+
     private float GetEdgeChance()
     {
         // Low roughness = smoother edge fill
@@ -1583,7 +1580,7 @@ public partial class HexGridManager : Node3D
         // High roughness = smaller patches
         return Mathf.RoundToInt(Mathf.Lerp(maxRadius, minRadius, TerrainRoughness));
     }
-    
+
     private void CarveLane(Vector2I start, Vector2I goal, int width = 0)
     {
         Vector2I current = start;
@@ -1610,7 +1607,7 @@ public partial class HexGridManager : Node3D
 
         ClearTileForLane(goal, width);
     }
-    
+
     private void ClearTileObstacleState(TileData tile)
     {
         tile.IsBlocked = false;
@@ -1812,7 +1809,7 @@ public partial class HexGridManager : Node3D
                 break;
         }
     }
-    
+
     private void ApplyArcaneMeadowTheme()
     {
         int forestPatches = GetTerrainPatchCount(1, 4);

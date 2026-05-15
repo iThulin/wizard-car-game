@@ -38,15 +38,16 @@ public partial class CombatUI : CanvasLayer
 
 	// ── Graveyard popup ─────────────────────────────────────────────────────
 	private PopupPanel _gravePopup;
-	private ItemList   _graveList;
+	private ItemList _graveList;
 
 	// ── Deck popup ───────────────────────────────────────────────────────────
 	private PopupPanel _deckPopup;
-	private ItemList   _deckList;
+	private ItemList _deckList;
 
 	// ─────────────────────────────────────────────────────────────────────────
 
 	private bool _nodesCached = false;
+	private readonly Queue<string> _logLines = new();
 
 	public override void _Ready()
 	{
@@ -68,47 +69,47 @@ public partial class CombatUI : CanvasLayer
 		_nodesCached = true;
 
 		// Phase / hint
-		_phaseLabel    = GetNodeOrNull<Label>("PhasePanel/PhaseLabel");
-		_hintLabel     = GetNodeOrNull<Label>("HintPanel/HintLabel");
+		_phaseLabel = GetNodeOrNull<Label>("PhasePanel/PhaseLabel");
+		_hintLabel = GetNodeOrNull<Label>("HintPanel/HintLabel");
 
 		// Selected unit panel
-		_unitNameLabel  = GetNodeOrNull<Label>    ("SelectedUnitPanel/MarginContainer/VBoxContainer/UnitNameLabel");
-		_healthLabel    = GetNodeOrNull<Label>    ("SelectedUnitPanel/MarginContainer/VBoxContainer/HealthRow/HealthLabel");
-		_movementLabel  = GetNodeOrNull<Label>    ("SelectedUnitPanel/MarginContainer/VBoxContainer/MoveRow/MovementLabel");
-		_manaLabel      = GetNodeOrNull<Label>    ("SelectedUnitPanel/MarginContainer/VBoxContainer/ManaRow/ManaLabel");
-		_healthBar      = GetNodeOrNull<ProgressBar>("SelectedUnitPanel/MarginContainer/VBoxContainer/HealthRow/HealthBar");
-		_moveBar        = GetNodeOrNull<ProgressBar>("SelectedUnitPanel/MarginContainer/VBoxContainer/MoveRow/MoveBar");
-		_manaBar        = GetNodeOrNull<ProgressBar>("SelectedUnitPanel/MarginContainer/VBoxContainer/ManaRow/ManaBar");
+		_unitNameLabel = GetNodeOrNull<Label>("SelectedUnitPanel/MarginContainer/VBoxContainer/UnitNameLabel");
+		_healthLabel = GetNodeOrNull<Label>("SelectedUnitPanel/MarginContainer/VBoxContainer/HealthRow/HealthLabel");
+		_movementLabel = GetNodeOrNull<Label>("SelectedUnitPanel/MarginContainer/VBoxContainer/MoveRow/MovementLabel");
+		_manaLabel = GetNodeOrNull<Label>("SelectedUnitPanel/MarginContainer/VBoxContainer/ManaRow/ManaLabel");
+		_healthBar = GetNodeOrNull<ProgressBar>("SelectedUnitPanel/MarginContainer/VBoxContainer/HealthRow/HealthBar");
+		_moveBar = GetNodeOrNull<ProgressBar>("SelectedUnitPanel/MarginContainer/VBoxContainer/MoveRow/MoveBar");
+		_manaBar = GetNodeOrNull<ProgressBar>("SelectedUnitPanel/MarginContainer/VBoxContainer/ManaRow/ManaBar");
 
 		// Action buttons
 		_confirmDeploymentButton = GetNodeOrNull<Button>("ActionPanel/HBoxContainer/ConfirmDeploymentButton");
-		_endTurnButton           = GetNodeOrNull<Button>("ActionPanel/HBoxContainer/EndTurnButton");
+		_endTurnButton = GetNodeOrNull<Button>("ActionPanel/HBoxContainer/EndTurnButton");
 
-		// New panels (null-safe – only wired up when the .tscn nodes exist)
-		_enemyRosterBox  = GetNodeOrNull<VBoxContainer>("EnemyRosterPanel/VBoxContainer");
-		_playerUnitBar   = GetNodeOrNull<HBoxContainer>("PlayerUnitBar/HBoxContainer");
-		_actionLogLabel  = GetNodeOrNull<Label>        ("ActionLogPanel/ActionLogLabel");
-		_deckButton      = GetNodeOrNull<Button>       ("DeckGravePanel/HBoxContainer/DeckButton");
-		_graveButton     = GetNodeOrNull<Button>       ("DeckGravePanel/HBoxContainer/GraveButton");
-		_gravePopup      = GetNodeOrNull<PopupPanel>   ("GravePopup");
-		_graveList       = GetNodeOrNull<ItemList>     ("GravePopup/ItemList");
-		_deckPopup       = GetNodeOrNull<PopupPanel>   ("DeckPopup");
-		_deckList        = GetNodeOrNull<ItemList>     ("DeckPopup/ItemList");
+		// New panels (null-safe — only wired up when the .tscn nodes exist)
+		_enemyRosterBox = GetNodeOrNull<VBoxContainer>("EnemyRosterPanel/VBoxContainer");
+		_playerUnitBar = GetNodeOrNull<HBoxContainer>("PlayerUnitBar/HBoxContainer");
+		_actionLogLabel = GetNodeOrNull<Label>("ActionLogPanel/ActionLogLabel");
+		_deckButton = GetNodeOrNull<Button>("DeckGravePanel/HBoxContainer/DeckButton");
+		_graveButton = GetNodeOrNull<Button>("DeckGravePanel/HBoxContainer/GraveButton");
+		_gravePopup = GetNodeOrNull<PopupPanel>("GravePopup");
+		_graveList = GetNodeOrNull<ItemList>("GravePopup/ItemList");
+		_deckPopup = GetNodeOrNull<PopupPanel>("DeckPopup");
+		_deckList = GetNodeOrNull<ItemList>("DeckPopup/ItemList");
 
 		// Warn on missing critical nodes
-		if (_phaseLabel        == null) GD.PrintErr("CombatUI: PhaseLabel not found");
-		if (_unitNameLabel     == null) GD.PrintErr("CombatUI: UnitNameLabel not found");
-		if (_healthLabel       == null) GD.PrintErr("CombatUI: HealthLabel not found");
-		if (_movementLabel     == null) GD.PrintErr("CombatUI: MovementLabel not found");
-		if (_manaLabel         == null) GD.PrintErr("CombatUI: ManaLabel not found");
-		if (_hintLabel         == null) GD.PrintErr("CombatUI: HintLabel not found");
+		if (_phaseLabel == null) GD.PrintErr("CombatUI: PhaseLabel not found");
+		if (_unitNameLabel == null) GD.PrintErr("CombatUI: UnitNameLabel not found");
+		if (_healthLabel == null) GD.PrintErr("CombatUI: HealthLabel not found");
+		if (_movementLabel == null) GD.PrintErr("CombatUI: MovementLabel not found");
+		if (_manaLabel == null) GD.PrintErr("CombatUI: ManaLabel not found");
+		if (_hintLabel == null) GD.PrintErr("CombatUI: HintLabel not found");
 		if (_confirmDeploymentButton == null) GD.PrintErr("CombatUI: ConfirmDeploymentButton not found");
-		if (_endTurnButton     == null) GD.PrintErr("CombatUI: EndTurnButton not found");
+		if (_endTurnButton == null) GD.PrintErr("CombatUI: EndTurnButton not found");
 
 		// Suppress the built-in % text — labels already show the values
 		if (_healthBar != null) _healthBar.ShowPercentage = false;
-		if (_moveBar   != null) _moveBar.ShowPercentage   = false;
-		if (_manaBar   != null) _manaBar.ShowPercentage   = false;
+		if (_moveBar != null) _moveBar.ShowPercentage = false;
+		if (_manaBar != null) _manaBar.ShowPercentage = false;
 	}
 
 	private void WireButtons()
@@ -129,7 +130,7 @@ public partial class CombatUI : CanvasLayer
 	// ── Button callbacks ─────────────────────────────────────────────────────
 
 	private void OnConfirmDeploymentButtonPressed() => EmitSignal(SignalName.ConfirmDeploymentPressed);
-	private void OnEndTurnButtonPressed()           => EmitSignal(SignalName.EndTurnPressed);
+	private void OnEndTurnButtonPressed() => EmitSignal(SignalName.EndTurnPressed);
 
 	private void OnDeckButtonPressed()
 	{
@@ -161,10 +162,6 @@ public partial class CombatUI : CanvasLayer
 
 	// ── Selected unit panel ──────────────────────────────────────────────────
 
-	/// <summary>
-	/// Show stats for the selected unit (player OR enemy).
-	/// Pass mana = -1 to hide the mana row (use for enemies with no mana).
-	/// </summary>
 	public void ShowSelectedUnit(Unit unit, int mana)
 	{
 		CacheNodes();
@@ -175,12 +172,12 @@ public partial class CombatUI : CanvasLayer
 		if (unit == null)
 		{
 			_unitNameLabel.Text = "No Unit Selected";
-			if (_healthLabel   != null) _healthLabel.Text   = "";
+			if (_healthLabel != null) _healthLabel.Text = "";
 			if (_movementLabel != null) _movementLabel.Text = "";
-			if (_manaLabel     != null) _manaLabel.Text     = mana >= 0 ? $"Mana: {mana}" : "";
+			if (_manaLabel != null) _manaLabel.Text = mana >= 0 ? $"Mana: {mana}" : "";
 
 			SetBar(_healthBar, 1, 0);
-			SetBar(_moveBar,   1, 0);
+			SetBar(_moveBar, 1, 0);
 			if (mana >= 0) SetBar(_manaBar, Mathf.Max(1, mana), mana);
 			return;
 		}
@@ -189,18 +186,17 @@ public partial class CombatUI : CanvasLayer
 
 		_unitNameLabel.Text = isEnemy ? $"[Enemy] {unit.Name}" : unit.Name;
 
-		if (_healthLabel   != null) _healthLabel.Text   = $"HP:   {unit.Stats.Health} / {unit.Stats.MaxHealth}";
+		if (_healthLabel != null) _healthLabel.Text = $"HP:   {unit.Stats.Health} / {unit.Stats.MaxHealth}";
 		if (_movementLabel != null) _movementLabel.Text = isEnemy
 			? $"Speed: {unit.Stats.BaseSpeed}"
 			: $"Move: {unit.Stats.MovePoints} / {unit.Stats.BaseSpeed}";
 
-		// Mana row: hide for enemies unless they have mana
 		bool showMana = !isEnemy || unit.Stats.MaxMana > 0;
 		if (_manaLabel != null)
 			_manaLabel.Text = showMana ? $"Mana: {mana}" : "";
 
 		SetBar(_healthBar, unit.Stats.MaxHealth, unit.Stats.Health);
-		SetBar(_moveBar,   unit.Stats.BaseSpeed, isEnemy ? unit.Stats.BaseSpeed : unit.Stats.MovePoints);
+		SetBar(_moveBar, unit.Stats.BaseSpeed, isEnemy ? unit.Stats.BaseSpeed : unit.Stats.MovePoints);
 		if (showMana) SetBar(_manaBar, Mathf.Max(1, unit.Stats.MaxMana), mana);
 	}
 
@@ -217,15 +213,11 @@ public partial class CombatUI : CanvasLayer
 
 	// ── Enemy Roster ─────────────────────────────────────────────────────────
 
-	/// <summary>
-	/// Rebuilds the enemy roster panel. Call after any enemy HP change or at the start of each turn.
-	/// </summary>
 	public void RefreshEnemyRoster(List<Unit> enemies)
 	{
 		CacheNodes();
 		if (_enemyRosterBox == null) return;
 
-		// Clear existing rows
 		foreach (Node child in _enemyRosterBox.GetChildren())
 			child.QueueFree();
 
@@ -234,35 +226,29 @@ public partial class CombatUI : CanvasLayer
 			var enemy = enemies[i];
 			if (enemy == null) continue;
 
-			// Outer HBox for this enemy row
 			var row = new HBoxContainer();
 			row.AddThemeConstantOverride("separation", 6);
 
-			// Clickable name button — emits EnemyButtonPressed(index)
 			var btn = new Button();
-			btn.Text        = enemy.Stats.IsAlive ? enemy.Name : $"[dead] {enemy.Name}";
-			btn.Disabled    = !enemy.Stats.IsAlive;
-			btn.CustomMinimumSize = new Vector2(90, 0);
+			btn.Text = enemy.Stats.IsAlive ? enemy.Name : $"[dead] {enemy.Name}";
+			btn.Disabled = !enemy.Stats.IsAlive;
+			btn.CustomMinimumSize = new Vector2(UITheme.EnemyRosterButtonWidth, 0);
 			int capturedIndex = i;
 			btn.Pressed += () => EmitSignal(SignalName.EnemyButtonPressed, capturedIndex);
 			row.AddChild(btn);
 
 			if (enemy.Stats.IsAlive)
 			{
-				// HP bar
 				var bar = new ProgressBar();
-				bar.MaxValue          = Mathf.Max(1, enemy.Stats.MaxHealth);
-				bar.Value             = enemy.Stats.Health;
-				bar.ShowPercentage    = false;
-				bar.CustomMinimumSize = new Vector2(80, 14);
+				bar.MaxValue = Mathf.Max(1, enemy.Stats.MaxHealth);
+				bar.Value = enemy.Stats.Health;
+				bar.ShowPercentage = false;
+				bar.CustomMinimumSize = new Vector2(UITheme.EnemyRosterBarWidth, UITheme.EnemyRosterBarHeight);
 				bar.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-				// Color the bar red for enemies
-				var style = new StyleBoxFlat();
-				style.BgColor = new Color(0.75f, 0.15f, 0.15f);
+				var style = new StyleBoxFlat { BgColor = UITheme.EnemyHealthBar };
 				bar.AddThemeStyleboxOverride("fill", style);
 				row.AddChild(bar);
 
-				// HP text
 				var lbl = new Label();
 				lbl.Text = $"{enemy.Stats.Health}/{enemy.Stats.MaxHealth}";
 				lbl.CustomMinimumSize = new Vector2(44, 0);
@@ -275,10 +261,6 @@ public partial class CombatUI : CanvasLayer
 
 	// ── Player Unit Bar ──────────────────────────────────────────────────────
 
-	/// <summary>
-	/// Rebuilds the player unit bar at the bottom. Call after HP changes or unit selection changes.
-	/// Highlights the currently selected unit.
-	/// </summary>
 	public void RefreshPlayerUnitBar(List<Unit> playerUnits, Unit selectedUnit)
 	{
 		CacheNodes();
@@ -294,43 +276,35 @@ public partial class CombatUI : CanvasLayer
 
 			var panel = new PanelContainer();
 
-			// Highlight selected unit
 			if (unit == selectedUnit)
 			{
 				var style = new StyleBoxFlat();
-				style.BgColor      = new Color(0.2f, 0.5f, 0.9f, 0.6f);
-				style.BorderColor  = new Color(1f, 1f, 1f, 0.9f);
-				style.SetBorderWidthAll(2);
+				style.BgColor = UITheme.UnitBarSelected;
+				style.BorderColor = UITheme.UnitBarBorder;
+				style.SetBorderWidthAll(UITheme.BorderWidth);
 				panel.AddThemeStyleboxOverride("panel", style);
 			}
 
 			var vbox = new VBoxContainer();
 			vbox.AddThemeConstantOverride("separation", 1);
 
-			// Unit name button
 			var btn = new Button();
-			btn.Text = unit.Stats.IsAlive ? unit.Name : $"[dead]";
+			btn.Text = unit.Stats.IsAlive ? unit.Name : "[dead]";
 			btn.Disabled = !unit.Stats.IsAlive;
 			int capturedIndex = i;
 			btn.Pressed += () => EmitSignal(SignalName.UnitButtonPressed, capturedIndex);
 			vbox.AddChild(btn);
 
-			// HP label + bar
 			AddStatRow(vbox, $"HP {unit.Stats.Health}/{unit.Stats.MaxHealth}",
-				unit.Stats.MaxHealth, unit.Stats.Health,
-				new Color(0.2f, 0.75f, 0.2f));
+				unit.Stats.MaxHealth, unit.Stats.Health, UITheme.StatBarHealth);
 
-			// Movement label + bar
 			AddStatRow(vbox, $"MOVE {unit.Stats.MovePoints}/{unit.Stats.BaseSpeed}",
-				unit.Stats.BaseSpeed, unit.Stats.MovePoints,
-				new Color(0.85f, 0.75f, 0.2f));
+				unit.Stats.BaseSpeed, unit.Stats.MovePoints, UITheme.StatBarMove);
 
-			// Mana label + bar (only for units that actually have mana)
 			if (unit.Stats.MaxMana > 0)
 			{
 				AddStatRow(vbox, $"MANA {unit.Stats.Mana}/{unit.Stats.MaxMana}",
-					unit.Stats.MaxMana, unit.Stats.Mana,
-					new Color(0.25f, 0.45f, 0.95f));
+					unit.Stats.MaxMana, unit.Stats.Mana, UITheme.StatBarMana);
 			}
 
 			panel.AddChild(vbox);
@@ -343,14 +317,14 @@ public partial class CombatUI : CanvasLayer
 		var lbl = new Label();
 		lbl.Text = text;
 		lbl.HorizontalAlignment = HorizontalAlignment.Center;
-		lbl.AddThemeFontSizeOverride("font_size", 10);
+		lbl.AddThemeFontSizeOverride("font_size", UITheme.CombatStatLabelFontSize);
 		parent.AddChild(lbl);
 
 		var bar = new ProgressBar();
-		bar.MaxValue          = Mathf.Max(1, max);
-		bar.Value             = Mathf.Clamp(value, 0, max);
-		bar.ShowPercentage    = false;
-		bar.CustomMinimumSize = new Vector2(80, 8);
+		bar.MaxValue = Mathf.Max(1, max);
+		bar.Value = Mathf.Clamp(value, 0, max);
+		bar.ShowPercentage = false;
+		bar.CustomMinimumSize = new Vector2(UITheme.UnitBarStatBarWidth, UITheme.UnitBarStatBarHeight);
 		bar.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
 		var style = new StyleBoxFlat { BgColor = fillColor };
 		bar.AddThemeStyleboxOverride("fill", style);
@@ -359,18 +333,12 @@ public partial class CombatUI : CanvasLayer
 
 	// ── Action Log ───────────────────────────────────────────────────────────
 
-	private const int MaxLogLines = 6;
-	private readonly Queue<string> _logLines = new();
-
-	/// <summary>
-	/// Appends a line to the combat action log (e.g. "Enemy_1 attacks Player_1 for 5 damage").
-	/// </summary>
 	public void AppendActionLog(string message)
 	{
 		CacheNodes();
 
 		_logLines.Enqueue(message);
-		while (_logLines.Count > MaxLogLines)
+		while (_logLines.Count > UITheme.MaxActionLogLines)
 			_logLines.Dequeue();
 
 		if (_actionLogLabel != null)
@@ -379,7 +347,6 @@ public partial class CombatUI : CanvasLayer
 		GD.Print($"[ActionLog] {message}");
 	}
 
-	/// <summary>Clears the action log (e.g. at start of player turn).</summary>
 	public void ClearActionLog()
 	{
 		_logLines.Clear();
@@ -389,17 +356,13 @@ public partial class CombatUI : CanvasLayer
 
 	// ── Deck / Graveyard counters ────────────────────────────────────────────
 
-	/// <summary>
-	/// Updates the deck and graveyard counter buttons and refreshes popup lists.
-	/// </summary>
 	public void RefreshDeckCounts(List<Card> library, List<Card> graveyard)
 	{
 		CacheNodes();
 
-		if (_deckButton  != null) _deckButton.Text  = $"Deck: {library?.Count ?? 0}";
+		if (_deckButton != null) _deckButton.Text = $"Deck: {library?.Count ?? 0}";
 		if (_graveButton != null) _graveButton.Text = $"Grave: {graveyard?.Count ?? 0}";
 
-		// Rebuild graveyard popup list
 		if (_graveList != null)
 		{
 			_graveList.Clear();
@@ -408,7 +371,6 @@ public partial class CombatUI : CanvasLayer
 					_graveList.AddItem(card.CardName ?? card.TopHalf?.Name ?? "Unknown");
 		}
 
-		// Rebuild deck popup list
 		if (_deckList != null)
 		{
 			_deckList.Clear();
@@ -420,11 +382,10 @@ public partial class CombatUI : CanvasLayer
 
 	// ── Helpers ──────────────────────────────────────────────────────────────
 
-	/// <summary>Safely sets a ProgressBar's max and current value.</summary>
 	private static void SetBar(ProgressBar bar, int max, int value)
 	{
 		if (bar == null) return;
 		bar.MaxValue = Mathf.Max(1, max);
-		bar.Value    = Mathf.Clamp(value, 0, max);
+		bar.Value = Mathf.Clamp(value, 0, max);
 	}
 }

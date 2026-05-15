@@ -212,7 +212,7 @@ public partial class Unit : Node3D
     public void GainMana(int amount)
     {
         if (amount <= 0) return;
-        Stats.Mana = Math.Min(Stats.MaxMana, Stats.Mana + amount);
+        Stats.Mana += amount; // no cap — overflow allowed this turn
         _healthBar?.SetMana(Stats.Mana, Stats.MaxMana);
     }
 

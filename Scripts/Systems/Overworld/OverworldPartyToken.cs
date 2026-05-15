@@ -28,20 +28,18 @@ public partial class OverworldPartyToken : Node2D
 
     public override void _Ready()
     {
-        // Draw the party token as a bright circle
         _tokenVisual = new Polygon2D
         {
-            Polygon = MakeCirclePoints(14f, 12),
-            Color = new Color(1f, 0.9f, 0.3f), // gold
+            Polygon = MakeCirclePoints(UITheme.PartyTokenRadius, UITheme.PartyTokenSegments),
+            Color = UITheme.PartyTokenFill,
             ZIndex = 10
         };
         AddChild(_tokenVisual);
 
-        // Add a dark outline for visibility
         var outline = new Polygon2D
         {
-            Polygon = MakeCirclePoints(17f, 12),
-            Color = new Color(0.15f, 0.1f, 0f),
+            Polygon = MakeCirclePoints(UITheme.PartyTokenOutlineRadius, UITheme.PartyTokenSegments),
+            Color = UITheme.PartyTokenOutline,
             ZIndex = 9
         };
         AddChild(outline);
@@ -144,10 +142,10 @@ public partial class OverworldPartyToken : Node2D
                 int cost = GetTerrainCostPreview(hex.Terrain);
                 Color tint = cost switch
                 {
-                    1 => new Color(0.6f, 1f, 0.6f, 0.3f),   // green — cheap
-                    2 => new Color(1f, 1f, 0.4f, 0.3f),      // yellow — moderate
-                    3 => new Color(1f, 0.5f, 0.3f, 0.3f),    // orange — expensive
-                    _ => new Color(1f, 1f, 0.6f, 0.3f),
+                    1 => UITheme.MoveHighlightCheap,
+                    2 => UITheme.MoveHighlightModerate,
+                    3 => UITheme.MoveHighlightExpensive,
+                    _ => UITheme.MoveHighlightDefault,
                 };
 
                 var highlight = new Polygon2D
@@ -169,7 +167,7 @@ public partial class OverworldPartyToken : Node2D
                     ZIndex = 5,
                     Name = "CostLabel"
                 };
-                costLabel.AddThemeFontSizeOverride("font_size", 14);
+                costLabel.AddThemeFontSizeOverride("font_size", UITheme.OverworldCostLabelFontSize);
                 costLabel.AddThemeColorOverride("font_color", Colors.White);
                 hex.AddChild(costLabel);
 
@@ -192,14 +190,14 @@ public partial class OverworldPartyToken : Node2D
     {
         return terrain switch
         {
-            OverworldHex.TerrainType.Road         => 1,
-            OverworldHex.TerrainType.Grassland     => 1,
-            OverworldHex.TerrainType.ArcaneGround  => 1,
-            OverworldHex.TerrainType.Forest         => 2,
-            OverworldHex.TerrainType.Ruins          => 2,
-            OverworldHex.TerrainType.Swamp          => 2,
-            OverworldHex.TerrainType.Mountain       => 3,
-            OverworldHex.TerrainType.Volcanic       => 2,
+            OverworldHex.TerrainType.Road => 1,
+            OverworldHex.TerrainType.Grassland => 1,
+            OverworldHex.TerrainType.ArcaneGround => 1,
+            OverworldHex.TerrainType.Forest => 2,
+            OverworldHex.TerrainType.Ruins => 2,
+            OverworldHex.TerrainType.Swamp => 2,
+            OverworldHex.TerrainType.Mountain => 3,
+            OverworldHex.TerrainType.Volcanic => 2,
             _ => 1
         };
     }

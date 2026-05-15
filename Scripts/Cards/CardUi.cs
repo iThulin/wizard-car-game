@@ -18,6 +18,8 @@ public partial class CardUi : Control
     private float _smoothBreathe = 0f;
     private Tween _cardTween;
     private Tween _halfTween;
+    private bool _isDiscardFlagged = false;
+    private Tween _amberPulseTween;
 
     // Card exit safety
     private bool _entryTweenComplete = false;
@@ -69,23 +71,6 @@ public partial class CardUi : Control
     private Panel _fullChannelPanel;
     private RichTextLabel _fullChannelLabel;
     private string _fullViewHalf = "none";
-
-    // Affordability tracking
-    private static readonly Color TopActiveColor = new Color(1.3f, 1.2f, 0.9f, 1f);
-    private static readonly Color BottomActiveColor = new Color(1.1f, 1.0f, 1.4f, 1f);
-    private static readonly Color DimColor = new Color(0.55f, 0.55f, 0.55f, 1f);
-
-    // Discard pressure tracking
-    private bool _isDiscardFlagged = false;
-    private Tween _amberPulseTween;
-    private static readonly Color AmberColor = new Color(1.0f, 0.65f, 0.1f, 1f);
-    private static readonly Color AmberDimColor = new Color(0.7f, 0.45f, 0.07f, 1f);
-
-    //Rarity color (currently unused, but keeping here for easy re-enable if we want to add it back)
-    private static readonly Color CommonColor = new Color(0.8f, 0.8f, 0.8f);
-    private static readonly Color UncommonColor = new Color(0.4f, 0.8f, 0.4f);
-    private static readonly Color RareColor = new Color(0.4f, 0.6f, 1f);
-    private static readonly Color LegendaryColor = new Color(0.8f, 0.4f, 0.8f);
 
     // Signals
     [Signal] public delegate void CardDroppedEventHandler();
@@ -305,15 +290,7 @@ public partial class CardUi : Control
         if (_splitDivider != null)
         {
             // Rarity color
-            var rarityCol = CardInstance.Rarity switch
-            {
-                CardRarity.Common => CommonColor,
-                CardRarity.Uncommon => UncommonColor,
-                CardRarity.Rare => RareColor,
-                CardRarity.Legendary => LegendaryColor,
-                _ => borderCol
-            };
-            //_splitDivider.Color = borderCol;
+            var rarityCol = UITheme.GetRarityColor(CardInstance.Rarity);
             _splitDivider.Color = rarityCol;
         }
 
@@ -345,23 +322,23 @@ public partial class CardUi : Control
     {
         if (panel == null) return;
         var style = new StyleBoxFlat();
-        style.BgColor = Colors.White;
+        style.BgColor = UITheme.SurfaceLight;
         style.BorderColor = borderCol;
-        style.BorderWidthLeft = 3;
-        style.BorderWidthRight = 3;
+        style.BorderWidthLeft = UITheme.BorderWidth;
+        style.BorderWidthRight = UITheme.BorderWidth;
         if (isTop)
         {
-            style.BorderWidthTop = 3;
+            style.BorderWidthTop = UITheme.BorderWidth;
             style.BorderWidthBottom = 2;
-            style.CornerRadiusTopLeft = 5;
-            style.CornerRadiusTopRight = 5;
+            style.CornerRadiusTopLeft = UITheme.CornerRadius;
+            style.CornerRadiusTopRight = UITheme.CornerRadius;
         }
         else
         {
             style.BorderWidthTop = 2;
-            style.BorderWidthBottom = 3;
-            style.CornerRadiusBottomLeft = 5;
-            style.CornerRadiusBottomRight = 5;
+            style.BorderWidthBottom = UITheme.BorderWidth;
+            style.CornerRadiusBottomLeft = UITheme.CornerRadius;
+            style.CornerRadiusBottomRight = UITheme.CornerRadius;
         }
         panel.AddThemeStyleboxOverride("panel", style);
     }
@@ -371,7 +348,7 @@ public partial class CardUi : Control
         var pip = GetNodeOrNull<Panel>(pipPanelPath);
         if (pip == null) return;
         var s = new StyleBoxFlat { BgColor = darkCol };
-        s.SetCornerRadiusAll(10);
+        s.SetCornerRadiusAll(UITheme.CornerRadiusLg);
         pip.AddThemeStyleboxOverride("panel", s);
     }
 
@@ -380,7 +357,7 @@ public partial class CardUi : Control
         if (panel == null) return;
         var s = new StyleBoxFlat();
         s.BgColor = new Color(borderCol.R, borderCol.G, borderCol.B, 0.12f);
-        s.SetCornerRadiusAll(3);
+        s.SetCornerRadiusAll(UITheme.CornerRadius);
         panel.AddThemeStyleboxOverride("panel", s);
 
         var label = panel.GetNodeOrNull<RichTextLabel>("ChannelLabel");
@@ -399,14 +376,7 @@ public partial class CardUi : Control
         var school = half.School;
         var borderColor = SchoolColors.GetBorderColor(school);
         var darkColor = SchoolColors.GetDarkColor(school);
-        var rarityCol = CardInstance.Rarity switch
-        {
-            CardRarity.Common => CommonColor,
-            CardRarity.Uncommon => UncommonColor,
-            CardRarity.Rare => RareColor,
-            CardRarity.Legendary => LegendaryColor,
-            _ => borderColor
-        };
+        var rarityCol = UITheme.GetRarityColor(CardInstance.Rarity);
 
         // Art panel placeholder
         if (_artPanel != null)
@@ -416,12 +386,12 @@ public partial class CardUi : Control
                 borderColor.R * 0.35f,
                 borderColor.G * 0.35f,
                 borderColor.B * 0.35f, 1f);
-            artStyle.CornerRadiusTopLeft = 5;
-            artStyle.CornerRadiusTopRight = 5;
+            artStyle.CornerRadiusTopLeft = UITheme.CornerRadius;
+            artStyle.CornerRadiusTopRight = UITheme.CornerRadius;
             artStyle.BorderColor = borderColor;
-            artStyle.BorderWidthLeft = 3;
-            artStyle.BorderWidthTop = 3;
-            artStyle.BorderWidthRight = 3;
+            artStyle.BorderWidthLeft = UITheme.BorderWidth;
+            artStyle.BorderWidthTop = UITheme.BorderWidth;
+            artStyle.BorderWidthRight = UITheme.BorderWidth;
             artStyle.BorderWidthBottom = 0;
             _artPanel.AddThemeStyleboxOverride("panel", artStyle);
         }
@@ -431,7 +401,7 @@ public partial class CardUi : Control
         {
             _schoolBadge.Text = SchoolColors.GetBadgeText(school);
             var badgeStyle = new StyleBoxFlat { BgColor = borderColor };
-            badgeStyle.SetCornerRadiusAll(9);
+            badgeStyle.SetCornerRadiusAll(UITheme.CornerRadiusLg);
             _schoolBadge.AddThemeStyleboxOverride("normal", badgeStyle);
         }
 
@@ -448,10 +418,10 @@ public partial class CardUi : Control
                 pip.CustomMinimumSize = new Vector2(14, 14);
                 pip.HorizontalAlignment = HorizontalAlignment.Center;
                 pip.VerticalAlignment = VerticalAlignment.Center;
-                pip.AddThemeFontSizeOverride("font_size", 8);
+                pip.AddThemeFontSizeOverride("font_size", UITheme.FontSizeSmall / 2);
                 pip.AddThemeColorOverride("font_color", Colors.White);
                 var pipStyle = new StyleBoxFlat { BgColor = ElementColors.Get(tag) };
-                pipStyle.SetCornerRadiusAll(7);
+                pipStyle.SetCornerRadiusAll(UITheme.CornerRadius + 2);
                 pip.AddThemeStyleboxOverride("normal", pipStyle);
                 _elementTagContainer.AddChild(pip);
             }
@@ -460,7 +430,6 @@ public partial class CardUi : Control
         // Divider
         if (_fullDivider != null)
         {
-            //var divStyle = new StyleBoxFlat { BgColor = borderColor };
             var divStyle = new StyleBoxFlat { BgColor = rarityCol };
             _fullDivider.AddThemeStyleboxOverride("panel", divStyle);
         }
@@ -469,14 +438,14 @@ public partial class CardUi : Control
         if (_fullInfoPanel != null)
         {
             var infoStyle = new StyleBoxFlat();
-            infoStyle.BgColor = Colors.White;
+            infoStyle.BgColor = UITheme.SurfaceLight;
             infoStyle.BorderColor = borderColor;
-            infoStyle.BorderWidthLeft = 3;
-            infoStyle.BorderWidthRight = 3;
-            infoStyle.BorderWidthBottom = 3;
+            infoStyle.BorderWidthLeft = UITheme.BorderWidth;
+            infoStyle.BorderWidthRight = UITheme.BorderWidth;
+            infoStyle.BorderWidthBottom = UITheme.BorderWidth;
             infoStyle.BorderWidthTop = 0;
-            infoStyle.CornerRadiusBottomLeft = 5;
-            infoStyle.CornerRadiusBottomRight = 5;
+            infoStyle.CornerRadiusBottomLeft = UITheme.CornerRadius;
+            infoStyle.CornerRadiusBottomRight = UITheme.CornerRadius;
             _fullInfoPanel.AddThemeStyleboxOverride("panel", infoStyle);
         }
 
@@ -485,7 +454,7 @@ public partial class CardUi : Control
         if (manaPipPanel != null)
         {
             var pipStyle = new StyleBoxFlat { BgColor = darkColor };
-            pipStyle.SetCornerRadiusAll(10);
+            pipStyle.SetCornerRadiusAll(UITheme.CornerRadiusLg);
             manaPipPanel.AddThemeStyleboxOverride("panel", pipStyle);
         }
 
@@ -495,13 +464,14 @@ public partial class CardUi : Control
         if (_fullSpeedLabel != null) _fullSpeedLabel.Text = half.Speed.ToString();
         if (_fullRulesLabel != null) _fullRulesLabel.Text = half.RulesText ?? "";
 
+        // Channel strip
         var chText = half.ChannelVariant?.RulesText ?? "";
         if (_fullChannelPanel != null)
         {
             _fullChannelPanel.Visible = !string.IsNullOrWhiteSpace(chText);
             var chStyle = new StyleBoxFlat();
             chStyle.BgColor = new Color(borderColor.R, borderColor.G, borderColor.B, 0.12f);
-            chStyle.SetCornerRadiusAll(3);
+            chStyle.SetCornerRadiusAll(UITheme.CornerRadius);
             _fullChannelPanel.AddThemeStyleboxOverride("panel", chStyle);
         }
         if (_fullChannelLabel != null)
@@ -511,7 +481,7 @@ public partial class CardUi : Control
         }
 
         _fullCardView.Visible = true;
-        _fullCardView.Modulate = new Color(1, 1, 1, 0); // start transparent
+        _fullCardView.Modulate = new Color(1, 1, 1, 0);
         _fullViewHalf = isTop ? "top" : "bottom";
 
         // Crossfade: split out, full in
@@ -519,18 +489,15 @@ public partial class CardUi : Control
         _transitionTween = CreateTween().SetParallel(true);
         _transitionTween.SetEase(Tween.EaseType.Out).SetTrans(Tween.TransitionType.Cubic);
 
-        // Fade split view out
         _transitionTween.TweenProperty(_splitView, "modulate",
-            new Color(1, 1, 1, 0), 0.15f);
+            new Color(1, 1, 1, 0), UITheme.AnimNormal);
 
-        // Fade full view in
         _transitionTween.TweenProperty(_fullCardView, "modulate",
-            Colors.White, 0.18f).SetDelay(0.05f);
+            Colors.White, UITheme.AnimNormal).SetDelay(0.05f);
 
-        // Subtle scale pop on the full view
         _fullCardView.Scale = new Vector2(0.97f, 0.97f);
         _transitionTween.TweenProperty(_fullCardView, "scale",
-            Vector2.One, 0.2f).SetDelay(0.05f);
+            Vector2.One, UITheme.AnimNormal).SetDelay(0.05f);
     }
 
     private void HideFullCard()
@@ -541,13 +508,10 @@ public partial class CardUi : Control
         _transitionTween = CreateTween().SetParallel(true);
         _transitionTween.SetEase(Tween.EaseType.Out).SetTrans(Tween.TransitionType.Cubic);
 
-        // Fade full view out
         _transitionTween.TweenProperty(_fullCardView, "modulate",
-            new Color(1, 1, 1, 0), 0.12f);
-
-        // Fade split view back in
+            new Color(1, 1, 1, 0), UITheme.AnimFast);
         _transitionTween.TweenProperty(_splitView, "modulate",
-            Colors.White, 0.15f).SetDelay(0.03f);
+            Colors.White, UITheme.AnimNormal).SetDelay(0.03f);
 
         // Hide the full view node after fade completes to free up input
         _transitionTween.Chain().TweenCallback(Callable.From(() =>
@@ -640,22 +604,22 @@ public partial class CardUi : Control
 
         if (activeHalf == "top")
         {
-            _halfTween.TweenProperty(_topPanel, "modulate", TopActiveColor, 0.1f);
-            _halfTween.TweenProperty(_bottomPanel, "modulate", DimColor, 0.1f);
+            _halfTween.TweenProperty(_topPanel, "modulate", UITheme.CardTopActive, 0.1f);
+            _halfTween.TweenProperty(_bottomPanel, "modulate", UITheme.CardDim, 0.1f);
             ShowFullCard(TopHalf, true);
         }
         else if (activeHalf == "bottom")
         {
-            _halfTween.TweenProperty(_topPanel, "modulate", DimColor, 0.1f);
-            _halfTween.TweenProperty(_bottomPanel, "modulate", BottomActiveColor, 0.1f);
+            _halfTween.TweenProperty(_topPanel, "modulate", UITheme.CardDim, 0.1f);
+            _halfTween.TweenProperty(_bottomPanel, "modulate", UITheme.CardBottomActive, 0.1f);
             ShowFullCard(BottomHalf, false);
         }
         else
         {
             var topBase = (TopHalf?.ManaCost ?? 0) > _lastKnownMana
-                ? new Color(0.7f, 0.5f, 0.5f, 1f) : Colors.White;
+                ? UITheme.DangerDim : UITheme.SurfaceLight;
             var botBase = (BottomHalf?.ManaCost ?? 0) > _lastKnownMana
-                ? new Color(0.7f, 0.5f, 0.5f, 1f) : Colors.White;
+                ? UITheme.DangerDim : UITheme.SurfaceLight;
             _halfTween.TweenProperty(_topPanel, "modulate", topBase, 0.1f);
             _halfTween.TweenProperty(_bottomPanel, "modulate", botBase, 0.1f);
             HideFullCard();
@@ -670,9 +634,9 @@ public partial class CardUi : Control
         if (_isDiscardFlagged) return;
 
         _topPanel.Modulate = (TopHalf?.ManaCost ?? 0) > currentMana
-            ? new Color(0.7f, 0.5f, 0.5f, 1f) : Colors.White;
+            ? UITheme.DangerDim : UITheme.SurfaceLight;
         _bottomPanel.Modulate = (BottomHalf?.ManaCost ?? 0) > currentMana
-            ? new Color(0.7f, 0.5f, 0.5f, 1f) : Colors.White;
+            ? UITheme.DangerDim : UITheme.SurfaceLight;
     }
 
     public void SetDiscardFlagged(bool flagged)
@@ -688,8 +652,8 @@ public partial class CardUi : Control
             _amberPulseTween = CreateTween().SetLoops();
             _amberPulseTween.SetEase(Tween.EaseType.InOut)
                             .SetTrans(Tween.TransitionType.Sine);
-            _amberPulseTween.TweenProperty(_visualNode, "modulate", AmberColor, 0.5f);
-            _amberPulseTween.TweenProperty(_visualNode, "modulate", AmberDimColor, 0.5f);
+            _amberPulseTween.TweenProperty(_visualNode, "modulate", UITheme.Warning, 0.5f);
+            _amberPulseTween.TweenProperty(_visualNode, "modulate", UITheme.WarningDim, 0.5f);
         }
         else
         {
@@ -784,9 +748,9 @@ public partial class CardUi : Control
         HideFullCard();
 
         float tiltDir = _dragTopCard ? -0.06f : 0.06f;
-        _cardTween.TweenProperty(this, "rotation", _restRotation * 0.2f + tiltDir, 0.12f);
-        _cardTween.TweenProperty(this, "scale", new Vector2(0.92f, 0.92f), 0.12f);
-        _cardTween.TweenProperty(this, "modulate", new Color(1.1f, 1.1f, 1.1f, 0.85f), 0.12f);
+        _cardTween.TweenProperty(this, "rotation", _restRotation * 0.2f + tiltDir, UITheme.AnimFast);
+        _cardTween.TweenProperty(this, "scale", new Vector2(0.92f, 0.92f), UITheme.AnimFast);
+        _cardTween.TweenProperty(this, "modulate", UITheme.CardDragGhost, UITheme.AnimFast);
         ZIndex = 200;
 
         // Notify GameRunner to show range highlight for the dragged half

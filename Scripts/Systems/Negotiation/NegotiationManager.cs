@@ -19,30 +19,21 @@ public partial class NegotiationManager : Control
     private Label _npcNameLabel;
     private Label _openingLabel;
 
-    // Tension meter
     private HBoxContainer _tensionBar;
     private Label _tensionLabel;
     private Label _zoneLabel;
 
-    // Deal terms
     private VBoxContainer _termsContainer;
-
-    // Token buttons
     private VBoxContainer _tokenContainer;
-
-    // Log
     private RichTextLabel _logLabel;
 
-    // Action buttons
     private Button _acceptButton;
     private Button _walkAwayButton;
 
-    // Result panel (shown after resolution)
     private Panel _resultPanel;
     private Label _resultLabel;
     private Button _continueButton;
 
-    // Tension step squares (10 visual blocks)
     private ColorRect[] _tensionSteps = new ColorRect[10];
 
     public override void _Ready()
@@ -53,7 +44,6 @@ public partial class NegotiationManager : Control
 
     private void InitializeNegotiation()
     {
-        // Load encounter data
         string encounterId = NegotiationContext.EncounterId;
         _data = NegotiationEncounterLoader.Load(encounterId);
 
@@ -64,14 +54,10 @@ public partial class NegotiationManager : Control
             return;
         }
 
-        // Build the party for token pool calculation
         var party = CompanionRoster.GetActiveParty();
         var school = PlayerSession.SelectedSchool;
-
-        // Faction reputation (stub 0 for now — Phase 3 wires in real faction data)
         int factionRep = 0;
 
-        // Initialize state machine
         _state = new NegotiationState();
         _state.OnTensionChanged += OnTensionChanged;
         _state.OnLogEntry += AppendLog;
@@ -79,7 +65,6 @@ public partial class NegotiationManager : Control
 
         _state.Initialize(_data, school, party, factionRep);
 
-        // Set UI
         _titleLabel.Text = _data.Title;
         _npcNameLabel.Text = _data.NpcName;
         _openingLabel.Text = _data.OpeningText;
@@ -99,17 +84,21 @@ public partial class NegotiationManager : Control
         // Background
         var bg = new ColorRect
         {
-            Color = new Color(0.08f, 0.07f, 0.12f),
-            AnchorRight = 1f, AnchorBottom = 1f,
+            Color = UITheme.NegotiationBg,
+            AnchorRight = 1f,
+            AnchorBottom = 1f,
         };
         AddChild(bg);
 
-        // Main layout: left panel (tension + terms + tokens) | right panel (log)
+        // Main layout
         var mainHBox = new HBoxContainer
         {
-            AnchorRight = 1f, AnchorBottom = 1f,
-            OffsetLeft = 20, OffsetTop = 20,
-            OffsetRight = -20, OffsetBottom = -20,
+            AnchorRight = 1f,
+            AnchorBottom = 1f,
+            OffsetLeft = 20,
+            OffsetTop = 20,
+            OffsetRight = -20,
+            OffsetBottom = -20,
         };
         mainHBox.AddThemeConstantOverride("separation", 20);
         AddChild(mainHBox);
@@ -124,21 +113,15 @@ public partial class NegotiationManager : Control
         mainHBox.AddChild(leftPanel);
 
         // Title
-        _titleLabel = new Label
-        {
-            HorizontalAlignment = HorizontalAlignment.Center,
-        };
-        _titleLabel.AddThemeFontSizeOverride("font_size", 26);
-        _titleLabel.AddThemeColorOverride("font_color", new Color(0.9f, 0.85f, 0.6f));
+        _titleLabel = new Label { HorizontalAlignment = HorizontalAlignment.Center };
+        _titleLabel.AddThemeFontSizeOverride("font_size", UITheme.NegotiationTitleFontSize);
+        _titleLabel.AddThemeColorOverride("font_color", UITheme.NegotiationTitleColor);
         leftPanel.AddChild(_titleLabel);
 
         // NPC name
-        _npcNameLabel = new Label
-        {
-            HorizontalAlignment = HorizontalAlignment.Center,
-        };
-        _npcNameLabel.AddThemeFontSizeOverride("font_size", 18);
-        _npcNameLabel.AddThemeColorOverride("font_color", new Color(0.7f, 0.7f, 0.8f));
+        _npcNameLabel = new Label { HorizontalAlignment = HorizontalAlignment.Center };
+        _npcNameLabel.AddThemeFontSizeOverride("font_size", UITheme.NegotiationNpcFontSize);
+        _npcNameLabel.AddThemeColorOverride("font_color", UITheme.NegotiationNpcColor);
         leftPanel.AddChild(_npcNameLabel);
 
         // Opening text
@@ -147,15 +130,15 @@ public partial class NegotiationManager : Control
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
             HorizontalAlignment = HorizontalAlignment.Left,
         };
-        _openingLabel.AddThemeFontSizeOverride("font_size", 15);
-        _openingLabel.AddThemeColorOverride("font_color", new Color(0.85f, 0.82f, 0.88f));
+        _openingLabel.AddThemeFontSizeOverride("font_size", UITheme.NegotiationBodyFontSize);
+        _openingLabel.AddThemeColorOverride("font_color", UITheme.NegotiationBodyColor);
         leftPanel.AddChild(_openingLabel);
 
         leftPanel.AddChild(new HSeparator());
 
         // ── TENSION METER ───────────────────────────────────────────────
         var tensionHeader = new Label { Text = "Tension" };
-        tensionHeader.AddThemeFontSizeOverride("font_size", 16);
+        tensionHeader.AddThemeFontSizeOverride("font_size", UITheme.NegotiationHeaderFontSize);
         tensionHeader.AddThemeColorOverride("font_color", Colors.White);
         leftPanel.AddChild(tensionHeader);
 
@@ -177,9 +160,9 @@ public partial class NegotiationManager : Control
 
         // Zone labels
         var zoneHBox = new HBoxContainer();
-        var cordialLbl = MakeTinyLabel("◀ CORDIAL", new Color(0.3f, 0.8f, 0.3f));
-        var strainedLbl = MakeTinyLabel("STRAINED", new Color(0.9f, 0.75f, 0.2f));
-        var hostileLbl = MakeTinyLabel("HOSTILE ▶", new Color(0.9f, 0.3f, 0.3f));
+        var cordialLbl = MakeTinyLabel("◀ CORDIAL", UITheme.ZoneCordialLabel);
+        var strainedLbl = MakeTinyLabel("STRAINED", UITheme.ZoneStrainedLabel);
+        var hostileLbl = MakeTinyLabel("HOSTILE ▶", UITheme.ZoneHostileLabel);
 
         cordialLbl.SizeFlagsHorizontal = SizeFlags.Expand;
         strainedLbl.SizeFlagsHorizontal = SizeFlags.Expand;
@@ -193,14 +176,14 @@ public partial class NegotiationManager : Control
         leftPanel.AddChild(zoneHBox);
 
         _tensionLabel = new Label { HorizontalAlignment = HorizontalAlignment.Center };
-        _tensionLabel.AddThemeFontSizeOverride("font_size", 14);
+        _tensionLabel.AddThemeFontSizeOverride("font_size", UITheme.NegotiationTensionFontSize);
         leftPanel.AddChild(_tensionLabel);
 
         leftPanel.AddChild(new HSeparator());
 
         // ── DEAL TERMS ──────────────────────────────────────────────────
         var termsHeader = new Label { Text = "Terms on the Table" };
-        termsHeader.AddThemeFontSizeOverride("font_size", 16);
+        termsHeader.AddThemeFontSizeOverride("font_size", UITheme.NegotiationHeaderFontSize);
         termsHeader.AddThemeColorOverride("font_color", Colors.White);
         leftPanel.AddChild(termsHeader);
 
@@ -212,7 +195,7 @@ public partial class NegotiationManager : Control
 
         // ── TOKEN BUTTONS ───────────────────────────────────────────────
         var tokensHeader = new Label { Text = "Your Leverage" };
-        tokensHeader.AddThemeFontSizeOverride("font_size", 16);
+        tokensHeader.AddThemeFontSizeOverride("font_size", UITheme.NegotiationHeaderFontSize);
         tokensHeader.AddThemeColorOverride("font_color", Colors.White);
         leftPanel.AddChild(tokensHeader);
 
@@ -220,7 +203,6 @@ public partial class NegotiationManager : Control
         _tokenContainer.AddThemeConstantOverride("separation", 6);
         leftPanel.AddChild(_tokenContainer);
 
-        // ── ACCEPT / WALK AWAY ───────────────────────────────────────────
         leftPanel.AddChild(new Control { CustomMinimumSize = new Vector2(0, 8) });
 
         var actionRow = new HBoxContainer();
@@ -233,7 +215,7 @@ public partial class NegotiationManager : Control
             Text = "Accept Deal",
             CustomMinimumSize = new Vector2(160, 44),
         };
-        _acceptButton.AddThemeFontSizeOverride("font_size", 16);
+        _acceptButton.AddThemeFontSizeOverride("font_size", UITheme.NegotiationActionFontSize);
         _acceptButton.Pressed += () => _state.AcceptDeal();
         actionRow.AddChild(_acceptButton);
 
@@ -242,7 +224,7 @@ public partial class NegotiationManager : Control
             Text = "Walk Away",
             CustomMinimumSize = new Vector2(160, 44),
         };
-        _walkAwayButton.AddThemeFontSizeOverride("font_size", 16);
+        _walkAwayButton.AddThemeFontSizeOverride("font_size", UITheme.NegotiationActionFontSize);
         _walkAwayButton.Pressed += () => _state.WalkAway();
         actionRow.AddChild(_walkAwayButton);
 
@@ -256,14 +238,11 @@ public partial class NegotiationManager : Control
         mainHBox.AddChild(rightPanel);
 
         var logHeader = new Label { Text = "Negotiation Log" };
-        logHeader.AddThemeFontSizeOverride("font_size", 16);
+        logHeader.AddThemeFontSizeOverride("font_size", UITheme.NegotiationHeaderFontSize);
         logHeader.AddThemeColorOverride("font_color", Colors.White);
         rightPanel.AddChild(logHeader);
 
-        var logScroll = new ScrollContainer
-        {
-            SizeFlagsVertical = SizeFlags.Expand,
-        };
+        var logScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.Expand };
         rightPanel.AddChild(logScroll);
 
         _logLabel = new RichTextLabel
@@ -272,37 +251,48 @@ public partial class NegotiationManager : Control
             FitContent = true,
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         };
-        _logLabel.AddThemeFontSizeOverride("font_size", 14);
+        _logLabel.AddThemeFontSizeOverride("font_size", UITheme.NegotiationDetailFontSize);
         logScroll.AddChild(_logLabel);
 
-        // ── RESULT PANEL (hidden until resolved) ─────────────────────────
+        // ── RESULT PANEL ─────────────────────────────────────────────────
         _resultPanel = new Panel
         {
-            AnchorLeft = 0.5f, AnchorTop = 0.5f,
-            AnchorRight = 0.5f, AnchorBottom = 0.5f,
+            AnchorLeft = 0.5f,
+            AnchorTop = 0.5f,
+            AnchorRight = 0.5f,
+            AnchorBottom = 0.5f,
             GrowHorizontal = GrowDirection.Both,
             GrowVertical = GrowDirection.Both,
-            OffsetLeft = -280, OffsetTop = -180,
-            OffsetRight = 280, OffsetBottom = 180,
+            OffsetLeft = -280,
+            OffsetTop = -180,
+            OffsetRight = 280,
+            OffsetBottom = 180,
             Visible = false,
         };
         var resultStyle = new StyleBoxFlat
         {
-            BgColor = new Color(0.10f, 0.09f, 0.16f),
-            BorderColor = new Color(0.6f, 0.5f, 0.8f),
-            BorderWidthTop = 2, BorderWidthBottom = 2,
-            BorderWidthLeft = 2, BorderWidthRight = 2,
-            CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8,
-            CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8,
+            BgColor = UITheme.NegotiationResultBg,
+            BorderColor = UITheme.NegotiationResultBorder,
+            BorderWidthTop = UITheme.BorderWidth,
+            BorderWidthBottom = UITheme.BorderWidth,
+            BorderWidthLeft = UITheme.BorderWidth,
+            BorderWidthRight = UITheme.BorderWidth,
+            CornerRadiusTopLeft = UITheme.NarrativePanelCorner,
+            CornerRadiusTopRight = UITheme.NarrativePanelCorner,
+            CornerRadiusBottomLeft = UITheme.NarrativePanelCorner,
+            CornerRadiusBottomRight = UITheme.NarrativePanelCorner,
         };
         _resultPanel.AddThemeStyleboxOverride("panel", resultStyle);
         AddChild(_resultPanel);
 
         var resultLayout = new VBoxContainer
         {
-            AnchorRight = 1f, AnchorBottom = 1f,
-            OffsetLeft = 24, OffsetTop = 24,
-            OffsetRight = -24, OffsetBottom = -24,
+            AnchorRight = 1f,
+            AnchorBottom = 1f,
+            OffsetLeft = 24,
+            OffsetTop = 24,
+            OffsetRight = -24,
+            OffsetBottom = -24,
         };
         resultLayout.AddThemeConstantOverride("separation", 16);
         _resultPanel.AddChild(resultLayout);
@@ -312,7 +302,7 @@ public partial class NegotiationManager : Control
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
             HorizontalAlignment = HorizontalAlignment.Center,
         };
-        _resultLabel.AddThemeFontSizeOverride("font_size", 18);
+        _resultLabel.AddThemeFontSizeOverride("font_size", UITheme.NegotiationResultFontSize);
         resultLayout.AddChild(_resultLabel);
 
         _continueButton = new Button
@@ -321,7 +311,7 @@ public partial class NegotiationManager : Control
             CustomMinimumSize = new Vector2(200, 44),
             SizeFlagsHorizontal = SizeFlags.ShrinkCenter,
         };
-        _continueButton.AddThemeFontSizeOverride("font_size", 16);
+        _continueButton.AddThemeFontSizeOverride("font_size", UITheme.NegotiationActionFontSize);
         _continueButton.Pressed += ReturnToOverworld;
         resultLayout.AddChild(_continueButton);
     }
@@ -341,21 +331,14 @@ public partial class NegotiationManager : Control
             bool filled = i < t;
             Color color;
             if (!filled)
-            {
-                color = new Color(0.2f, 0.2f, 0.25f);
-            }
+                color = UITheme.TensionEmpty;
             else if (i < 3)
-            {
-                color = new Color(0.25f, 0.75f, 0.35f);   // Cordial — green
-            }
+                color = UITheme.TensionCordial;
             else if (i < 7)
-            {
-                color = new Color(0.85f, 0.70f, 0.15f);   // Strained — amber
-            }
+                color = UITheme.TensionStrained;
             else
-            {
-                color = new Color(0.85f, 0.25f, 0.20f);   // Hostile — red
-            }
+                color = UITheme.TensionHostile;
+
             _tensionSteps[i].Color = color;
         }
     }
@@ -372,7 +355,6 @@ public partial class NegotiationManager : Control
             var hbox = new HBoxContainer();
             hbox.AddThemeConstantOverride("separation", 8);
 
-            // Icon — fixed width so it doesn't expand
             var icon = new Label
             {
                 Text = term.FavorPlayer ? "✓" : "✗",
@@ -380,23 +362,21 @@ public partial class NegotiationManager : Control
                 SizeFlagsHorizontal = SizeFlags.ShrinkBegin,
             };
             icon.AddThemeColorOverride("font_color",
-                term.FavorPlayer ? new Color(0.4f, 0.9f, 0.4f) : new Color(0.9f, 0.4f, 0.4f));
+                term.FavorPlayer ? UITheme.TermFavorPlayer : UITheme.TermAgainstPlayer);
             hbox.AddChild(icon);
 
-            // Description — expands to fill remaining width and wraps properly
             var desc = new Label
             {
                 Text = term.Description,
                 AutowrapMode = TextServer.AutowrapMode.WordSmart,
                 SizeFlagsHorizontal = SizeFlags.ExpandFill,
             };
-            desc.AddThemeFontSizeOverride("font_size", 14);
+            desc.AddThemeFontSizeOverride("font_size", UITheme.NegotiationDetailFontSize);
             hbox.AddChild(desc);
 
             _termsContainer.AddChild(hbox);
         }
 
-        // Hidden terms count
         int hiddenCount = _state.Terms.Count(t => t.IsHidden && !t.IsAccepted);
         if (hiddenCount > 0)
         {
@@ -405,8 +385,8 @@ public partial class NegotiationManager : Control
                 Text = $"[{hiddenCount} hidden term{(hiddenCount > 1 ? "s" : "")}]",
                 SizeFlagsHorizontal = SizeFlags.ExpandFill,
             };
-            hiddenLabel.AddThemeColorOverride("font_color", new Color(0.6f, 0.6f, 0.7f));
-            hiddenLabel.AddThemeFontSizeOverride("font_size", 13);
+            hiddenLabel.AddThemeColorOverride("font_color", UITheme.NegotiationHiddenTerm);
+            hiddenLabel.AddThemeFontSizeOverride("font_size", UITheme.NegotiationSmallFontSize);
             _termsContainer.AddChild(hiddenLabel);
         }
     }
@@ -418,7 +398,6 @@ public partial class NegotiationManager : Control
         foreach (var child in _tokenContainer.GetChildren())
             child.QueueFree();
 
-        // Build two columns of token buttons
         var hbox = new HBoxContainer();
         hbox.AddThemeConstantOverride("separation", 8);
         _tokenContainer.AddChild(hbox);
@@ -444,7 +423,7 @@ public partial class NegotiationManager : Control
                 CustomMinimumSize = new Vector2(160, 34),
                 Disabled = _state.IsResolved,
             };
-            btn.AddThemeFontSizeOverride("font_size", 13);
+            btn.AddThemeFontSizeOverride("font_size", UITheme.NegotiationSmallFontSize);
             btn.Pressed += () =>
             {
                 if (_state.PlayToken(token))
@@ -460,7 +439,6 @@ public partial class NegotiationManager : Control
             colIndex++;
         }
 
-        // Patience button (separate — always shows remaining uses)
         int patienceLeft = NegotiationState.MaxPatience - _state.PatienceUsed;
         if (patienceLeft > 0)
         {
@@ -470,7 +448,7 @@ public partial class NegotiationManager : Control
                 CustomMinimumSize = new Vector2(160, 34),
                 Disabled = _state.IsResolved,
             };
-            patienceBtn.AddThemeFontSizeOverride("font_size", 13);
+            patienceBtn.AddThemeFontSizeOverride("font_size", UITheme.NegotiationSmallFontSize);
             patienceBtn.Pressed += () =>
             {
                 if (_state.PlayToken(LeverageToken.Patience))
@@ -496,11 +474,9 @@ public partial class NegotiationManager : Control
 
     private void OnNegotiationResolved()
     {
-        // Disable action buttons
         _acceptButton.Disabled = true;
         _walkAwayButton.Disabled = true;
 
-        // Build result text
         string outcome;
         if (_state.DealAccepted)
         {
@@ -512,7 +488,6 @@ public partial class NegotiationManager : Control
                 TensionZone.Hostile => " (Hostile penalty applied)",
                 _ => ""
             };
-
             outcome = $"Deal struck in the {_state.Zone} zone.\n\n" +
                       $"Gold: {(gold >= 0 ? "+" : "")}{gold}{zoneBonus}\n" +
                       $"Reputation: {(rep >= 0 ? "+" : "")}{rep}";
@@ -529,7 +504,6 @@ public partial class NegotiationManager : Control
         _resultLabel.Text = outcome;
         _resultPanel.Visible = true;
 
-        // Store result for EncounterRouter to pick up
         NegotiationContext.SetResult(
             _state.DealAccepted,
             _state.GetGoldOutcome(),
@@ -550,7 +524,7 @@ public partial class NegotiationManager : Control
     private Label MakeTinyLabel(string text, Color color)
     {
         var lbl = new Label { Text = text };
-        lbl.AddThemeFontSizeOverride("font_size", 11);
+        lbl.AddThemeFontSizeOverride("font_size", UITheme.NegotiationTinyFontSize);
         lbl.AddThemeColorOverride("font_color", color);
         return lbl;
     }

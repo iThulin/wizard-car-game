@@ -7,13 +7,9 @@ public partial class CampusScreen : Control
     private int _selectedSlot = -1;
     private int _activeTab = 0;
 
-    // Tab buttons
     private Button[] _tabButtons;
-
-    // Tab content panels (one per tab, shown/hidden)
     private Control[] _tabPanels;
 
-    // Guild tab nodes
     private VBoxContainer _slotContainer;
     private Label _summaryLabel;
     private OptionButton _schoolPicker;
@@ -24,10 +20,7 @@ public partial class CampusScreen : Control
     private Button _startRunButton;
     private Button _cardLibraryButton;
 
-    // Companions tab
     private VBoxContainer _companionContainer;
-
-    // Campus tab
     private VBoxContainer _buildingContainer;
 
     private static readonly Dictionary<CardSchool, string> SchoolDescriptions = new()
@@ -49,18 +42,18 @@ public partial class CampusScreen : Control
     private void BuildUI()
     {
         // Background
-        var bg = new ColorRect { Color = new Color(0.09f, 0.08f, 0.13f) };
+        var bg = new ColorRect { Color = UITheme.CampusBg };
         bg.SetAnchorsPreset(LayoutPreset.FullRect);
         AddChild(bg);
 
-        // Title bar — fixed 60px at top
+        // Title bar
         var titleBar = new Panel();
         titleBar.SetAnchorsPreset(LayoutPreset.TopWide);
         titleBar.OffsetBottom = 60;
         var titleStyle = new StyleBoxFlat
         {
-            BgColor = new Color(0.13f, 0.11f, 0.20f),
-            BorderColor = new Color(0.35f, 0.28f, 0.55f),
+            BgColor = UITheme.CampusTitleBarBg,
+            BorderColor = UITheme.CampusTitleBarBorder,
             BorderWidthBottom = 2,
         };
         titleBar.AddThemeStyleboxOverride("panel", titleStyle);
@@ -73,11 +66,11 @@ public partial class CampusScreen : Control
             VerticalAlignment = VerticalAlignment.Center,
         };
         titleLbl.SetAnchorsPreset(LayoutPreset.FullRect);
-        titleLbl.AddThemeFontSizeOverride("font_size", 30);
-        titleLbl.AddThemeColorOverride("font_color", new Color(0.9f, 0.85f, 0.6f));
+        titleLbl.AddThemeFontSizeOverride("font_size", UITheme.CampusTitleFontSize);
+        titleLbl.AddThemeColorOverride("font_color", UITheme.CampusTitleColor);
         titleBar.AddChild(titleLbl);
 
-        // Tab button bar — fixed 44px below title
+        // Tab bar
         var tabBar = new HBoxContainer();
         tabBar.SetAnchorsPreset(LayoutPreset.TopWide);
         tabBar.OffsetTop = 60;
@@ -96,14 +89,14 @@ public partial class CampusScreen : Control
                 SizeFlagsHorizontal = SizeFlags.ExpandFill,
                 CustomMinimumSize = new Vector2(0, 44),
             };
-            btn.AddThemeFontSizeOverride("font_size", 16);
+            btn.AddThemeFontSizeOverride("font_size", UITheme.CampusTabFontSize);
             int captured = i;
             btn.Pressed += () => SelectTab(captured);
             _tabButtons[i] = btn;
             tabBar.AddChild(btn);
         }
 
-        // Content area — fills from below tab bar to bottom
+        // Content panels
         _tabPanels = new Control[tabNames.Length];
         for (int i = 0; i < tabNames.Length; i++)
         {
@@ -117,13 +110,11 @@ public partial class CampusScreen : Control
             _tabPanels[i] = panel;
         }
 
-        // Build tab content
         BuildGuildTab((ScrollContainer)_tabPanels[0]);
         BuildCompanionsTab((ScrollContainer)_tabPanels[1]);
         BuildCampusTab((ScrollContainer)_tabPanels[2]);
         BuildExpeditionTab((ScrollContainer)_tabPanels[3]);
 
-        // Auto-select active slot
         GD.Print($"CampusScreen: ActiveSave={SaveManager.ActiveSave?.GuildName ?? "NULL"}, " +
                  $"Gold={SaveManager.ActiveSave?.Gold ?? -1}, " +
                  $"Runs={SaveManager.ActiveSave?.TotalRuns ?? -1}");
@@ -155,7 +146,7 @@ public partial class CampusScreen : Control
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // Tab content builders
+    // Tab builders
     // ═══════════════════════════════════════════════════════════════════════
 
     private void BuildGuildTab(ScrollContainer scroll)
@@ -175,7 +166,7 @@ public partial class CampusScreen : Control
             HorizontalAlignment = HorizontalAlignment.Center,
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         };
-        _summaryLabel.AddThemeFontSizeOverride("font_size", 15);
+        _summaryLabel.AddThemeFontSizeOverride("font_size", UITheme.CampusBodyFontSize);
         layout.AddChild(_summaryLabel);
 
         if (RunResultData.HasResults)
@@ -186,13 +177,13 @@ public partial class CampusScreen : Control
                                  $"Encounters: {RunResultData.EncountersWon}  |  " +
                                  $"HP: {RunResultData.HPRemaining}";
             _summaryLabel.Modulate = RunResultData.ReachedObjective
-                ? new Color(0.5f, 1f, 0.5f) : new Color(1f, 0.5f, 0.5f);
+                ? UITheme.CampusRunSuccess : UITheme.CampusRunFail;
             RunResultData.Clear();
         }
         else
         {
             _summaryLabel.Text = "No expeditions yet. The wilds await.";
-            _summaryLabel.Modulate = new Color(0.6f, 0.6f, 0.6f);
+            _summaryLabel.Modulate = UITheme.CampusNoRunText;
         }
 
         layout.AddChild(new HSeparator());
@@ -215,8 +206,8 @@ public partial class CampusScreen : Control
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
             CustomMinimumSize = new Vector2(0, 48),
         };
-        _schoolDescription.AddThemeFontSizeOverride("font_size", 13);
-        _schoolDescription.Modulate = new Color(0.8f, 0.8f, 0.85f);
+        _schoolDescription.AddThemeFontSizeOverride("font_size", UITheme.CampusSchoolFontSize);
+        _schoolDescription.Modulate = UITheme.CampusSchoolDescText;
         layout.AddChild(_schoolDescription);
         UpdateSchoolDescription();
 
@@ -277,11 +268,11 @@ public partial class CampusScreen : Control
         var note = new Label
         {
             Text = "Recruit companions to bring on expeditions. Active party members " +
-                   "contribute cards to your deck and tokens to negotiations.",
+                           "contribute cards to your deck and tokens to negotiations.",
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         };
-        note.AddThemeFontSizeOverride("font_size", 13);
-        note.Modulate = new Color(0.7f, 0.7f, 0.75f);
+        note.AddThemeFontSizeOverride("font_size", UITheme.CampusSmallFontSize);
+        note.Modulate = UITheme.CampusSubtleText;
         layout.AddChild(note);
         layout.AddChild(new HSeparator());
 
@@ -303,8 +294,8 @@ public partial class CampusScreen : Control
             Text = "Construct and upgrade buildings to gain permanent bonuses across all runs.",
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         };
-        note.AddThemeFontSizeOverride("font_size", 13);
-        note.Modulate = new Color(0.7f, 0.7f, 0.75f);
+        note.AddThemeFontSizeOverride("font_size", UITheme.CampusSmallFontSize);
+        note.Modulate = UITheme.CampusSubtleText;
         layout.AddChild(note);
         layout.AddChild(new HSeparator());
 
@@ -327,8 +318,8 @@ public partial class CampusScreen : Control
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
             HorizontalAlignment = HorizontalAlignment.Center,
         };
-        stub.AddThemeFontSizeOverride("font_size", 16);
-        stub.Modulate = new Color(0.6f, 0.6f, 0.65f);
+        stub.AddThemeFontSizeOverride("font_size", UITheme.CampusTabFontSize);
+        stub.Modulate = UITheme.CampusStubText;
         layout.AddChild(stub);
     }
 
@@ -341,12 +332,16 @@ public partial class CampusScreen : Control
         var panel = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ShrinkCenter };
         var style = new StyleBoxFlat
         {
-            BgColor = new Color(0.15f, 0.10f, 0.10f),
-            BorderColor = new Color(0.6f, 0.3f, 0.3f),
-            BorderWidthTop = 1, BorderWidthBottom = 1,
-            BorderWidthLeft = 1, BorderWidthRight = 1,
-            ContentMarginLeft = 12, ContentMarginRight = 12,
-            ContentMarginTop = 8, ContentMarginBottom = 8,
+            BgColor = UITheme.DebugPanelBg,
+            BorderColor = UITheme.DebugPanelBorder,
+            BorderWidthTop = 1,
+            BorderWidthBottom = 1,
+            BorderWidthLeft = 1,
+            BorderWidthRight = 1,
+            ContentMarginLeft = UITheme.PaddingNormal + 4,
+            ContentMarginRight = UITheme.PaddingNormal + 4,
+            ContentMarginTop = UITheme.PaddingNormal,
+            ContentMarginBottom = UITheme.PaddingNormal,
         };
         panel.AddThemeStyleboxOverride("stylebox", style);
 
@@ -358,16 +353,16 @@ public partial class CampusScreen : Control
         CheckBox MakeDebugCheck(string label, bool current, Action<bool> onChange)
         {
             var cb = new CheckBox { Text = label, ButtonPressed = current };
-            cb.AddThemeFontSizeOverride("font_size", 13);
+            cb.AddThemeFontSizeOverride("font_size", UITheme.CampusSmallFontSize);
             cb.Toggled += (on) => onChange(on);
             return cb;
         }
 
-        grid.AddChild(MakeDebugCheck("No Fog of War",   PlayerSession.NoFog,
+        grid.AddChild(MakeDebugCheck("No Fog of War", PlayerSession.NoFog,
             on => PlayerSession.NoFog = on));
         grid.AddChild(MakeDebugCheck("Unlimited Steps", PlayerSession.UnlimitedSteps,
             on => PlayerSession.UnlimitedSteps = on));
-        grid.AddChild(MakeDebugCheck("God Mode HP",     PlayerSession.GodModeHP,
+        grid.AddChild(MakeDebugCheck("God Mode HP", PlayerSession.GodModeHP,
             on => PlayerSession.GodModeHP = on));
         grid.AddChild(MakeDebugCheck("Start With Gold", PlayerSession.StartWithGold,
             on => PlayerSession.StartWithGold = on));
@@ -375,16 +370,16 @@ public partial class CampusScreen : Control
             on => PlayerSession.SkipDeployment = on));
 
         var forceLabel = new Label { Text = "Force Next POI:" };
-        forceLabel.AddThemeFontSizeOverride("font_size", 13);
+        forceLabel.AddThemeFontSizeOverride("font_size", UITheme.CampusSmallFontSize);
         grid.AddChild(forceLabel);
 
         _forceEncounterDropdown = new OptionButton { CustomMinimumSize = new Vector2(140, 28) };
-        _forceEncounterDropdown.AddThemeFontSizeOverride("font_size", 13);
+        _forceEncounterDropdown.AddThemeFontSizeOverride("font_size", UITheme.CampusSmallFontSize);
         _forceEncounterDropdown.AddItem("None (normal)", -1);
-        _forceEncounterDropdown.AddItem("Combat",        (int)OverworldHex.POIType.Combat);
-        _forceEncounterDropdown.AddItem("Rest",          (int)OverworldHex.POIType.Rest);
-        _forceEncounterDropdown.AddItem("Narrative",     (int)OverworldHex.POIType.Narrative);
-        _forceEncounterDropdown.AddItem("Negotiation",   (int)OverworldHex.POIType.Negotiation);
+        _forceEncounterDropdown.AddItem("Combat", (int)OverworldHex.POIType.Combat);
+        _forceEncounterDropdown.AddItem("Rest", (int)OverworldHex.POIType.Rest);
+        _forceEncounterDropdown.AddItem("Narrative", (int)OverworldHex.POIType.Narrative);
+        _forceEncounterDropdown.AddItem("Negotiation", (int)OverworldHex.POIType.Negotiation);
         _forceEncounterDropdown.Selected = 0;
         _forceEncounterDropdown.ItemSelected += (idx) =>
             PlayerSession.ForceNextEncounterType =
@@ -395,7 +390,7 @@ public partial class CampusScreen : Control
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // Refresh methods (unchanged from before)
+    // Refresh methods
     // ═══════════════════════════════════════════════════════════════════════
 
     private void RefreshAll()
@@ -428,7 +423,7 @@ public partial class CampusScreen : Control
                 SizeFlagsHorizontal = SizeFlags.ShrinkCenter,
             };
             if (slot.Slot == _selectedSlot)
-                loadBtn.Modulate = new Color(0.7f, 1f, 0.7f);
+                loadBtn.Modulate = UITheme.CampusSlotSelected;
 
             int capturedSlot = slot.Slot;
             bool isEmpty = slot.IsEmpty;
@@ -468,7 +463,7 @@ public partial class CampusScreen : Control
             Text = $"Active party: {save.ActivePartyCompanionIds.Count} / {save.MaxPartySize}",
             HorizontalAlignment = HorizontalAlignment.Center,
         };
-        partyHeader.AddThemeFontSizeOverride("font_size", 14);
+        partyHeader.AddThemeFontSizeOverride("font_size", UITheme.CampusStubFontSize);
         _companionContainer.AddChild(partyHeader);
 
         bool anyShown = false;
@@ -481,14 +476,20 @@ public partial class CampusScreen : Control
             var card = new PanelContainer();
             var cardStyle = new StyleBoxFlat
             {
-                BgColor = new Color(0.12f, 0.11f, 0.18f),
-                BorderColor = c.IsRecruited ? new Color(0.4f, 0.7f, 0.4f) : new Color(0.35f, 0.35f, 0.45f),
-                BorderWidthTop = 1, BorderWidthBottom = 1,
-                BorderWidthLeft = 1, BorderWidthRight = 1,
-                CornerRadiusTopLeft = 4, CornerRadiusTopRight = 4,
-                CornerRadiusBottomLeft = 4, CornerRadiusBottomRight = 4,
-                ContentMarginLeft = 10, ContentMarginRight = 10,
-                ContentMarginTop = 8, ContentMarginBottom = 8,
+                BgColor = UITheme.CompanionCardBg,
+                BorderColor = c.IsRecruited ? UITheme.CompanionCardBorderActive : UITheme.CompanionCardBorderInactive,
+                BorderWidthTop = 1,
+                BorderWidthBottom = 1,
+                BorderWidthLeft = 1,
+                BorderWidthRight = 1,
+                CornerRadiusTopLeft = UITheme.CornerRadius - 1,
+                CornerRadiusTopRight = UITheme.CornerRadius - 1,
+                CornerRadiusBottomLeft = UITheme.CornerRadius - 1,
+                CornerRadiusBottomRight = UITheme.CornerRadius - 1,
+                ContentMarginLeft = UITheme.PaddingNormal + 2,
+                ContentMarginRight = UITheme.PaddingNormal + 2,
+                ContentMarginTop = UITheme.PaddingNormal,
+                ContentMarginBottom = UITheme.PaddingNormal,
             };
             card.AddThemeStyleboxOverride("stylebox", cardStyle);
 
@@ -502,18 +503,18 @@ public partial class CampusScreen : Control
             string badge = c.IsRecruited ? (inParty ? "  [PARTY]" : "  [ROSTER]") : $"  [{c.RecruitmentCost}g]";
 
             var nameLabel = new Label { Text = $"{c.Name}{badge}" };
-            nameLabel.AddThemeFontSizeOverride("font_size", 15);
+            nameLabel.AddThemeFontSizeOverride("font_size", UITheme.CampusNameFontSize);
             info.AddChild(nameLabel);
 
             var subLabel = new Label { Text = $"{c.School}  ·  {c.PersonalityTrait}  ·  Loyalty: {c.Loyalty}" };
-            subLabel.AddThemeFontSizeOverride("font_size", 12);
-            subLabel.Modulate = new Color(0.7f, 0.7f, 0.75f);
+            subLabel.AddThemeFontSizeOverride("font_size", UITheme.CampusTinyFontSize);
+            subLabel.Modulate = UITheme.CompanionSubText;
             info.AddChild(subLabel);
             row.AddChild(info);
 
             string capturedId = c.Id;
             var btn = new Button { CustomMinimumSize = new Vector2(120, 32) };
-            btn.AddThemeFontSizeOverride("font_size", 13);
+            btn.AddThemeFontSizeOverride("font_size", UITheme.CampusSmallFontSize);
 
             if (!c.IsRecruited)
             {
@@ -560,14 +561,20 @@ public partial class CampusScreen : Control
             var card = new PanelContainer();
             var cardStyle = new StyleBoxFlat
             {
-                BgColor = new Color(0.11f, 0.10f, 0.17f),
-                BorderColor = buildingSave.Tier > 0 ? new Color(0.55f, 0.45f, 0.75f) : new Color(0.30f, 0.30f, 0.40f),
-                BorderWidthTop = 1, BorderWidthBottom = 1,
-                BorderWidthLeft = 1, BorderWidthRight = 1,
-                CornerRadiusTopLeft = 4, CornerRadiusTopRight = 4,
-                CornerRadiusBottomLeft = 4, CornerRadiusBottomRight = 4,
-                ContentMarginLeft = 12, ContentMarginRight = 12,
-                ContentMarginTop = 10, ContentMarginBottom = 10,
+                BgColor = UITheme.BuildingCardBg,
+                BorderColor = buildingSave.Tier > 0 ? UITheme.BuildingCardBorderBuilt : UITheme.BuildingCardBorderEmpty,
+                BorderWidthTop = 1,
+                BorderWidthBottom = 1,
+                BorderWidthLeft = 1,
+                BorderWidthRight = 1,
+                CornerRadiusTopLeft = UITheme.CornerRadius - 1,
+                CornerRadiusTopRight = UITheme.CornerRadius - 1,
+                CornerRadiusBottomLeft = UITheme.CornerRadius - 1,
+                CornerRadiusBottomRight = UITheme.CornerRadius - 1,
+                ContentMarginLeft = UITheme.PaddingNormal + 4,
+                ContentMarginRight = UITheme.PaddingNormal + 4,
+                ContentMarginTop = UITheme.PaddingNormal + 2,
+                ContentMarginBottom = UITheme.PaddingNormal + 2,
             };
             card.AddThemeStyleboxOverride("stylebox", cardStyle);
 
@@ -583,15 +590,15 @@ public partial class CampusScreen : Control
 
             string tierText = buildingSave.Tier == 0 ? "Not Built" : $"Tier {buildingSave.Tier} / {template.MaxTier}";
             var nameLabel = new Label { Text = $"{buildingSave.Name}  [{tierText}]" };
-            nameLabel.AddThemeFontSizeOverride("font_size", 16);
+            nameLabel.AddThemeFontSizeOverride("font_size", UITheme.CampusBuildFontSize);
             nameCol.AddChild(nameLabel);
 
             var catLabel = new Label
             {
                 Text = template.Category + (string.IsNullOrEmpty(template.SchoolAffinity) ? "" : $"  ·  {template.SchoolAffinity}")
             };
-            catLabel.AddThemeFontSizeOverride("font_size", 12);
-            catLabel.Modulate = new Color(0.6f, 0.6f, 0.7f);
+            catLabel.AddThemeFontSizeOverride("font_size", UITheme.CampusBuildTinyFontSize);
+            catLabel.Modulate = UITheme.BuildingCategoryText;
             nameCol.AddChild(catLabel);
             headerRow.AddChild(nameCol);
 
@@ -606,7 +613,7 @@ public partial class CampusScreen : Control
                     CustomMinimumSize = new Vector2(90, 44),
                     Disabled = save.Gold < cost,
                 };
-                btn.AddThemeFontSizeOverride("font_size", 13);
+                btn.AddThemeFontSizeOverride("font_size", UITheme.CampusBuildSmallFontSize);
                 string capturedId = buildingSave.Id;
                 btn.Pressed += () => { if (TryBuildOrUpgrade(capturedId)) RefreshAll(); };
                 headerRow.AddChild(btn);
@@ -614,8 +621,8 @@ public partial class CampusScreen : Control
             else
             {
                 var maxLabel = new Label { Text = "MAX" };
-                maxLabel.AddThemeFontSizeOverride("font_size", 13);
-                maxLabel.AddThemeColorOverride("font_color", new Color(0.5f, 0.9f, 0.5f));
+                maxLabel.AddThemeFontSizeOverride("font_size", UITheme.CampusBuildSmallFontSize);
+                maxLabel.AddThemeColorOverride("font_color", UITheme.BuildingMaxText);
                 headerRow.AddChild(maxLabel);
             }
 
@@ -625,8 +632,8 @@ public partial class CampusScreen : Control
                 if (cur != null)
                 {
                     var lbl = new Label { Text = $"Active: {cur.Description}", AutowrapMode = TextServer.AutowrapMode.WordSmart };
-                    lbl.AddThemeFontSizeOverride("font_size", 13);
-                    lbl.AddThemeColorOverride("font_color", new Color(0.6f, 0.9f, 0.6f));
+                    lbl.AddThemeFontSizeOverride("font_size", UITheme.CampusBuildSmallFontSize);
+                    lbl.AddThemeColorOverride("font_color", UITheme.BuildingActiveText);
                     cardLayout.AddChild(lbl);
                 }
             }
@@ -637,8 +644,8 @@ public partial class CampusScreen : Control
                 if (next != null)
                 {
                     var lbl = new Label { Text = $"Next: {next.Description}", AutowrapMode = TextServer.AutowrapMode.WordSmart };
-                    lbl.AddThemeFontSizeOverride("font_size", 12);
-                    lbl.AddThemeColorOverride("font_color", new Color(0.65f, 0.65f, 0.75f));
+                    lbl.AddThemeFontSizeOverride("font_size", UITheme.CampusBuildTinyFontSize);
+                    lbl.AddThemeColorOverride("font_color", UITheme.BuildingNextText);
                     cardLayout.AddChild(lbl);
                 }
             }
@@ -758,8 +765,8 @@ public partial class CampusScreen : Control
             Text = text,
             HorizontalAlignment = HorizontalAlignment.Center,
         };
-        label.AddThemeFontSizeOverride("font_size", 20);
-        label.AddThemeColorOverride("font_color", new Color(0.9f, 0.85f, 0.6f));
+        label.AddThemeFontSizeOverride("font_size", UITheme.CampusSectionFontSize);
+        label.AddThemeColorOverride("font_color", UITheme.CampusSectionColor);
         parent.AddChild(label);
     }
 
@@ -802,8 +809,8 @@ public partial class CampusScreen : Control
             HorizontalAlignment = HorizontalAlignment.Center,
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         };
-        label.AddThemeFontSizeOverride("font_size", 14);
-        label.Modulate = new Color(0.6f, 0.6f, 0.65f);
+        label.AddThemeFontSizeOverride("font_size", UITheme.CampusStubFontSize);
+        label.Modulate = UITheme.CampusStubText;
         return label;
     }
 }

@@ -21,21 +21,21 @@ public partial class PauseButton : Button
         Text = "☰";
         if (CustomMinimumSize == Vector2.Zero)
             CustomMinimumSize = new Vector2(40, 40);
-        AddThemeFontSizeOverride("font_size", 18);
+        AddThemeFontSizeOverride("font_size", UITheme.FontSizePauseButton);
         FocusMode = FocusModeEnum.None;
         ProcessMode = ProcessModeEnum.Always;
 
         if (AnchorTopRight)
         {
             // Anchor to top-right corner of parent.
-            AnchorLeft   = 1f;
-            AnchorTop    = 0f;
-            AnchorRight  = 1f;
+            AnchorLeft = 1f;
+            AnchorTop = 0f;
+            AnchorRight = 1f;
             AnchorBottom = 0f;
             // Offsets are measured from the anchor point.
-            OffsetLeft   = OffsetFromCorner.X - CustomMinimumSize.X;
-            OffsetTop    = OffsetFromCorner.Y;
-            OffsetRight  = OffsetFromCorner.X;
+            OffsetLeft = OffsetFromCorner.X - CustomMinimumSize.X;
+            OffsetTop = OffsetFromCorner.Y;
+            OffsetRight = OffsetFromCorner.X;
             OffsetBottom = OffsetFromCorner.Y + CustomMinimumSize.Y;
         }
 

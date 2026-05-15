@@ -8,34 +8,29 @@ public partial class CardLibraryUi : Control
     // ── Exports ──────────────────────────────────────────────────────────
     [Export] public PackedScene CardUIScene;
     [Export] public string CardJsonDirectory = "res://Data/Cards";
-    [Export] public string ReturnScenePath   = "res://Scenes/Campus/CampusScene.tscn";
+    [Export] public string ReturnScenePath = "res://Scenes/Campus/CampusScene.tscn";
 
     [Export(PropertyHint.Range, "0.5,1.5,0.05")]
     public float CardScale = 1f;
 
     // ── Node refs (wired from .tscn) ─────────────────────────────────────
-    private HBoxContainer   _schoolTabs;
-    private HBoxContainer   _rarityTabs;
-    private HBoxContainer   _manaTabs;
-    private LineEdit         _searchBox;
-    private ScrollContainer  _scroll;
-    private GridContainer    _cardGrid;
-    private Label            _countLabel;
-    private Button           _backButton;
+    private HBoxContainer _schoolTabs;
+    private HBoxContainer _rarityTabs;
+    private HBoxContainer _manaTabs;
+    private LineEdit _searchBox;
+    private ScrollContainer _scroll;
+    private GridContainer _cardGrid;
+    private Label _countLabel;
+    private Button _backButton;
 
     // ── Filter state ─────────────────────────────────────────────────────
     private CardSchool? _schoolFilter = null;
     private CardRarity? _rarityFilter = null;
-    private int         _manaFilter   = -1;   // -1 = all
-    private string      _searchText   = "";
+    private int _manaFilter = -1;
+    private string _searchText = "";
 
     // ── Data ─────────────────────────────────────────────────────────────
     private List<CardBlueprint> _pool = new();
-
-    // ── Layout constants ─────────────────────────────────────────────────
-    private const float NativeCardW = 200f;
-    private const float NativeCardH = 300f;
-    private const float GridSpacing = 12f;
 
     private int _lastColumnCount = -1;
 
@@ -65,8 +60,6 @@ public partial class CardLibraryUi : Control
         if (_backButton != null)
             _backButton.Pressed += OnBackPressed;
 
-        // Defer the first grid build so the scroll container has its
-        // final size and column calculation is correct.
         CallDeferred(nameof(RebuildGrid));
     }
 
@@ -81,28 +74,27 @@ public partial class CardLibraryUi : Control
     }
 
     // ═════════════════════════════════════════════════════════════════════
-    //  Node wiring — paths match CardLibrary.tscn
+    //  Node wiring
     // ═════════════════════════════════════════════════════════════════════
 
     private void WireNodes()
     {
         _schoolTabs = GetNodeOrNull<HBoxContainer>("Margin/VBox/FilterBar/SchoolTabs");
         _rarityTabs = GetNodeOrNull<HBoxContainer>("Margin/VBox/FilterBar/RarityTabs");
-        _manaTabs   = GetNodeOrNull<HBoxContainer>("Margin/VBox/FilterBar/ManaRow/ManaTabs");
-        _searchBox  = GetNodeOrNull<LineEdit>     ("Margin/VBox/FilterBar/ManaRow/SearchBox");
-        _countLabel = GetNodeOrNull<Label>        ("Margin/VBox/FilterBar/ManaRow/CountLabel");
-        _scroll     = GetNodeOrNull<ScrollContainer>("Margin/VBox/Scroll");
-        _cardGrid   = GetNodeOrNull<GridContainer>("Margin/VBox/Scroll/GridCentering/CardGrid");
-        _backButton = GetNodeOrNull<Button>       ("Margin/VBox/TopBar/BackButton");
+        _manaTabs = GetNodeOrNull<HBoxContainer>("Margin/VBox/FilterBar/ManaRow/ManaTabs");
+        _searchBox = GetNodeOrNull<LineEdit>("Margin/VBox/FilterBar/ManaRow/SearchBox");
+        _countLabel = GetNodeOrNull<Label>("Margin/VBox/FilterBar/ManaRow/CountLabel");
+        _scroll = GetNodeOrNull<ScrollContainer>("Margin/VBox/Scroll");
+        _cardGrid = GetNodeOrNull<GridContainer>("Margin/VBox/Scroll/GridCentering/CardGrid");
+        _backButton = GetNodeOrNull<Button>("Margin/VBox/TopBar/BackButton");
 
-        // Log any missing nodes so they're easy to fix
         if (_schoolTabs == null) GD.PrintErr("[CardLibrary] SchoolTabs not found");
         if (_rarityTabs == null) GD.PrintErr("[CardLibrary] RarityTabs not found");
-        if (_manaTabs   == null) GD.PrintErr("[CardLibrary] ManaTabs not found");
-        if (_searchBox  == null) GD.PrintErr("[CardLibrary] SearchBox not found");
+        if (_manaTabs == null) GD.PrintErr("[CardLibrary] ManaTabs not found");
+        if (_searchBox == null) GD.PrintErr("[CardLibrary] SearchBox not found");
         if (_countLabel == null) GD.PrintErr("[CardLibrary] CountLabel not found");
-        if (_scroll     == null) GD.PrintErr("[CardLibrary] Scroll not found");
-        if (_cardGrid   == null) GD.PrintErr("[CardLibrary] CardGrid not found");
+        if (_scroll == null) GD.PrintErr("[CardLibrary] Scroll not found");
+        if (_cardGrid == null) GD.PrintErr("[CardLibrary] CardGrid not found");
         if (_backButton == null) GD.PrintErr("[CardLibrary] BackButton not found");
     }
 
@@ -200,17 +192,13 @@ public partial class CardLibraryUi : Control
             ToggleMode = true,
             ButtonPressed = active,
             FocusMode = FocusModeEnum.None,
-            CustomMinimumSize = new Vector2(0, 28),
+            CustomMinimumSize = new Vector2(0, UITheme.LibraryTabHeight),
         };
 
-        var normal  = FlatBox(new Color(0.12f, 0.12f, 0.18f));
-        var pressed = FlatBox(new Color(0.30f, 0.30f, 0.42f));
-        var hover   = FlatBox(new Color(0.18f, 0.18f, 0.26f));
-
-        btn.AddThemeStyleboxOverride("normal",  normal);
-        btn.AddThemeStyleboxOverride("pressed", pressed);
-        btn.AddThemeStyleboxOverride("hover",   hover);
-        btn.AddThemeFontSizeOverride("font_size", 12);
+        btn.AddThemeStyleboxOverride("normal", FlatBox(UITheme.LibraryTabNormal));
+        btn.AddThemeStyleboxOverride("pressed", FlatBox(UITheme.LibraryTabPressed));
+        btn.AddThemeStyleboxOverride("hover", FlatBox(UITheme.LibraryTabHover));
+        btn.AddThemeFontSizeOverride("font_size", UITheme.LibraryTabFontSize);
 
         btn.Pressed += () =>
         {
@@ -227,8 +215,8 @@ public partial class CardLibraryUi : Control
     private static StyleBoxFlat FlatBox(Color bg)
     {
         var sb = new StyleBoxFlat { BgColor = bg };
-        sb.SetCornerRadiusAll(5);
-        sb.SetContentMarginAll(6);
+        sb.SetCornerRadiusAll(UITheme.CornerRadius);
+        sb.SetContentMarginAll(UITheme.PaddingNormal - 2);
         return sb;
     }
 
@@ -255,7 +243,7 @@ public partial class CardLibraryUi : Control
     private int CalculateColumns()
     {
         float available = _scroll?.Size.X ?? GetViewportRect().Size.X;
-        float cellW = NativeCardW * CardScale + GridSpacing;
+        float cellW = UITheme.LibraryCardWidth * CardScale + UITheme.LibraryGridSpacing;
         return Mathf.Max(1, Mathf.FloorToInt(available / cellW));
     }
 
@@ -283,7 +271,6 @@ public partial class CardLibraryUi : Control
         GD.Print($"[CardLibrary] RebuildGrid — pool: {_pool.Count}, " +
                  $"filtered: {filtered.Count}, columns: {cols}");
 
-        // Sort: school → rarity → top-half name
         filtered.Sort((a, b) =>
         {
             int cmp = a.School.CompareTo(b.School);
@@ -295,20 +282,15 @@ public partial class CardLibraryUi : Control
             return string.Compare(na, nb, StringComparison.OrdinalIgnoreCase);
         });
 
-        float s  = CardScale;
-        float cw = NativeCardW * s;
-        float ch = NativeCardH * s;
+        float s = CardScale;
+        float cw = UITheme.LibraryCardWidth * s;
+        float ch = UITheme.LibraryCardHeight * s;
 
         foreach (var bp in filtered)
         {
             var card = CardDatabase.Instantiate(bp);
             if (card == null) continue;
 
-            // ── Wrapper ─────────────────────────────────────────────
-            // CardUI.tscn root has full-rect anchors + clip_contents,
-            // designed to fill its parent in the hand UI. Wrapping it
-            // in a fixed-size Control with the card scaled inside
-            // gives correct grid layout.
             var wrapper = new Control
             {
                 CustomMinimumSize = new Vector2(cw, ch),
@@ -316,35 +298,28 @@ public partial class CardLibraryUi : Control
             };
             _cardGrid.AddChild(wrapper);
 
-            // ── Card instance ───────────────────────────────────────
             var cardUi = CardUIScene.Instantiate<CardUi>();
             cardUi.SetCard(card);
 
-            // Reset anchors from full-rect to top-left, fixed size
-            cardUi.AnchorLeft   = 0;
-            cardUi.AnchorTop    = 0;
-            cardUi.AnchorRight  = 0;
+            cardUi.AnchorLeft = 0;
+            cardUi.AnchorTop = 0;
+            cardUi.AnchorRight = 0;
             cardUi.AnchorBottom = 0;
-            cardUi.OffsetLeft   = 0;
-            cardUi.OffsetTop    = 0;
-            cardUi.OffsetRight  = NativeCardW;
-            cardUi.OffsetBottom = NativeCardH;
-            cardUi.Scale        = new Vector2(s, s);
-            cardUi.PivotOffset  = Vector2.Zero;
+            cardUi.OffsetLeft = 0;
+            cardUi.OffsetTop = 0;
+            cardUi.OffsetRight = UITheme.LibraryCardWidth;
+            cardUi.OffsetBottom = UITheme.LibraryCardHeight;
+            cardUi.Scale = new Vector2(s, s);
+            cardUi.PivotOffset = Vector2.Zero;
 
             wrapper.AddChild(cardUi);
-            // _Ready() fires here — sets Modulate = transparent,
-            // Position += 300 for the hand draw-in animation.
 
-            // Undo the animation setup immediately
-            cardUi.Modulate  = Colors.White;
-            cardUi.Position  = Vector2.Zero;
-            cardUi.Rotation  = 0f;
+            cardUi.Modulate = Colors.White;
+            cardUi.Position = Vector2.Zero;
+            cardUi.Rotation = 0f;
 
-            // Stop the breathe animation in _Process
             cardUi.SetProcess(false);
 
-            // Prevent drag / hover / lift interactions
             DisableMouseRecursive(cardUi);
         }
 
@@ -379,7 +354,7 @@ public partial class CardLibraryUi : Control
         {
             int topMana = bp.Prebuilt?.TopHalf?.ManaCost ?? 0;
             if (_manaFilter < 5 && topMana != _manaFilter) return false;
-            if (_manaFilter >= 5 && topMana < 5)           return false;
+            if (_manaFilter >= 5 && topMana < 5) return false;
         }
 
         if (!string.IsNullOrEmpty(_searchText))
@@ -403,7 +378,6 @@ public partial class CardLibraryUi : Control
 
     private void OnBackPressed()
     {
-        // Inline-overlay mode: PauseMenu mounted us, just remove ourselves.
         if (string.IsNullOrEmpty(ReturnScenePath) || ReturnScenePath == "__INLINE__")
         {
             QueueFree();

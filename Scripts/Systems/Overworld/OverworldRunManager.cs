@@ -79,8 +79,8 @@ public partial class OverworldRunManager : Node2D
         AddChild(_grid);
 
         // ── POIs use region counts (or defaults if no region) ───────────
-        int combatCount    = _region?.CombatPOICount    ?? 10;
-        int restCount      = _region?.RestPOICount      ?? 4;
+        int combatCount = _region?.CombatPOICount ?? 10;
+        int restCount = _region?.RestPOICount ?? 4;
         int narrativeCount = _region?.NarrativePOICount ?? 3;
         int negotiationCount = _region?.NegotiationPOICount ?? 2;
         POIGenerator.Generate(_grid, combatCount, restCount, narrativeCount, negotiationCount, seed);
@@ -125,7 +125,7 @@ public partial class OverworldRunManager : Node2D
         canvas.AddChild(_objectiveLabel);
 
         _infoLabel = MakeUILabel(new Vector2(20, 130));
-        _infoLabel.Modulate = new Color(1f, 1f, 0.7f);
+        _infoLabel.Modulate = UITheme.OverworldInfoLabelTint;
         canvas.AddChild(_infoLabel);
 
         // ── Initialize run state defaults (may be overwritten by restore) ───
@@ -279,7 +279,7 @@ public partial class OverworldRunManager : Node2D
 
         GD.Print($"RunManager: Restored. Party at {router.SavedPartyCoord}, " +
                  $"Steps: {StepsRemaining}, HP: {CurrentHP}, Gold: {GoldEarned}");
-        
+
     }
 
     /// <summary>
@@ -299,7 +299,7 @@ public partial class OverworldRunManager : Node2D
         GD.Print("RunManager: Created EncounterRouter on tree root.");
     }
 
- private void OnPartyMoved(Vector2I newCoord, Vector2I oldCoord)
+    private void OnPartyMoved(Vector2I newCoord, Vector2I oldCoord)
     {
         int stepCost = 1;
         int hpDrain = 0;
@@ -345,12 +345,12 @@ public partial class OverworldRunManager : Node2D
         UpdateUI();
     }
 
-        private void OnHexClicked(Vector2I axial)
+    private void OnHexClicked(Vector2I axial)
     {
         if (RunComplete) return;
         _party.TryMoveTo(axial);
     }
-    
+
     private void OnPartyArrived(Vector2I coord)
     {
         if (RunComplete) return;
@@ -364,7 +364,7 @@ public partial class OverworldRunManager : Node2D
             return;
         }
 
-                // Debug: force a specific encounter type
+        // Debug: force a specific encounter type
         var poiType = hex.POI;
         if (PlayerSession.DebugMode && PlayerSession.ForceNextEncounterType >= 0)
         {
@@ -401,8 +401,8 @@ public partial class OverworldRunManager : Node2D
                 break;
 
             case OverworldHex.POIType.Negotiation:
-            TriggerNegotiationEncounter(hex, coord);
-            break;
+                TriggerNegotiationEncounter(hex, coord);
+                break;
         }
     }
 
@@ -410,14 +410,14 @@ public partial class OverworldRunManager : Node2D
     {
         return terrain switch
         {
-            OverworldHex.TerrainType.Road         => 1,
-            OverworldHex.TerrainType.Grassland     => 1,
-            OverworldHex.TerrainType.ArcaneGround  => 1,
-            OverworldHex.TerrainType.Forest         => 2,
-            OverworldHex.TerrainType.Ruins          => 2,
-            OverworldHex.TerrainType.Swamp          => 2,
-            OverworldHex.TerrainType.Mountain       => 3,
-            OverworldHex.TerrainType.Volcanic       => 2,
+            OverworldHex.TerrainType.Road => 1,
+            OverworldHex.TerrainType.Grassland => 1,
+            OverworldHex.TerrainType.ArcaneGround => 1,
+            OverworldHex.TerrainType.Forest => 2,
+            OverworldHex.TerrainType.Ruins => 2,
+            OverworldHex.TerrainType.Swamp => 2,
+            OverworldHex.TerrainType.Mountain => 3,
+            OverworldHex.TerrainType.Volcanic => 2,
             _ => 1
         };
     }
@@ -426,8 +426,8 @@ public partial class OverworldRunManager : Node2D
     {
         return terrain switch
         {
-            OverworldHex.TerrainType.Swamp    => 3,
-            OverworldHex.TerrainType.Volcanic  => GD.Randf() < 0.3f ? 5 : 0, // 30% chance
+            OverworldHex.TerrainType.Swamp => 3,
+            OverworldHex.TerrainType.Volcanic => GD.Randf() < 0.3f ? 5 : 0, // 30% chance
             _ => 0
         };
     }
@@ -705,7 +705,7 @@ public partial class OverworldRunManager : Node2D
 
 
 
-        private void RevealAllFog()
+    private void RevealAllFog()
     {
         foreach (var hex in _grid.Hexes.Values)
         {
@@ -724,12 +724,12 @@ public partial class OverworldRunManager : Node2D
             : $"Steps: {StepsRemaining} / {StepBudget}";
         _stepLabel.Modulate = StepsRemaining > 5
             ? Colors.White
-            : new Color(1f, 0.4f, 0.4f);
+            : UITheme.OverworldLowResourceWarning;
 
         _hpLabel.Text = $"HP: {CurrentHP} / {MaxHP}";
         _hpLabel.Modulate = CurrentHP > MaxHP / 3
             ? Colors.White
-            : new Color(1f, 0.4f, 0.4f);
+            : UITheme.OverworldLowResourceWarning;
 
         int dist = _grid.Distance(_party.CurrentCoord, _grid.ObjectiveCoord);
         _objectiveLabel.Text = $"Objective: ~{dist} hexes away";
@@ -757,7 +757,7 @@ public partial class OverworldRunManager : Node2D
     private Label MakeUILabel(Vector2 pos)
     {
         var label = new Label { Position = pos };
-        label.AddThemeFontSizeOverride("font_size", 18);
+        label.AddThemeFontSizeOverride("font_size", UITheme.OverworldUIFontSize);
         return label;
     }
 }

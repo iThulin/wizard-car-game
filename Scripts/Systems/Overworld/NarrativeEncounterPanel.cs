@@ -32,43 +32,52 @@ public partial class NarrativeEncounterPanel : Control
         // Dim backdrop
         _backdrop = new Panel
         {
-            AnchorRight = 1f, AnchorBottom = 1f,
+            AnchorRight = 1f,
+            AnchorBottom = 1f,
             MouseFilter = MouseFilterEnum.Stop,
         };
-        var backdropStyle = new StyleBoxFlat
-        {
-            BgColor = new Color(0f, 0f, 0f, 0.65f)
-        };
+        var backdropStyle = new StyleBoxFlat { BgColor = UITheme.NarrativeBackdrop }; ;
         _backdrop.AddThemeStyleboxOverride("panel", backdropStyle);
         AddChild(_backdrop);
 
         // Main encounter panel
         _panel = new Panel
         {
-            AnchorLeft = 0.5f, AnchorTop = 0.5f,
-            AnchorRight = 0.5f, AnchorBottom = 0.5f,
+            AnchorLeft = 0.5f,
+            AnchorTop = 0.5f,
+            AnchorRight = 0.5f,
+            AnchorBottom = 0.5f,
             GrowHorizontal = GrowDirection.Both,
             GrowVertical = GrowDirection.Both,
-            OffsetLeft = -320, OffsetTop = -280,
-            OffsetRight = 320, OffsetBottom = 280,
+            OffsetLeft = -320,
+            OffsetTop = -280,
+            OffsetRight = 320,
+            OffsetBottom = 280,
         };
         var panelStyle = new StyleBoxFlat
         {
-            BgColor = new Color(0.12f, 0.10f, 0.18f),
-            BorderColor = new Color(0.45f, 0.38f, 0.65f),
-            BorderWidthTop = 2, BorderWidthBottom = 2,
-            BorderWidthLeft = 2, BorderWidthRight = 2,
-            CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8,
-            CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8,
+            BgColor = UITheme.NarrativePanelBg,
+            BorderColor = UITheme.NarrativePanelBorder,
+            BorderWidthTop = UITheme.BorderWidth,
+            BorderWidthBottom = UITheme.BorderWidth,
+            BorderWidthLeft = UITheme.BorderWidth,
+            BorderWidthRight = UITheme.BorderWidth,
+            CornerRadiusTopLeft = UITheme.NarrativePanelCorner,
+            CornerRadiusTopRight = UITheme.NarrativePanelCorner,
+            CornerRadiusBottomLeft = UITheme.NarrativePanelCorner,
+            CornerRadiusBottomRight = UITheme.NarrativePanelCorner,
         };
         _panel.AddThemeStyleboxOverride("panel", panelStyle);
         AddChild(_panel);
 
         var layout = new VBoxContainer
         {
-            AnchorRight = 1f, AnchorBottom = 1f,
-            OffsetLeft = 24, OffsetTop = 24,
-            OffsetRight = -24, OffsetBottom = -24,
+            AnchorRight = 1f,
+            AnchorBottom = 1f,
+            OffsetLeft = 24,
+            OffsetTop = 24,
+            OffsetRight = -24,
+            OffsetBottom = -24,
         };
         layout.AddThemeConstantOverride("separation", 14);
         _panel.AddChild(layout);
@@ -79,8 +88,8 @@ public partial class NarrativeEncounterPanel : Control
             HorizontalAlignment = HorizontalAlignment.Center,
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         };
-        _titleLabel.AddThemeFontSizeOverride("font_size", 22);
-        _titleLabel.AddThemeColorOverride("font_color", new Color(0.85f, 0.75f, 1.0f));
+        _titleLabel.AddThemeFontSizeOverride("font_size", UITheme.NarrativeTitleFontSize);
+        _titleLabel.AddThemeColorOverride("font_color", UITheme.NarrativeTitleColor);
         layout.AddChild(_titleLabel);
 
         layout.AddChild(new HSeparator());
@@ -91,8 +100,8 @@ public partial class NarrativeEncounterPanel : Control
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
             HorizontalAlignment = HorizontalAlignment.Left,
         };
-        _bodyLabel.AddThemeFontSizeOverride("font_size", 16);
-        _bodyLabel.AddThemeColorOverride("font_color", new Color(0.88f, 0.85f, 0.90f));
+        _bodyLabel.AddThemeFontSizeOverride("font_size", UITheme.NarrativeBodyFontSize);
+        _bodyLabel.AddThemeColorOverride("font_color", UITheme.NarrativeBodyColor);
         layout.AddChild(_bodyLabel);
 
         layout.AddChild(new Control { CustomMinimumSize = new Vector2(0, 6) });
@@ -106,14 +115,20 @@ public partial class NarrativeEncounterPanel : Control
         _resultPanel = new Panel { Visible = false };
         var resultStyle = new StyleBoxFlat
         {
-            BgColor = new Color(0.18f, 0.15f, 0.25f),
-            BorderColor = new Color(0.55f, 0.45f, 0.75f),
-            BorderWidthTop = 1, BorderWidthBottom = 1,
-            BorderWidthLeft = 1, BorderWidthRight = 1,
-            CornerRadiusTopLeft = 4, CornerRadiusTopRight = 4,
-            CornerRadiusBottomLeft = 4, CornerRadiusBottomRight = 4,
-            ContentMarginLeft = 12, ContentMarginRight = 12,
-            ContentMarginTop = 10, ContentMarginBottom = 10,
+            BgColor = UITheme.NarrativeResultBg,
+            BorderColor = UITheme.NarrativeResultBorder,
+            BorderWidthTop = 1,
+            BorderWidthBottom = 1,
+            BorderWidthLeft = 1,
+            BorderWidthRight = 1,
+            CornerRadiusTopLeft = UITheme.NarrativeResultCorner,
+            CornerRadiusTopRight = UITheme.NarrativeResultCorner,
+            CornerRadiusBottomLeft = UITheme.NarrativeResultCorner,
+            CornerRadiusBottomRight = UITheme.NarrativeResultCorner,
+            ContentMarginLeft = UITheme.PaddingNormal + 4,
+            ContentMarginRight = UITheme.PaddingNormal + 4,
+            ContentMarginTop = UITheme.PaddingNormal + 2,
+            ContentMarginBottom = UITheme.PaddingNormal + 2,
         };
         _resultPanel.AddThemeStyleboxOverride("panel", resultStyle);
         _resultPanel.CustomMinimumSize = new Vector2(0, 70);
@@ -121,11 +136,12 @@ public partial class NarrativeEncounterPanel : Control
 
         _resultLabel = new Label
         {
-            AnchorRight = 1f, AnchorBottom = 1f,
+            AnchorRight = 1f,
+            AnchorBottom = 1f,
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         };
-        _resultLabel.AddThemeFontSizeOverride("font_size", 15);
-        _resultLabel.AddThemeColorOverride("font_color", new Color(0.95f, 0.90f, 0.75f));
+        _resultLabel.AddThemeFontSizeOverride("font_size", UITheme.NarrativeResultFontSize);
+        _resultLabel.AddThemeColorOverride("font_color", UITheme.NarrativeResultColor);
         _resultPanel.AddChild(_resultLabel);
 
         // Continue button
@@ -136,7 +152,7 @@ public partial class NarrativeEncounterPanel : Control
             CustomMinimumSize = new Vector2(160, 40),
             SizeFlagsHorizontal = SizeFlags.ShrinkCenter,
         };
-        _continueButton.AddThemeFontSizeOverride("font_size", 16);
+        _continueButton.AddThemeFontSizeOverride("font_size", UITheme.NarrativeBodyFontSize);
         _continueButton.Pressed += OnContinuePressed;
         layout.AddChild(_continueButton);
     }
@@ -162,7 +178,7 @@ public partial class NarrativeEncounterPanel : Control
                 AutowrapMode = TextServer.AutowrapMode.WordSmart,
                 CustomMinimumSize = new Vector2(0, 44),
             };
-            btn.AddThemeFontSizeOverride("font_size", 15);
+            btn.AddThemeFontSizeOverride("font_size", UITheme.NarrativeChoiceFontSize);
             var capturedChoice = choice;
             btn.Pressed += () => OnChoicePressed(capturedChoice);
             _choiceContainer.AddChild(btn);
@@ -184,12 +200,12 @@ public partial class NarrativeEncounterPanel : Control
         // Build result text + outcome summary
         string resultText = choice.ResultText;
         var outcomes = new System.Collections.Generic.List<string>();
-        if (choice.GoldDelta > 0)  outcomes.Add($"+{choice.GoldDelta} gold");
-        if (choice.GoldDelta < 0)  outcomes.Add($"{choice.GoldDelta} gold");
-        if (choice.HPDelta > 0)    outcomes.Add($"+{choice.HPDelta} HP");
-        if (choice.HPDelta < 0)    outcomes.Add($"{choice.HPDelta} HP");
-        if (choice.StepDelta > 0)  outcomes.Add($"+{choice.StepDelta} steps");
-        if (choice.StepDelta < 0)  outcomes.Add($"{choice.StepDelta} steps");
+        if (choice.GoldDelta > 0) outcomes.Add($"+{choice.GoldDelta} gold");
+        if (choice.GoldDelta < 0) outcomes.Add($"{choice.GoldDelta} gold");
+        if (choice.HPDelta > 0) outcomes.Add($"+{choice.HPDelta} HP");
+        if (choice.HPDelta < 0) outcomes.Add($"{choice.HPDelta} HP");
+        if (choice.StepDelta > 0) outcomes.Add($"+{choice.StepDelta} steps");
+        if (choice.StepDelta < 0) outcomes.Add($"{choice.StepDelta} steps");
 
         if (outcomes.Count > 0)
             resultText += $"\n\n{string.Join("  |  ", outcomes)}";

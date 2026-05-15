@@ -26,12 +26,13 @@ public partial class SchoolAttunementUI : PanelContainer
 	private readonly Dictionary<ElementTag, ElementBar> _elementBars = new();
 
 	// ── Colors matching your card element pips ──────────────────────
-	private static readonly Dictionary<ElementTag, Color> BarFillColors = new()
+	private static Color GetElementColor(ElementTag element) => element switch
 	{
-		{ ElementTag.Fire,  new Color(0.85f, 0.25f, 0.1f) },
-		{ ElementTag.Ice,   new Color(0.3f, 0.6f, 0.9f) },
-		{ ElementTag.Storm, new Color(0.8f, 0.75f, 0.15f) },
-		{ ElementTag.Earth, new Color(0.5f, 0.38f, 0.2f) }
+		ElementTag.Fire => UITheme.ElementFire,
+		ElementTag.Ice => UITheme.ElementIce,
+		ElementTag.Storm => UITheme.ElementStorm,
+		ElementTag.Earth => UITheme.ElementEarth,
+		_ => UITheme.Neutral
 	};
 
 	private static readonly Dictionary<ElementTag, string> ElementNames = new()
@@ -49,16 +50,16 @@ public partial class SchoolAttunementUI : PanelContainer
 		// Match SelectedUnitPanel: solid black, 2px expand margins
 		var style = new StyleBoxFlat
 		{
-			BgColor = new Color(0, 0, 0, 1),
-			ExpandMarginLeft = 2,
-			ExpandMarginTop = 2,
-			ExpandMarginRight = 2,
-			ExpandMarginBottom = 2
+			BgColor = UITheme.SurfaceDark,
+			ExpandMarginLeft = UITheme.PaddingSmall / 2,
+			ExpandMarginTop = UITheme.PaddingSmall / 2,
+			ExpandMarginRight = UITheme.PaddingSmall / 2,
+			ExpandMarginBottom = UITheme.PaddingSmall / 2
 		};
 		AddThemeStyleboxOverride("panel", style);
 
 		// Same width as SelectedUnitPanel
-		CustomMinimumSize = new Vector2(252, 0);
+		CustomMinimumSize = new Vector2(UITheme.AttunementPanelWidth, 0);
 
 		_container = new VBoxContainer();
 		_container.AddThemeConstantOverride("separation", 4);
@@ -197,19 +198,15 @@ public partial class SchoolAttunementUI : PanelContainer
 		// Progress bar — same style as HealthBar/ManaBar
 		bar.Bar = new ProgressBar
 		{
-			CustomMinimumSize = new Vector2(80, 12),
+			CustomMinimumSize = new Vector2(80, UITheme.AttunementBarHeight),
 			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-			MaxValue = 4,
+			MaxValue = UITheme.AttunementBarMax,
 			Value = 0,
 			Step = 1,
 			ShowPercentage = false
 		};
 
-		// Color the fill to match the element
-		var fillStyle = new StyleBoxFlat
-		{
-			BgColor = BarFillColors[element]
-		};
+		var fillStyle = new StyleBoxFlat { BgColor = GetElementColor(element) };
 		bar.Bar.AddThemeStyleboxOverride("fill", fillStyle);
 
 		row.AddChild(bar.Bar);
@@ -268,7 +265,7 @@ public partial class SchoolAttunementUI : PanelContainer
 		tween.TweenCallback(Callable.From(() =>
 		{
 			// Restore normal color
-			var restoreStyle = new StyleBoxFlat { BgColor = BarFillColors[element] };
+			var restoreStyle = new StyleBoxFlat { BgColor = GetElementColor(element) };
 			bar.Bar.AddThemeStyleboxOverride("fill", restoreStyle);
 			if (_boundAttunement != null)
 				UpdateElementBar(bar, _boundAttunement.Charges[element]);
@@ -286,7 +283,7 @@ public partial class SchoolAttunementUI : PanelContainer
 
 	private void UpdateElementBar(ElementBar bar, int charges)
 	{
-		charges = Math.Clamp(charges, 0, 4);
+		charges = Math.Clamp(charges, 0, UITheme.AttunementBarMax);
 		bar.Bar.Value = charges;
 
 		int tierIdx = charges >= 4 ? 4 : charges >= 3 ? 3 : charges >= 2 ? 2 : charges >= 1 ? 1 : 0;

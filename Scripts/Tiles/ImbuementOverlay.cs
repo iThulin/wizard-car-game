@@ -11,8 +11,8 @@ public partial class ImbuementOverlay : Node3D
 
     // How high above the tile top the glyph hovers, and how far it bobs.
     [Export] public float GlyphBaseHeight = 0.55f;
-    [Export] public float GlyphBobAmount  = 0.08f;
-    [Export] public float GlyphBobSpeed   = 1.4f;
+    [Export] public float GlyphBobAmount = 0.08f;
+    [Export] public float GlyphBobSpeed = 1.4f;
 
     // If true (default), at startup we measure the parent HexTile's actual
     // mesh top and reposition the aura/glyph accordingly. Set false in the
@@ -30,14 +30,14 @@ public partial class ImbuementOverlay : Node3D
     // Element → tint color (used by both shaders).
     private static readonly Dictionary<TileElementType, Color> ElementTints = new()
     {
-        { TileElementType.Fire,      new Color(1.00f, 0.45f, 0.10f, 1.0f) },
-        { TileElementType.Frost,     new Color(0.65f, 0.90f, 1.00f, 1.0f) },
-        { TileElementType.Lightning, new Color(0.90f, 0.80f, 1.00f, 1.0f) },
-        { TileElementType.Earth,     new Color(0.75f, 0.55f, 0.25f, 1.0f) },
-        { TileElementType.Water,     new Color(0.30f, 0.60f, 0.95f, 1.0f) },
-        { TileElementType.Air,       new Color(0.85f, 0.95f, 0.85f, 1.0f) },
-        { TileElementType.Arcane,    new Color(0.85f, 0.40f, 1.00f, 1.0f) },
-        { TileElementType.Shadow,    new Color(0.50f, 0.20f, 0.55f, 1.0f) },
+        { TileElementType.Fire,      UITheme.ElementTintFire      },
+        { TileElementType.Frost,     UITheme.ElementTintFrost     },
+        { TileElementType.Lightning, UITheme.ElementTintLightning },
+        { TileElementType.Earth,     UITheme.ElementTintEarth     },
+        { TileElementType.Water,     UITheme.ElementTintWater     },
+        { TileElementType.Air,       UITheme.ElementTintAir       },
+        { TileElementType.Arcane,    UITheme.ElementTintArcane    },
+        { TileElementType.Shadow,    UITheme.ElementTintShadow    },
     };
 
     // Element → integer ID for the shader switch.
@@ -55,7 +55,7 @@ public partial class ImbuementOverlay : Node3D
 
     public override void _Ready()
     {
-        if (AuraMesh == null)  AuraMesh  = GetNodeOrNull<MeshInstance3D>("Aura");
+        if (AuraMesh == null) AuraMesh = GetNodeOrNull<MeshInstance3D>("Aura");
         if (GlyphMesh == null) GlyphMesh = GetNodeOrNull<MeshInstance3D>("Glyph");
 
         // Duplicate shader materials so each tile can have its own tint/id.

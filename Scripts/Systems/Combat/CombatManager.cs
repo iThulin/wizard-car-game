@@ -1121,9 +1121,16 @@ public partial class CombatManager : Node3D
 
     private void SpawnTestUnits()
     {
+        GD.Print($"[SpawnTest] PlayerUnitScene={PlayerUnitScene != null}, DummyUnitScene={DummyUnitScene != null}");
         grid = GetNodeOrNull<HexGridManager>(GridPath);
         if (grid == null) { GD.PrintErr($"HexGridManager not found at: {GridPath}"); return; }
         if (PlayerUnitScene == null || DummyUnitScene == null) { GD.PrintErr("Assign PlayerUnitScene and DummyUnitScene in the Inspector."); return; }
+
+        if (PlayerUnitScene == null || DummyUnitScene == null)
+        {
+            GD.PrintErr($"Assign PlayerUnitScene and DummyUnitScene in the Inspector. Player={PlayerUnitScene != null} Dummy={DummyUnitScene != null}");
+            return;
+        }
 
         originalDeployCoords.Clear();
         playerUnits.Clear();
@@ -1137,12 +1144,10 @@ public partial class CombatManager : Node3D
             if (unit != null) playerUnits.Add(unit);
         }
 
-        for (int i = 0; i < TestEnemyCount; i++)
+        for (int i = 0; i < enemyUnits.Count; i++)
         {
-            var unit = SpawnUnitFromSide(HexGridManager.SpawnSide.Enemy, DummyUnitScene,
-                teamId: 1, isPlayerControlled: false, namePrefix: "Enemy",
-                maxHealth: 30, health: 30, baseSpeed: 2, maxMana: 0, mana: 0, armor: 0, shield: 0);
-            if (unit != null) enemyUnits.Add(unit);
+            enemyUnits[i].SetBodyColor(UITheme.EnemyUnitColors[i % UITheme.EnemyUnitColors.Length]);
+            enemyUnits[i].RefreshNameLabel();
         }
 
         if (playerUnits.Count == 0 || enemyUnits.Count == 0)
@@ -1368,11 +1373,11 @@ public partial class CombatManager : Node3D
 
             // Color: friendly summons are blue-ish, pillars are grey
             if (unitKind.Contains("pillar") || unitKind.Contains("boulder"))
-                unit.SetBodyColor(new Color(0.5f, 0.45f, 0.35f)); // stone grey-brown
+                unit.SetBodyColor(UITheme.SummonColorPillar);
             else if (isPlayerControlled)
-                unit.SetBodyColor(new Color(0.3f, 0.6f, 0.9f)); // friendly blue
+                unit.SetBodyColor(UITheme.SummonColorFriendly);
             else
-                unit.SetBodyColor(new Color(0.9f, 0.3f, 0.3f)); // enemy red
+                unit.SetBodyColor(UITheme.SummonColorEnemy);
 
             // Add to the appropriate unit list
             if (isPlayerControlled)
@@ -1528,7 +1533,7 @@ public partial class CombatManager : Node3D
         var targets = new TargetSet();
         switch (half.Targeting)
         {
-            case SelectUnitTarget:
+            case SelectUnitTarget ut:
                 var unit = State.UnitsInPlay
                     .FirstOrDefault(u => u?.CurrentTile?.Axial == tile.Axial && u.Stats.IsAlive);
                 if (unit == null)
@@ -1536,12 +1541,44 @@ public partial class CombatManager : Node3D
                     combatUI?.AppendActionLog("No valid unit on that tile.");
                     return;
                 }
+
+                // Range check
+                if (selectedUnit?.CurrentTile != null)
+                {
+                    int dist = grid.Distance(selectedUnit.CurrentTile.Axial, unit.CurrentTile.Axial);
+                    if (dist > ut.range)
+                    {
+                        combatUI?.AppendActionLog("Target is out of range!");
+                        GD.Print($"[Cast] Out of range: dist={dist} range={ut.range}");
+                        return;
+                    }
+                }
+
+                // Enemies only check
+                if (ut.enemyOnly && unit.TeamId == selectedUnit?.TeamId)
+                {
+                    combatUI?.AppendActionLog("Invalid target.");
+                    return;
+                }
+
                 targets.Items.Add(unit);
                 break;
 
-            case SelectTileTarget:
+            case SelectTileTarget tt:
                 var tileData = grid.GetTile(tile.Axial);
                 if (tileData == null) { State.Log("Invalid tile."); return; }
+
+                // Range check
+                if (selectedUnit?.CurrentTile != null)
+                {
+                    int dist = grid.Distance(selectedUnit.CurrentTile.Axial, tile.Axial);
+                    if (dist > tt.range)
+                    {
+                        combatUI?.AppendActionLog("Target is out of range!");
+                        return;
+                    }
+                }
+
                 targets.Items.Add(tileData);
                 break;
 
@@ -1571,6 +1608,30 @@ public partial class CombatManager : Node3D
                 // No targeting required — targets stays empty, TryCastWithTargets handles null targeting
                 break;
 
+            case SelectEmptyTileTarget et:
+                var emptyTile = grid.GetTile(tile.Axial);
+                if (emptyTile == null) { State.Log("Invalid tile."); return; }
+
+                // Range check
+                if (selectedUnit?.CurrentTile != null)
+                {
+                    int dist = grid.Distance(selectedUnit.CurrentTile.Axial, tile.Axial);
+                    if (dist > et.Range)
+                    {
+                        combatUI?.AppendActionLog("Target is out of range!");
+                        return;
+                    }
+                }
+
+                // Must be empty
+                if (emptyTile.Occupant != null)
+                {
+                    combatUI?.AppendActionLog("Target tile is occupied!");
+                    return;
+                }
+
+                targets.Items.Add(emptyTile);
+                break;
             default:
                 GD.PrintErr($"[GameRunner] Unhandled targeter type: {half.Targeting.GetType().Name}");
                 targets.Items.Add(Me); // fallback

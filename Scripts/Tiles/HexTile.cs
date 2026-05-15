@@ -4,7 +4,7 @@ using System;
 public partial class HexTile : Node3D
 {
     // Configurable properties
-    [Export] public Color HoverColor = new Color(1.0f, 0.9f, 0.4f);
+    [Export] public Color HoverColor = UITheme.TileHover;
     [Export] public bool ShowDebugInfo = true;
 
     // Optional override; if not set, the default overlay scene is loaded by path.
@@ -27,16 +27,11 @@ public partial class HexTile : Node3D
     private bool _isHighlighted = false;
     private Color _preHighlightColor;
     private bool deploymentHighlighted = false;
-    private Color deploymentColor = new Color(0.2f, 1.0f, 0.2f, 1f);
     private bool moveHighlighted = false;
-    private Color moveHighlightColor = new Color(0.2f, 0.6f, 1.0f, 1f);
     private bool targetHighlighted = false;
-    private Color targetHighlightColor = new Color(1.0f, 0.4f, 0.4f, 1f);
     private bool rangeHighlighted = false;
     private bool rangeBorderHighlighted = false;
-    private Color rangeColor = new Color(1.0f, 0.7f, 0.3f, 1f);
-    private Color rangeBorderColor = new Color(1.0f, 0.5f, 0.1f, 1f);
-    [Export] public Color DragHoverColor = new Color(1.0f, 0.85f, 0.2f, 1f);
+    [Export] public Color DragHoverColor = UITheme.TileDragHover;
 
     public override void _Ready()
     {
@@ -90,15 +85,14 @@ public partial class HexTile : Node3D
 
     private void OnMouseExited()
     {
-        // Restore to either the highlight override or base visual state
         if (_isHighlighted)
         {
             if (rangeBorderHighlighted)
-                material.AlbedoColor = rangeBorderColor;
+                material.AlbedoColor = UITheme.TileRangeBorder;
             else if (rangeHighlighted)
-                material.AlbedoColor = rangeColor;
+                material.AlbedoColor = UITheme.TileRangeInterior;
             else if (targetHighlighted)
-                material.AlbedoColor = targetHighlightColor;
+                material.AlbedoColor = UITheme.TileTargetHighlight;
         }
         else
         {
@@ -163,8 +157,8 @@ public partial class HexTile : Node3D
         {
             _glyphLabel = new Label3D();
             _glyphLabel.Text = "✦";
-            _glyphLabel.FontSize = 64;
-            _glyphLabel.Modulate = new Color(0.6f, 0.2f, 1.0f); // purple
+            _glyphLabel.FontSize = UITheme.Label3DGlyph;
+            _glyphLabel.Modulate = UITheme.TileGlyph;
             _glyphLabel.Billboard = BaseMaterial3D.BillboardModeEnum.Enabled;
             _glyphLabel.Position = new Vector3(0, 0.6f, 0);
             _glyphLabel.Name = "GlyphIndicator";
@@ -241,7 +235,7 @@ public partial class HexTile : Node3D
         }
 
         if (enabled)
-            material.AlbedoColor = targetHighlightColor;
+            material.AlbedoColor = UITheme.TileTargetHighlight;
     }
 
     public void SetRangeHighlight(bool interior, bool border)
@@ -251,13 +245,11 @@ public partial class HexTile : Node3D
 
         if ((interior || border) && !_isHighlighted)
         {
-            // Save current color before overriding
             _preHighlightColor = material.AlbedoColor;
             _isHighlighted = true;
         }
         else if (!interior && !border && _isHighlighted)
         {
-            // Restore saved color
             _isHighlighted = false;
             material.AlbedoColor = _preHighlightColor;
             return;
@@ -266,9 +258,9 @@ public partial class HexTile : Node3D
         if (material == null) return;
 
         if (border)
-            material.AlbedoColor = rangeBorderColor;
+            material.AlbedoColor = UITheme.TileRangeBorder;
         else if (interior)
-            material.AlbedoColor = rangeColor;
+            material.AlbedoColor = UITheme.TileRangeInterior;
     }
 
     public void SetDragHoverHighlight(bool on)
@@ -283,17 +275,12 @@ public partial class HexTile : Node3D
     public void RefreshVisualState()
     {
         if (material == null) return;
-
-        // If highlighted, don't lerp — the override color is already set directly
         if (_isHighlighted) return;
 
         Color finalColor = baseColor;
-        if (deploymentHighlighted) finalColor = finalColor.Lerp(deploymentColor, 0.45f);
-        if (moveHighlighted) finalColor = finalColor.Lerp(moveHighlightColor, 0.45f);
+        if (deploymentHighlighted) finalColor = finalColor.Lerp(UITheme.TileDeployHighlight, 0.45f);
+        if (moveHighlighted) finalColor = finalColor.Lerp(UITheme.TileMoveHighlight, 0.45f);
         material.AlbedoColor = finalColor;
-        // Note: element visuals are NOT applied here.
-        // They live on the ImbuementOverlay child node and update
-        // independently via SetElement().
     }
 
 }
