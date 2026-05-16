@@ -14,6 +14,7 @@ public sealed class Stats
     public int MovePoints;
     public bool HasMoved;
     public bool HasActed;
+    public bool HasPlayedCardThisTurn = false;
 
     public int Armor;
     public int Shield;
@@ -46,6 +47,10 @@ public partial class Unit : Node3D
     // Null for Generic or schools without a mechanic yet.
     public ISchoolAttunement Attunement { get; private set; }
     [Export] public CardSchool School = CardSchool.Generic;
+
+    // ── Equipment passives — set by CombatManager after applying loadout ────
+    public List<(ItemPassiveTag tag, int value)> EquipmentPassives = new();
+    public int BonusSpellDamage = 0;   // from wizard weapon/trinket
 
     // ── Combat archetype (set by CombatManager at spawn time) ───────────────
     public EnemyArchetype EnemyArchetype = EnemyArchetype.Soldier;
@@ -112,6 +117,7 @@ public partial class Unit : Node3D
         Stats.MovePoints = Stats.BaseSpeed;
         Stats.HasMoved = false;
         Stats.HasActed = false;
+        Stats.HasPlayedCardThisTurn = false;
 
         Stats.Mana = Stats.MaxMana;
         _healthBar?.SetMana(Stats.Mana, Stats.MaxMana);

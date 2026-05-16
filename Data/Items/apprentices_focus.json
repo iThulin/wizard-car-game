@@ -1,0 +1,12 @@
+{
+  "id": "apprentices_focus",
+  "name": "Apprentice's Focus",
+  "description": "A simple focus crystal that sharpens spellcasting. +1 to all spell damage.",
+  "rarity": "Common",
+  "slot": "Weapon",
+  "unitClass": "Wizard",
+  "stats": { "spellDamage": 1 },
+  "passive": "None",
+  "passiveValue": 0,
+  "goldValue": 40
+}

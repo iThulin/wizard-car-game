@@ -80,46 +80,51 @@ public sealed class DealDamageEffect : EffectBase
 		int hit = 0;
 		if (targets == null) { s?.Log($"[DealDamage] No targets."); return; }
 
-		// Check if caster has persistent buffs
 		var casterUnit = FindCasterUnit(s, caster);
+
+		// ── Bonus damage accumulation ────────────────────────────────────
 		int bonus = 0;
 		if (casterUnit != null && casterUnit.HasStatus("empowered"))
-			bonus = 3;
+			bonus += 3;
 
 		var avatarAura = s.GetActiveEffect<AvatarAuraEffect>(caster);
 		if (avatarAura != null)
 			bonus += avatarAura.BonusDamage;
 
-		s.Log($"targets.Items.Count={targets.Items.Count}");
+		int bonusSpellDmg = casterUnit?.BonusSpellDamage ?? 0;
+		if (bonusSpellDmg > 0)
+			s.Log($"[SpellDamage] +{bonusSpellDmg} from equipment.");
 
+		int totalDamage = Amount + bonus + bonusSpellDmg;
+
+		// ── Debug logging ────────────────────────────────────────────────
+		s.Log($"targets.Items.Count={targets.Items.Count}");
 		foreach (var obj in targets.Items)
 		{
 			s.Log($"  item: {(obj == null ? "null" : obj.GetType().Name)}");
-
 			if (obj is Unit u)
 				s.Log($"    -> Unit: {u.Name} HP {u.Stats.Health}/{u.Stats.MaxHealth}");
-
 			if (obj is TileData td)
 				s.Log($"    -> TileData: {td.Axial} occupant={(td.Occupant != null ? td.Occupant.Name : "null")}");
-
 			if (obj is HexTile tile)
 				s.Log($"    -> TileView: {tile.Axial}");
 		}
 
+		// ── Main damage loop ─────────────────────────────────────────────
 		foreach (var obj in targets.Items)
 		{
 			Unit victim = null;
 
 			if (obj is Unit u)
 			{
-				u.ApplyDamage(Amount + bonus);
+				u.ApplyDamage(totalDamage);
 				s.Log($"HIT unit {u.Name}");
 				hit++;
 				victim = u;
 			}
 			else if (obj is TileData td && td.Occupant != null)
 			{
-				td.Occupant.ApplyDamage(Amount + bonus);
+				td.Occupant.ApplyDamage(totalDamage);
 				s.Log($"HIT tile occupant {td.Occupant.Name} on {td.Axial}");
 				hit++;
 				victim = td.Occupant;
@@ -129,14 +134,14 @@ public sealed class DealDamageEffect : EffectBase
 				var tileData = ResolveTileDataFromView(s, tileView);
 				if (tileData != null && tileData.Occupant != null)
 				{
-					tileData.Occupant.ApplyDamage(Amount + bonus);
+					tileData.Occupant.ApplyDamage(totalDamage);
 					s.Log($"HIT tile occupant {tileData.Occupant.Name} on {tileData.Axial}");
 					hit++;
 					victim = tileData.Occupant;
 				}
 			}
 
-			// Consume arcane mark for bonus damage
+			// Arcane mark: separate bonus, intentionally outside totalDamage
 			if (victim != null && victim.HasStatus("arcane_mark"))
 			{
 				victim.RemoveStatus("arcane_mark");
@@ -146,13 +151,12 @@ public sealed class DealDamageEffect : EffectBase
 			}
 		}
 
-		s.Log($"Resolve: Deal {Amount} damage to {hit} target(s).");
+		s.Log($"Resolve: Deal {totalDamage} damage to {hit} target(s). lethal={hit > 0}");
 
-		// After the main damage loop, add chain bounces:
+		// ── Chain bounce ─────────────────────────────────────────────────
 		int chainCount = 0;
 		if (casterUnit != null && casterUnit.HasStatus("chaining"))
 		{
-			// Get the chaining level (1 or 2)
 			chainCount = casterUnit.Stats.StatusEffects.ContainsKey("chaining")
 				? Math.Min(casterUnit.Stats.StatusEffects["chaining"], 2)
 				: 1;
@@ -162,7 +166,6 @@ public sealed class DealDamageEffect : EffectBase
 		{
 			if (s?.Grid == null) { s?.Log("[Chain] No grid for chain bounce."); return; }
 
-			// Build exclusion set from already-hit units
 			var alreadyHit = new HashSet<Unit>();
 			foreach (var obj in targets.Items)
 			{
@@ -171,7 +174,6 @@ public sealed class DealDamageEffect : EffectBase
 			}
 			alreadyHit.Add(casterUnit);
 
-			// Find the last hit unit as origin for chain
 			Unit chainOrigin = null;
 			foreach (var obj in targets.Items)
 			{
@@ -183,7 +185,6 @@ public sealed class DealDamageEffect : EffectBase
 			{
 				if (chainOrigin?.CurrentTile == null) break;
 
-				// Find nearest enemy to chainOrigin not already hit
 				Unit nearest = null;
 				int nearestDist = int.MaxValue;
 				foreach (var unit in s.UnitsInPlay)
@@ -202,15 +203,14 @@ public sealed class DealDamageEffect : EffectBase
 
 				if (nearest != null)
 				{
-					nearest.ApplyDamage(Amount + bonus);
+					nearest.ApplyDamage(totalDamage);
 					alreadyHit.Add(nearest);
 					chainOrigin = nearest;
-					s.Log($"[Chain] Bounced to {nearest.Name} for {Amount + bonus} damage.");
+					s.Log($"[Chain] Bounced to {nearest.Name} for {totalDamage} damage.");
 				}
 				else break;
 			}
 
-			// Consume chaining after use
 			casterUnit.Stats.StatusEffects.Remove("chaining");
 			s.Log($"[Chain] Chaining consumed.");
 		}
@@ -224,11 +224,13 @@ public sealed class DealDamageEffect : EffectBase
 
 		if (ctx.Targets == null) return new EffectResult();
 
-		// Check empowered
 		var casterUnit = FindCasterUnit(ctx.Game, ctx.Caster);
 		int bonus = 0;
 		if (casterUnit != null && casterUnit.HasStatus("empowered"))
-			bonus = 3;
+			bonus += 3;
+
+		int bonusSpellDmg = casterUnit?.BonusSpellDamage ?? 0;
+		int total = Amount + bonus + bonusSpellDmg;
 
 		foreach (var obj in ctx.Targets.Items)
 		{
@@ -244,18 +246,14 @@ public sealed class DealDamageEffect : EffectBase
 			if (victim != null)
 			{
 				int hpBefore = victim.Stats.Health;
-				victim.ApplyDamage(Amount + bonus);
-				totalDamage += Amount + bonus;
+				victim.ApplyDamage(total);
+				totalDamage += total;
 				hit++;
 				if (hpBefore > 0 && victim.Stats.Health <= 0) lethal = true;
 			}
 		}
 
-		if (bonus > 0)
-			ctx.Game?.Log($"Resolve: Deal {Amount}+{bonus} (empowered) damage to {hit} target(s). lethal={lethal}");
-		else
-			ctx.Game?.Log($"Resolve: Deal {Amount} damage to {hit} target(s). lethal={lethal}");
-
+		ctx.Game?.Log($"Resolve: Deal {total} damage to {hit} target(s). lethal={lethal}");
 		return new EffectResult { DamageDealt = totalDamage, WasLethal = lethal, TargetsHit = hit };
 	}
 
@@ -296,13 +294,15 @@ public sealed class DistanceDamageEffect : EffectBase
 			return;
 		}
 
+		int bonusSpellDmg = casterUnit?.BonusSpellDamage ?? 0;
+
 		foreach (var obj in targets.Items)
 		{
 			var victim = ResolveTargetUnit(s, obj);
 			if (victim?.CurrentTile == null) continue;
 
 			int dist = s.Grid.Distance(casterUnit.CurrentTile.Axial, victim.CurrentTile.Axial);
-			int damage = Math.Clamp(dist * BonusPerTile, MinDamage, MaxDamage);
+			int damage = Math.Clamp(dist * BonusPerTile, MinDamage, MaxDamage) + bonusSpellDmg;
 
 			victim.ApplyDamage(damage);
 			s.Log($"[DistanceDamage] {victim.Name} takes {damage} damage (dist={dist}).");
@@ -331,6 +331,9 @@ public sealed class AoeAllEffect : EffectBase
 		var casterUnit = FindCasterUnit(s, caster);
 		if (casterUnit?.CurrentTile == null) return;
 
+		int bonusSpellDmg = casterUnit?.BonusSpellDamage ?? 0;
+		int totalDamage = Damage + bonusSpellDmg;
+
 		var center = casterUnit.CurrentTile.Axial;
 		int hit = 0;
 
@@ -339,8 +342,8 @@ public sealed class AoeAllEffect : EffectBase
 			if (unit == null || !unit.Stats.IsAlive || unit.CurrentTile == null) continue;
 			if (s.Grid.Distance(center, unit.CurrentTile.Axial) > Radius) continue;
 
-			unit.ApplyDamage(Damage);
-			s.Log($"[AoeAll] {unit.Name} takes {Damage} damage.");
+			unit.ApplyDamage(totalDamage);
+			s.Log($"[AoeAll] {unit.Name} takes {totalDamage} damage.");
 			hit++;
 		}
 
@@ -362,7 +365,8 @@ public sealed class DamageByHandSizeEffect : EffectBase
 
 		var casterUnit = FindCasterUnit(s, caster);
 		var hand = casterUnit?.DeckData?.Hand ?? new System.Collections.Generic.List<Card>();
-		int damage = hand.Count * Multiplier;
+		int bonusSpellDmg = casterUnit?.BonusSpellDamage ?? 0;
+		int damage = hand.Count * Multiplier + bonusSpellDmg;
 
 		if (damage <= 0)
 		{
@@ -375,7 +379,7 @@ public sealed class DamageByHandSizeEffect : EffectBase
 			var victim = ResolveTargetUnit(s, obj);
 			if (victim == null) continue;
 			victim.ApplyDamage(damage);
-			s.Log($"[HandSizeDamage] {victim.Name} takes {damage} damage ({hand.Count} cards x {Multiplier}).");
+			s.Log($"[HandSizeDamage] {victim.Name} takes {damage} damage ({hand.Count} cards x {Multiplier} +{bonusSpellDmg} spell).");
 		}
 	}
 }
@@ -806,8 +810,11 @@ public sealed class ImbueTileEffect : EffectBase
 
 			if (BonusDamage > 0 && tile.Occupant != null && tile.Occupant.TeamId != 0)
 			{
-				tile.Occupant.ApplyDamage(BonusDamage);
-				s.Log($"[ImbueTile] {Element} deals {BonusDamage} to {tile.Occupant.Name}.");
+				var casterUnit = FindCasterUnit(s, caster);
+				int bonusSpellDmg = casterUnit?.BonusSpellDamage ?? 0;
+				int totalImbueDmg = BonusDamage + bonusSpellDmg;
+				tile.Occupant.ApplyDamage(totalImbueDmg);
+				s.Log($"[ImbueTile] {Element} deals {totalImbueDmg} to {tile.Occupant.Name}.");
 			}
 		}
 	}
@@ -836,6 +843,9 @@ public sealed class PlaceGlyphEffect : EffectBase
 		var casterUnit = FindCasterUnit(s, caster);
 		if (casterUnit == null) return;
 
+		int bonusSpellDmg = casterUnit?.BonusSpellDamage ?? 0;
+		int totalGlyphDmg = Damage + bonusSpellDmg; // captured at placement
+
 		foreach (var obj in targets.Items)
 		{
 			TileData tile = null;
@@ -845,7 +855,7 @@ public sealed class PlaceGlyphEffect : EffectBase
 			if (tile == null || tile.IsBlocked) continue;
 			if (tile.Glyph != null) continue; // tile already has a glyph
 
-			int dmg = Damage;
+			int dmg = totalGlyphDmg; // use captured value in closure
 			string status = Status;
 			int dur = StatusDuration;
 

@@ -1,0 +1,12 @@
+{
+  "id": "travellers_robe",
+  "name": "Traveller's Robe",
+  "description": "Sturdy travelling clothes. +5 max HP.",
+  "rarity": "Common",
+  "slot": "Armor",
+  "unitClass": "Wizard",
+  "stats": { "maxHP": 5 },
+  "passive": "None",
+  "passiveValue": 0,
+  "goldValue": 40
+}

@@ -1,0 +1,12 @@
+{
+  "id": "spell_focus",
+  "name": "Spell Focus",
+  "description": "A lens that concentrates magical intent. Your first card each turn costs 1 less mana.",
+  "rarity": "Rare",
+  "slot": "Trinket",
+  "unitClass": "Wizard",
+  "stats": {},
+  "passive": "FirstCardCostReduction",
+  "passiveValue": 1,
+  "goldValue": 160
+}

@@ -1,0 +1,12 @@
+{
+  "id": "stormcaller_staff",
+  "name": "Stormcaller Staff",
+  "description": "Carved from a lightning-struck oak. Storm spells cost 1 less mana.",
+  "rarity": "Uncommon",
+  "slot": "Weapon",
+  "unitClass": "Wizard",
+  "stats": {},
+  "passive": "StormSpellCostReduction",
+  "passiveValue": 1,
+  "goldValue": 90
+}

@@ -1,0 +1,12 @@
+{
+  "id": "iron_sword",
+  "name": "Iron Sword",
+  "description": "A reliable blade. +3 attack damage.",
+  "rarity": "Common",
+  "slot": "Weapon",
+  "unitClass": "Martial",
+  "stats": { "attackDamage": 3 },
+  "passive": "None",
+  "passiveValue": 0,
+  "goldValue": 40
+}

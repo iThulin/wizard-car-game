@@ -1,0 +1,12 @@
+{
+  "id": "mana_crystal",
+  "name": "Mana Crystal",
+  "description": "A shard of solidified ley energy. Restore 1 mana at the start of each turn.",
+  "rarity": "Uncommon",
+  "slot": "Trinket",
+  "unitClass": "Wizard",
+  "stats": {},
+  "passive": "RestoreManaOnTurnStart",
+  "passiveValue": 1,
+  "goldValue": 110
+}

@@ -640,6 +640,16 @@ public partial class CombatManager : Node3D
                 foreach (var card in drawn)
                     GD.Print($"[{unit.Name}] Drew: {card.TopHalf?.Name ?? card.CardName}");
             }
+
+            // ── Equipment passive: restore mana on turn start ────────────
+            foreach (var (tag, value) in unit.EquipmentPassives)
+            {
+                if (tag == ItemPassiveTag.RestoreManaOnTurnStart)
+                {
+                    unit.GainMana(value);
+                    GD.Print($"[Equipment] {unit.Name} restores {value} mana (Mana Crystal).");
+                }
+            }
         }
 
         // Prune before ticking persistent effects so freed units don't
@@ -1557,6 +1567,16 @@ public partial class CombatManager : Node3D
             if (unit != null) playerUnits.Add(unit);
         }
 
+        // Apply equipment loadouts to player units
+        // Player_1 is the wizard; companions would use their companion ID.
+        // For now all player units map to "wizard" until companion units
+        // are spawned as separate entities with their own IDs.
+        for (int i = 0; i < playerUnits.Count; i++)
+        {
+            string unitId = i == 0 ? "wizard" : $"companion_{i}";
+            ApplyEquipmentLoadout(playerUnits[i], unitId);
+        }
+
         // Default encounter composition — will be replaced by EncounterDefinition
         // in Step 2 of the architecture plan. For now, a fixed mix that exercises
         // all five archetypes when TestEnemyCount >= 3.
@@ -1995,6 +2015,74 @@ public partial class CombatManager : Node3D
         };
     }
 
+    /// <summary>
+    /// Applies EquipmentLoadout stat bonuses and passive tags to a player unit.
+    /// Called immediately after the unit is spawned and initialized.
+    /// unitId: "wizard" for the main wizard, companion ID for companions.
+    /// </summary>
+    private void ApplyEquipmentLoadout(Unit unit, string unitId)
+    {
+        var loadout = EquipmentLoadout.Get(unitId);
+        if (loadout == null) return;
+
+        // ── Stat modifiers ────────────────────────────────────────────────
+        if (loadout.BonusMaxHP > 0)
+        {
+            unit.Stats.MaxHealth += loadout.BonusMaxHP;
+            unit.Stats.Health += loadout.BonusMaxHP;
+        }
+
+        if (loadout.BonusMaxMana > 0)
+        {
+            unit.Stats.MaxMana += loadout.BonusMaxMana;
+            unit.Stats.Mana += loadout.BonusMaxMana;
+        }
+
+        if (loadout.BonusArmor > 0)
+            unit.Stats.Armor += loadout.BonusArmor;
+
+        if (loadout.BonusBaseSpeed != 0)
+            unit.Stats.BaseSpeed += loadout.BonusBaseSpeed;
+
+        if (loadout.BonusAttackDamage != 0)
+            unit.AttackDamage += loadout.BonusAttackDamage;
+
+        if (loadout.BonusAttackRange != 0)
+            unit.AttackRange += loadout.BonusAttackRange;
+
+        if (loadout.BonusSpellDamage != 0)
+            unit.BonusSpellDamage = loadout.BonusSpellDamage;
+
+        // ── Passive tags ──────────────────────────────────────────────────
+        unit.EquipmentPassives = new List<(ItemPassiveTag, int)>(loadout.Passives);
+
+        // Apply immediate passives that take effect at combat start
+        foreach (var (tag, value) in loadout.Passives)
+        {
+            switch (tag)
+            {
+                case ItemPassiveTag.StartCombatWithShield:
+                    unit.Stats.Shield += value;
+                    break;
+                    // Other passives are applied at their relevant moment
+                    // (turn start, on attack, etc.) — see passive hooks below
+            }
+        }
+
+        unit.RefreshHealthBar();
+
+        if (loadout.Passives.Count > 0 || HasAnyBonus(loadout))
+            GD.Print($"[Equipment] Applied loadout to {unit.Name}: " +
+                     $"+HP:{loadout.BonusMaxHP} +Mana:{loadout.BonusMaxMana} " +
+                     $"+Armor:{loadout.BonusArmor} +Spd:{loadout.BonusBaseSpeed} " +
+                     $"Passives:{loadout.Passives.Count}");
+    }
+
+    private static bool HasAnyBonus(ResolvedLoadout l) =>
+        l.BonusMaxHP != 0 || l.BonusMaxMana != 0 || l.BonusArmor != 0 ||
+        l.BonusBaseSpeed != 0 || l.BonusAttackDamage != 0 ||
+        l.BonusAttackRange != 0 || l.BonusSpellDamage != 0;
+
     // ═══════════════════════════════════════════════════════════════════════
     // Casting / card logic
     // ═══════════════════════════════════════════════════════════════════════
@@ -2257,6 +2345,9 @@ public partial class CombatManager : Node3D
 
         if (ok)
         {
+            // Mark first card played (for FirstCardCostReduction passive)
+            if (selectedUnit != null)
+                selectedUnit.Stats.HasPlayedCardThisTurn = true;
 
             // --- Avatar aura: notify on cast, apply bonus damage ---
             if (State.ActiveEffects != null && selectedUnit != null)
@@ -2266,6 +2357,22 @@ public partial class CombatManager : Node3D
                     if (effect is AvatarAuraEffect aura && effect.Owner == Me && !effect.IsExpired)
                     {
                         aura.OnSpellCast(State, selectedUnit, targets);
+                    }
+                }
+            }
+
+            // ── Equipment passive: fire spell bonus damage ───────────────
+            if (half.Tags != null && selectedUnit != null)
+            {
+                foreach (var (tag, value) in selectedUnit.EquipmentPassives)
+                {
+                    if (tag == ItemPassiveTag.FireSpellBonusDamage &&
+                        half.Tags.Any(t => t.ToLowerInvariant() == "fire"))
+                    {
+                        // Bonus damage was already applied via BonusSpellDamage
+                        // OR apply it here as a post-cast damage tick.
+                        // Simplest: fold into BonusSpellDamage when a fire tag is active.
+                        // TODO: implement element-specific spell damage bonus properly.
                     }
                 }
             }

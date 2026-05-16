@@ -61,6 +61,9 @@ public partial class OverworldRunManager : Node2D
             GD.Print($"RunManager: New run with seed {seed}.");
         }
 
+        // ── Build equipment loadouts for the run ─────────────────────
+        BuildEquipmentLoadouts();
+
         // ── Load the region for this run ───────────────────────────
         string regionId = SaveManager.ActiveSave?.CurrentRegionId ?? "frontier_wilds";
         _region = RegionLoader.LoadOrDefault(regionId);
@@ -299,6 +302,18 @@ public partial class OverworldRunManager : Node2D
         // Add immediately, not deferred — we need it ready for the seed check below.
         GetTree().Root.AddChild(router);
         GD.Print("RunManager: Created EncounterRouter on tree root.");
+    }
+
+    private void BuildEquipmentLoadouts()
+    {
+        var save = SaveManager.ActiveSave;
+        if (save == null) return;
+
+        // "wizard" is the canonical ID for the player wizard unit.
+        // Companions use their Companion.Id.
+        var companionIds = save.ActivePartyCompanionIds ?? new List<string>();
+
+        EquipmentLoadout.BuildForRun(save.Armory, "wizard", companionIds);
     }
 
     private void OnPartyMoved(Vector2I newCoord, Vector2I oldCoord)

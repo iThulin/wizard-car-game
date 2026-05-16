@@ -1,0 +1,12 @@
+{
+  "id": "scouts_leathers",
+  "name": "Scout's Leathers",
+  "description": "Light and flexible. +1 speed.",
+  "rarity": "Uncommon",
+  "slot": "Armor",
+  "unitClass": "Martial",
+  "stats": { "baseSpeed": 1 },
+  "passive": "None",
+  "passiveValue": 0,
+  "goldValue": 80
+}

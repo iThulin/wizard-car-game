@@ -1,0 +1,12 @@
+{
+  "id": "leather_jerkin",
+  "name": "Leather Jerkin",
+  "description": "Basic but effective protection. +8 max HP.",
+  "rarity": "Common",
+  "slot": "Armor",
+  "unitClass": "Martial",
+  "stats": { "maxHP": 8 },
+  "passive": "None",
+  "passiveValue": 0,
+  "goldValue": 40
+}

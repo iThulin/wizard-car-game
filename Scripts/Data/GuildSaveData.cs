@@ -19,7 +19,7 @@ public class GuildSaveData
     public string SelectedSchool = "Elementalist";
 
     // ── Region ──────────────────────────────────────────────────────────
-    public string CurrentRegionId = "frontier_wilds"; 
+    public string CurrentRegionId = "frontier_wilds";
 
     // ── Economy ─────────────────────────────────────────────────────────
     public int Gold = 0;
@@ -35,6 +35,9 @@ public class GuildSaveData
     public List<Companion> Companions = new();
     public List<string> ActivePartyCompanionIds = new();
     public int MaxPartySize = 2;
+
+    // ── Equipment armory ─────────────────────────────────────────────────
+    public ArmoryData Armory = new();
 
     // ── Buildings ────────────────────────────────────────────────────────
     public List<BuildingSaveData> Buildings = new();

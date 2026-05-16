@@ -1,0 +1,12 @@
+{
+  "id": "emberwood_wand",
+  "name": "Emberwood Wand",
+  "description": "Infused with volcanic resin. Fire spells deal +2 damage.",
+  "rarity": "Uncommon",
+  "slot": "Weapon",
+  "unitClass": "Wizard",
+  "stats": {},
+  "passive": "FireSpellBonusDamage",
+  "passiveValue": 2,
+  "goldValue": 90
+}

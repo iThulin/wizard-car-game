@@ -1,0 +1,12 @@
+{
+  "id": "warding_cloak",
+  "name": "Warding Cloak",
+  "description": "Enchanted with a protective ward. Start combat with 3 shield.",
+  "rarity": "Uncommon",
+  "slot": "Armor",
+  "unitClass": "Wizard",
+  "stats": {},
+  "passive": "StartCombatWithShield",
+  "passiveValue": 3,
+  "goldValue": 80
+}

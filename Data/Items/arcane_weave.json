@@ -1,0 +1,12 @@
+{
+  "id": "arcane_weave",
+  "name": "Arcane Weave",
+  "description": "Stitched with mana-conducting thread. +1 max mana.",
+  "rarity": "Uncommon",
+  "slot": "Armor",
+  "unitClass": "Wizard",
+  "stats": { "maxMana": 1 },
+  "passive": "None",
+  "passiveValue": 0,
+  "goldValue": 100
+}

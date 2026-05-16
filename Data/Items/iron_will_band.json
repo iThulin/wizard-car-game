@@ -1,0 +1,12 @@
+{
+  "id": "iron_will_band",
+  "name": "Iron Will Band",
+  "description": "A heavy iron ring etched with runes of endurance. Take 2 less damage from each hit.",
+  "rarity": "Rare",
+  "slot": "Trinket",
+  "unitClass": "Martial",
+  "stats": {},
+  "passive": "DamageReductionPerHit",
+  "passiveValue": 2,
+  "goldValue": 150
+}

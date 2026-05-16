@@ -1,0 +1,12 @@
+{
+  "id": "serrated_blade",
+  "name": "Serrated Blade",
+  "description": "A jagged edge that leaves wounds bleeding. Attacks apply bleed for 1 turn.",
+  "rarity": "Uncommon",
+  "slot": "Weapon",
+  "unitClass": "Martial",
+  "stats": { "attackDamage": 1 },
+  "passive": "AttackAppliesBleed",
+  "passiveValue": 1,
+  "goldValue": 90
+}

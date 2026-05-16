@@ -1,0 +1,12 @@
+{
+  "id": "warriors_sigil",
+  "name": "Warrior's Sigil",
+  "description": "A carved charm that blazes when fighting at full strength. +2 attack damage while above 50% HP.",
+  "rarity": "Uncommon",
+  "slot": "Trinket",
+  "unitClass": "Martial",
+  "stats": {},
+  "passive": "BonusDamageAboveHalfHP",
+  "passiveValue": 2,
+  "goldValue": 90
+}

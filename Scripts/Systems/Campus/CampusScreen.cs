@@ -23,6 +23,11 @@ public partial class CampusScreen : Control
     private VBoxContainer _companionContainer;
     private VBoxContainer _buildingContainer;
 
+    // Armory tab
+    private VBoxContainer _armoryContainer;
+    private string _selectedArmoryUnitId = null;   // which unit we're equipping
+    private string _armorySlotFilter = "All"; // "All", "Weapon", "Armor", "Trinket"
+
     private static readonly Dictionary<CardSchool, string> SchoolDescriptions = new()
     {
         { CardSchool.Arcanist,     "Masters of raw magic. High damage spells and mana manipulation." },
@@ -30,7 +35,7 @@ public partial class CampusScreen : Control
         { CardSchool.Necromancer,  "Summons minions and drains life from enemies." },
         { CardSchool.Enchanter,    "Buffs, debuffs, and tile enchantments." },
         { CardSchool.Tinker,       "Mechanical traps, turrets, and area control." },
-        { CardSchool.Generic,      "A mixed deck drawn from all schools." },
+        { CardSchool.Generic,      "Academy trained magical initiates at their finest." },
     };
 
     public override void _Ready()
@@ -78,7 +83,7 @@ public partial class CampusScreen : Control
         tabBar.AddThemeConstantOverride("separation", 0);
         AddChild(tabBar);
 
-        string[] tabNames = { "Guild", "Companions", "Campus", "Expedition" };
+        string[] tabNames = { "Guild", "Companions", "Campus", "Expedition", "Armory" };
         _tabButtons = new Button[tabNames.Length];
         for (int i = 0; i < tabNames.Length; i++)
         {
@@ -90,6 +95,7 @@ public partial class CampusScreen : Control
                 CustomMinimumSize = new Vector2(0, 44),
             };
             btn.AddThemeFontSizeOverride("font_size", UITheme.CampusTabFontSize);
+            ApplyTabStyle(btn, false);
             int captured = i;
             btn.Pressed += () => SelectTab(captured);
             _tabButtons[i] = btn;
@@ -106,6 +112,11 @@ public partial class CampusScreen : Control
             panel.Visible = false;
             panel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
             panel.SizeFlagsVertical = SizeFlags.ExpandFill;
+
+            // Slate background so WorldBase doesn't bleed through
+            var panelBg = new StyleBoxFlat { BgColor = UITheme.BgBase };
+            panel.AddThemeStyleboxOverride("panel", panelBg);
+
             AddChild(panel);
             _tabPanels[i] = panel;
         }
@@ -114,7 +125,7 @@ public partial class CampusScreen : Control
         BuildCompanionsTab((ScrollContainer)_tabPanels[1]);
         BuildCampusTab((ScrollContainer)_tabPanels[2]);
         BuildExpeditionTab((ScrollContainer)_tabPanels[3]);
-
+        BuildArmoryTab((ScrollContainer)_tabPanels[4]);
         GD.Print($"CampusScreen: ActiveSave={SaveManager.ActiveSave?.GuildName ?? "NULL"}, " +
                  $"Gold={SaveManager.ActiveSave?.Gold ?? -1}, " +
                  $"Runs={SaveManager.ActiveSave?.TotalRuns ?? -1}");
@@ -142,6 +153,7 @@ public partial class CampusScreen : Control
         {
             _tabPanels[i].Visible = (i == index);
             _tabButtons[i].ButtonPressed = (i == index);
+            ApplyTabStyle(_tabButtons[i], i == index);
         }
     }
 
@@ -324,6 +336,422 @@ public partial class CampusScreen : Control
     }
 
     // ═══════════════════════════════════════════════════════════════════════
+    // Armory Tab
+    // ═══════════════════════════════════════════════════════════════════════
+
+    private void BuildArmoryTab(ScrollContainer scroll)
+    {
+        // EnsureStarterItems removed — now called from OnSlotSelected
+        var outer = MakeMargins(20, 16);
+        scroll.AddChild(outer);
+
+        _armoryContainer = MakeVBox(12);
+        _armoryContainer.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        outer.AddChild(_armoryContainer);
+
+        RefreshArmoryTab();
+    }
+
+    private void RefreshArmoryTab()
+    {
+        if (_armoryContainer == null) return;
+
+        foreach (Node child in _armoryContainer.GetChildren())
+            child.QueueFree();
+
+        var save = SaveManager.ActiveSave;
+        if (save == null)
+        {
+            _armoryContainer.AddChild(MakeStubLabel("No save loaded."));
+            return;
+        }
+
+        ItemDatabase.LoadAll();
+
+        // ── Unit selector ────────────────────────────────────────────────
+        AddSectionHeader(_armoryContainer, "Equip To");
+        BuildUnitSelector(save);
+
+        // ── Currently equipped ───────────────────────────────────────────
+        if (_selectedArmoryUnitId != null)
+        {
+            AddSectionHeader(_armoryContainer, "Equipped");
+            BuildEquippedPanel(save);
+        }
+
+        // ── Unequipped items ─────────────────────────────────────────────
+        AddSectionHeader(_armoryContainer, "Armory");
+        BuildUnequippedPanel(save);
+    }
+
+    // ── Unit selector row ────────────────────────────────────────────────
+
+    private void BuildUnitSelector(GuildSaveData save)
+    {
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 8);
+        _armoryContainer.AddChild(row);
+
+        // Wizard button (always present)
+        AddUnitSelectorButton(row, "wizard", "Wizard", UITheme.Violet);
+
+        // Active party companions
+        foreach (var companionId in save.ActivePartyCompanionIds)
+        {
+            var companion = save.Companions.Find(c => c.Id == companionId);
+            if (companion == null || companion.IsPermadead) continue;
+
+            AddUnitSelectorButton(row, companion.Id, companion.Name, UITheme.Success);
+        }
+    }
+
+    private void AddUnitSelectorButton(HBoxContainer row, string unitId, string label, Color accentColor)
+    {
+        bool isSelected = _selectedArmoryUnitId == unitId;
+
+        var btn = new Button
+        {
+            Text = label,
+            ToggleMode = true,
+            ButtonPressed = isSelected,
+            CustomMinimumSize = new Vector2(120, 36),
+        };
+        btn.AddThemeFontSizeOverride("font_size", UITheme.CampusSmallFontSize);
+
+        if (isSelected)
+            btn.AddThemeColorOverride("font_color", accentColor);
+
+        string captured = unitId;
+        btn.Pressed += () =>
+        {
+            _selectedArmoryUnitId = captured;
+            _armorySlotFilter = "All"; // reset filter on unit switch
+            RefreshArmoryTab();
+        };
+
+        row.AddChild(btn);
+    }
+
+    // ── Equipped panel ───────────────────────────────────────────────────
+
+    private void BuildEquippedPanel(GuildSaveData save)
+    {
+        var grid = new GridContainer { Columns = 3 };
+        grid.AddThemeConstantOverride("h_separation", UITheme.PaddingNormal);
+        grid.AddThemeConstantOverride("v_separation", UITheme.PaddingNormal);
+        grid.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        _armoryContainer.AddChild(grid);
+
+        foreach (EquipmentSlot slot in System.Enum.GetValues(typeof(EquipmentSlot)))
+        {
+            var loadout = save.Armory.GetLoadout(_selectedArmoryUnitId);
+            var instanceId = loadout.GetSlot(slot);
+            var item = instanceId != null ? save.Armory.GetInstance(instanceId) : null;
+
+            var card = BuildItemSlotCard(slot, item, save);
+            grid.AddChild(card);
+        }
+    }
+
+    private Control BuildItemSlotCard(EquipmentSlot slot, ItemInstance item, GuildSaveData save)
+    {
+        var panel = new PanelContainer();
+        panel.CustomMinimumSize = new Vector2(180, 90);
+
+        var style = new StyleBoxFlat
+        {
+            BgColor = UITheme.SurfaceLight,
+            BorderColor = item != null ? RarityColor(item.Rarity) : UITheme.Neutral,
+            CornerRadiusTopLeft = UITheme.CornerRadius - 1,
+            CornerRadiusTopRight = UITheme.CornerRadius - 1,
+            CornerRadiusBottomLeft = UITheme.CornerRadius - 1,
+            CornerRadiusBottomRight = UITheme.CornerRadius - 1,
+            BorderWidthTop = UITheme.BorderWidth - 1,
+            BorderWidthBottom = UITheme.BorderWidth - 1,
+            BorderWidthLeft = UITheme.BorderWidth - 1,
+            BorderWidthRight = UITheme.BorderWidth - 1,
+            ContentMarginLeft = UITheme.PaddingNormal + 2,
+            ContentMarginRight = UITheme.PaddingNormal + 2,
+            ContentMarginTop = UITheme.PaddingNormal,
+            ContentMarginBottom = UITheme.PaddingNormal,
+        };
+        panel.AddThemeStyleboxOverride("panel", style);
+
+        var vbox = MakeVBox(4);
+        panel.AddChild(vbox);
+
+        // Slot label
+        var slotLbl = new Label { Text = slot.ToString().ToUpper() };
+        slotLbl.AddThemeFontSizeOverride("font_size", UITheme.CampusTinyFontSize);
+        slotLbl.AddThemeColorOverride("font_color", UITheme.TextOnLight);
+        vbox.AddChild(slotLbl);
+
+        if (item != null)
+        {
+            // Item name
+            var nameLbl = new Label { Text = item.Name };
+            nameLbl.AddThemeFontSizeOverride("font_size", UITheme.CampusSmallFontSize);
+            nameLbl.AddThemeColorOverride("font_color", RarityColor(item.Rarity));
+            nameLbl.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            vbox.AddChild(nameLbl);
+
+            // Stats summary
+            var def = ItemDatabase.Get(item.DefinitionId);
+            if (def != null)
+            {
+                var statsLbl = new Label { Text = BuildStatSummary(def) };
+                statsLbl.AddThemeFontSizeOverride("font_size", UITheme.CampusTinyFontSize);
+                statsLbl.AddThemeColorOverride("font_color", UITheme.TextOnLight);
+                statsLbl.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+                vbox.AddChild(statsLbl);
+            }
+
+            // Unequip button
+            var unequipBtn = new Button
+            {
+                Text = "Unequip",
+                CustomMinimumSize = new Vector2(0, 24),
+            };
+            unequipBtn.AddThemeFontSizeOverride("font_size", UITheme.CampusTinyFontSize);
+            EquipmentSlot capturedSlot = slot;
+            unequipBtn.Pressed += () =>
+            {
+                save.Armory.Unequip(_selectedArmoryUnitId, capturedSlot);
+                SaveManager.Save();
+                RefreshArmoryTab();
+            };
+            vbox.AddChild(unequipBtn);
+        }
+        else
+        {
+            var emptyLbl = new Label { Text = "— Empty —" };
+            emptyLbl.AddThemeFontSizeOverride("font_size", UITheme.CampusTinyFontSize);
+            emptyLbl.AddThemeColorOverride("font_color", UITheme.TextDim);
+            vbox.AddChild(emptyLbl);
+        }
+
+        return panel;
+    }
+
+    // ── Unequipped items list ─────────────────────────────────────────────
+
+    private void BuildUnequippedPanel(GuildSaveData save)
+    {
+        var allUnequipped = save.Armory.GetUnequipped();
+
+        if (allUnequipped.Count == 0)
+        {
+            _armoryContainer.AddChild(MakeStubLabel("All items are equipped."));
+            return;
+        }
+
+        // ── Filter bar ────────────────────────────────────────────────
+        var filterRow = new HBoxContainer();
+        filterRow.AddThemeConstantOverride("separation", 4);
+        _armoryContainer.AddChild(filterRow);
+
+        foreach (var filterName in new[] { "All", "Weapon", "Armor", "Trinket" })
+        {
+            bool isActive = _armorySlotFilter == filterName;
+            var filterBtn = new Button
+            {
+                Text = filterName,
+                ToggleMode = true,
+                ButtonPressed = isActive,
+                CustomMinimumSize = new Vector2(80, 28),
+            };
+            filterBtn.AddThemeFontSizeOverride("font_size", UITheme.CampusTinyFontSize);
+            ApplyTabStyle(filterBtn, isActive);
+
+            string captured = filterName;
+            filterBtn.Pressed += () =>
+            {
+                _armorySlotFilter = captured;
+                RefreshArmoryTab();
+            };
+            filterRow.AddChild(filterBtn);
+        }
+
+        // ── Filtered list ─────────────────────────────────────────────
+        var filtered = _armorySlotFilter == "All"
+            ? allUnequipped
+            : allUnequipped.FindAll(i => i.Slot == _armorySlotFilter);
+
+        if (filtered.Count == 0)
+        {
+            _armoryContainer.AddChild(MakeStubLabel($"No {_armorySlotFilter} items in armory."));
+            return;
+        }
+
+        var countLbl = new Label
+        {
+            Text = _armorySlotFilter == "All"
+                ? $"{filtered.Count} items"
+                : $"{filtered.Count} {_armorySlotFilter}s",
+        };
+        countLbl.AddThemeFontSizeOverride("font_size", UITheme.CampusTinyFontSize);
+        countLbl.AddThemeColorOverride("font_color", UITheme.TextSecondary);
+        _armoryContainer.AddChild(countLbl);
+
+        foreach (var item in filtered)
+            _armoryContainer.AddChild(BuildUnequippedItemRow(item, save));
+    }
+
+    private Control BuildUnequippedItemRow(ItemInstance item, GuildSaveData save)
+    {
+
+        var panel = new PanelContainer();
+        var style = new StyleBoxFlat
+        {
+            BgColor = UITheme.SurfaceLight,
+            BorderColor = RarityColor(item.Rarity),
+            CornerRadiusTopLeft = UITheme.CornerRadius - 1,
+            CornerRadiusTopRight = UITheme.CornerRadius - 1,
+            CornerRadiusBottomLeft = UITheme.CornerRadius - 1,
+            CornerRadiusBottomRight = UITheme.CornerRadius - 1,
+            BorderWidthTop = UITheme.BorderWidth - 1,
+            BorderWidthBottom = UITheme.BorderWidth - 1,
+            BorderWidthLeft = UITheme.BorderWidth - 1,
+            BorderWidthRight = UITheme.BorderWidth - 1,
+            ContentMarginLeft = UITheme.PaddingNormal + 2,
+            ContentMarginRight = UITheme.PaddingNormal + 2,
+            ContentMarginTop = UITheme.PaddingNormal,
+            ContentMarginBottom = UITheme.PaddingNormal,
+        };
+        panel.AddThemeStyleboxOverride("panel", style);
+        panel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 12);
+        panel.AddChild(row);
+
+        // Left: name + details
+        var info = MakeVBox(2);
+        info.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        row.AddChild(info);
+
+        var nameRow = new HBoxContainer();
+        nameRow.AddThemeConstantOverride("separation", 8);
+        info.AddChild(nameRow);
+
+        var nameLbl = new Label { Text = item.Name };
+        nameLbl.AddThemeFontSizeOverride("font_size", UITheme.CampusBodyFontSize);
+        nameLbl.AddThemeColorOverride("font_color", RarityColor(item.Rarity));
+        nameRow.AddChild(nameLbl);
+
+        var slotBadge = new Label { Text = $"[{item.Slot}]" };
+        slotBadge.AddThemeFontSizeOverride("font_size", UITheme.CampusTinyFontSize);
+        slotBadge.AddThemeColorOverride("font_color", UITheme.TextOnLight);
+        nameRow.AddChild(slotBadge);
+
+        var classBadge = new Label { Text = $"[{item.UnitClass}]" };
+        classBadge.AddThemeFontSizeOverride("font_size", UITheme.CampusTinyFontSize);
+        classBadge.AddThemeColorOverride("font_color", UITheme.SuccessDim);
+        nameRow.AddChild(classBadge);
+
+        var def = ItemDatabase.Get(item.DefinitionId);
+        if (def != null)
+        {
+            var statsLbl = new Label { Text = BuildStatSummary(def) };
+            statsLbl.AddThemeFontSizeOverride("font_size", UITheme.CampusTinyFontSize);
+            statsLbl.AddThemeColorOverride("font_color", UITheme.TextOnLight);
+            info.AddChild(statsLbl);
+
+            if (!string.IsNullOrEmpty(def.Description))
+            {
+                var descLbl = new Label
+                {
+                    Text = def.Description,
+                    AutowrapMode = TextServer.AutowrapMode.WordSmart,
+                };
+                descLbl.AddThemeFontSizeOverride("font_size", UITheme.CampusTinyFontSize);
+                descLbl.AddThemeColorOverride("font_color", UITheme.TextDim);
+                info.AddChild(descLbl);
+            }
+        }
+
+        // Right: equip button
+        if (_selectedArmoryUnitId != null && def != null)
+        {
+            if (System.Enum.TryParse<EquipmentSlot>(item.Slot, true, out var itemSlot))
+            {
+                var loadout = save.Armory.GetLoadout(_selectedArmoryUnitId);
+                string currentInstanceId = loadout.GetSlot(itemSlot);
+
+                string btnText = currentInstanceId != null ? "Swap →" : "Equip →";
+
+                var equipBtn = new Button
+                {
+                    Text = btnText,
+                    CustomMinimumSize = new Vector2(90, 32),
+                };
+                equipBtn.AddThemeFontSizeOverride("font_size", UITheme.CampusTinyFontSize);
+                UITheme.ApplyButtonStyle(equipBtn, isPrimary: true);
+
+                string capturedInstId = item.InstanceId;
+                equipBtn.Pressed += () =>
+                {
+                    // Swap: unequip current first, then equip new
+                    if (currentInstanceId != null)
+                        save.Armory.Unequip(_selectedArmoryUnitId, itemSlot);
+                    save.Armory.Equip(_selectedArmoryUnitId, capturedInstId);
+                    SaveManager.Save();
+                    RefreshArmoryTab();
+                };
+
+                var btnCol = MakeVBox(4);
+                btnCol.SizeFlagsHorizontal = SizeFlags.ShrinkEnd;
+                row.AddChild(btnCol);
+                btnCol.AddChild(equipBtn);
+            }
+        }
+
+        return panel;
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────
+
+    private string BuildStatSummary(ItemDefinition def)
+    {
+        var parts = new System.Collections.Generic.List<string>();
+
+        if (def.Stats.MaxHP != 0) parts.Add($"+{def.Stats.MaxHP} HP");
+        if (def.Stats.MaxMana != 0) parts.Add($"+{def.Stats.MaxMana} Mana");
+        if (def.Stats.Armor != 0) parts.Add($"+{def.Stats.Armor} Armor");
+        if (def.Stats.BaseSpeed != 0) parts.Add($"+{def.Stats.BaseSpeed} Speed");
+        if (def.Stats.AttackDamage != 0) parts.Add($"+{def.Stats.AttackDamage} Atk");
+        if (def.Stats.AttackRange != 0) parts.Add($"+{def.Stats.AttackRange} Range");
+        if (def.Stats.SpellDamage != 0) parts.Add($"+{def.Stats.SpellDamage} SpellDmg");
+
+        if (def.Passive != "None" && !string.IsNullOrEmpty(def.Passive))
+            parts.Add(PassiveLabel(def.Passive, def.PassiveValue));
+
+        return parts.Count > 0 ? string.Join("  ·  ", parts) : "No bonuses";
+    }
+
+    private string PassiveLabel(string passive, int value) => passive switch
+    {
+        "StormSpellCostReduction" => $"Storm spells cost -{value} mana",
+        "FireSpellBonusDamage" => $"Fire spells +{value} dmg",
+        "StartCombatWithShield" => $"Start with {value} shield",
+        "RestoreManaOnTurnStart" => $"Restore {value} mana/turn",
+        "FirstCardCostReduction" => $"First card costs -{value} mana",
+        "AttackAppliesBleed" => "Attacks apply bleed",
+        "BonusDamageAboveHalfHP" => $"+{value} atk above 50% HP",
+        "DamageReductionPerHit" => $"Take -{value} dmg per hit",
+        _ => passive,
+    };
+
+    public static Color RarityColor(string rarity) => rarity switch
+    {
+        "Common" => UITheme.RarityCommon,
+        "Uncommon" => UITheme.RarityUncommon,
+        "Rare" => UITheme.RarityRare,
+        "Legendary" => UITheme.RarityLegendary,
+        _ => UITheme.RarityCommon,
+    };
+
+    // ═══════════════════════════════════════════════════════════════════════
     // Debug panel
     // ═══════════════════════════════════════════════════════════════════════
 
@@ -343,7 +771,7 @@ public partial class CampusScreen : Control
             ContentMarginTop = UITheme.PaddingNormal,
             ContentMarginBottom = UITheme.PaddingNormal,
         };
-        panel.AddThemeStyleboxOverride("stylebox", style);
+        panel.AddThemeStyleboxOverride("panel", style);
 
         var grid = new GridContainer { Columns = 2 };
         grid.AddThemeConstantOverride("h_separation", 20);
@@ -422,6 +850,8 @@ public partial class CampusScreen : Control
                 CustomMinimumSize = new Vector2(360, 36),
                 SizeFlagsHorizontal = SizeFlags.ShrinkCenter,
             };
+            UITheme.ApplyButtonStyle(loadBtn, isPrimary: false);
+
             if (slot.Slot == _selectedSlot)
                 loadBtn.Modulate = UITheme.CampusSlotSelected;
 
@@ -433,6 +863,7 @@ public partial class CampusScreen : Control
             if (!slot.IsEmpty)
             {
                 var delBtn = new Button { Text = "✕", CustomMinimumSize = new Vector2(36, 36) };
+                UITheme.ApplyButtonStyle(delBtn, isPrimary: false);
                 delBtn.Pressed += () =>
                 {
                     SaveManager.DeleteSlot(capturedSlot);
@@ -491,7 +922,7 @@ public partial class CampusScreen : Control
                 ContentMarginTop = UITheme.PaddingNormal,
                 ContentMarginBottom = UITheme.PaddingNormal,
             };
-            card.AddThemeStyleboxOverride("stylebox", cardStyle);
+            card.AddThemeStyleboxOverride("panel", cardStyle);
 
             var row = new HBoxContainer();
             row.AddThemeConstantOverride("separation", 12);
@@ -504,6 +935,7 @@ public partial class CampusScreen : Control
 
             var nameLabel = new Label { Text = $"{c.Name}{badge}" };
             nameLabel.AddThemeFontSizeOverride("font_size", UITheme.CampusNameFontSize);
+            nameLabel.AddThemeColorOverride("font_color", UITheme.TextPrimary); // ← add this
             info.AddChild(nameLabel);
 
             var subLabel = new Label { Text = $"{c.School}  ·  {c.PersonalityTrait}  ·  Loyalty: {c.Loyalty}" };
@@ -576,7 +1008,7 @@ public partial class CampusScreen : Control
                 ContentMarginTop = UITheme.PaddingNormal + 2,
                 ContentMarginBottom = UITheme.PaddingNormal + 2,
             };
-            card.AddThemeStyleboxOverride("stylebox", cardStyle);
+            card.AddThemeStyleboxOverride("panel", cardStyle);
 
             var cardLayout = MakeVBox(4);
             card.AddChild(cardLayout);
@@ -591,6 +1023,7 @@ public partial class CampusScreen : Control
             string tierText = buildingSave.Tier == 0 ? "Not Built" : $"Tier {buildingSave.Tier} / {template.MaxTier}";
             var nameLabel = new Label { Text = $"{buildingSave.Name}  [{tierText}]" };
             nameLabel.AddThemeFontSizeOverride("font_size", UITheme.CampusBuildFontSize);
+            nameLabel.AddThemeColorOverride("font_color", UITheme.TextPrimary); // ← add this
             nameCol.AddChild(nameLabel);
 
             var catLabel = new Label
@@ -678,7 +1111,9 @@ public partial class CampusScreen : Control
         }
         _selectedSlot = slot;
         EnsureRostersAndBuildings();
+        EnsureStarterItems();    // ← move here, runs after save is loaded
         RefreshAll();
+        RefreshArmoryTab();      // ← explicitly refresh armory now that items exist
         UpdateStartButton();
         GD.Print($"Selected slot {slot}");
     }
@@ -758,6 +1193,67 @@ public partial class CampusScreen : Control
         BuildingDatabase.EnsureBuildings(SaveManager.ActiveSave);
     }
 
+    private void EnsureStarterItems()
+    {
+        var save = SaveManager.ActiveSave;
+        if (save == null) return;
+
+        ItemDatabase.LoadAll();
+
+        // Only seed on a fresh armory
+        if (save.Armory.OwnedItems.Count > 0) return;
+
+        // Give one of each starter item
+        var starterIds = new[]
+        {
+            "apprentices_focus", "travellers_robe", "mana_crystal",
+            "stormcaller_staff", "warding_cloak", "spell_focus",
+            "iron_sword", "leather_jerkin", "warriors_sigil",
+            "hunters_bow", "chain_hauberk", "scouts_leathers",
+        };
+
+        foreach (var id in starterIds)
+        {
+            var def = ItemDatabase.Get(id);
+            if (def != null)
+                save.Armory.AddItem(def);
+        }
+
+        SaveManager.Save();
+        GD.Print($"[Armory] Seeded {save.Armory.OwnedItems.Count} starter items.");
+    }
+
+    private void ApplyTabStyle(Button btn, bool isActive)
+    {
+        // Flat style — no rounded corners, continuous bar appearance
+        var normal = new StyleBoxFlat
+        {
+            BgColor = isActive ? UITheme.ButtonPrimary : UITheme.BgDeep,
+            BorderColor = isActive ? UITheme.Violet : UITheme.NeutralDim,
+            BorderWidthBottom = isActive ? 2 : 0,
+            BorderWidthTop = 0,
+            BorderWidthLeft = 0,
+            BorderWidthRight = 0,
+            // No corner radius — square tabs
+        };
+        var hover = new StyleBoxFlat
+        {
+            BgColor = isActive ? UITheme.ButtonPrimaryHover : UITheme.BgBase,
+            BorderColor = UITheme.Violet,
+            BorderWidthBottom = 2,
+            BorderWidthTop = 0,
+            BorderWidthLeft = 0,
+            BorderWidthRight = 0,
+        };
+
+        btn.AddThemeStyleboxOverride("normal", normal);
+        btn.AddThemeStyleboxOverride("hover", hover);
+        btn.AddThemeStyleboxOverride("pressed", normal);
+        btn.AddThemeStyleboxOverride("focus", normal);
+        btn.AddThemeColorOverride("font_color",
+            isActive ? UITheme.TextPrimary : UITheme.TextSecondary);
+    }
+
     private void AddSectionHeader(VBoxContainer parent, string text)
     {
         var label = new Label
@@ -789,7 +1285,8 @@ public partial class CampusScreen : Control
         return m;
     }
 
-    private Button MakeButton(string text, float minWidth, float minHeight, int fontSize)
+    private Button MakeButton(string text, float minWidth, float minHeight, int fontSize,
+        bool isPrimary = true)
     {
         var btn = new Button
         {
@@ -798,6 +1295,7 @@ public partial class CampusScreen : Control
             SizeFlagsHorizontal = SizeFlags.ShrinkCenter,
         };
         btn.AddThemeFontSizeOverride("font_size", fontSize);
+        UITheme.ApplyButtonStyle(btn, isPrimary);
         return btn;
     }
 
