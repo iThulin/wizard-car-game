@@ -229,6 +229,9 @@ public partial class CombatManager : Node3D
         {
             if (unit == null) continue;
 
+            // Martial units have no deck — skip
+            if (unit.IsMartial) continue;
+
             unit.DeckData = new UnitDeckData(unit.School, 5);
 
             if (!injectedCompanionCards && companionCards.Count > 0)
@@ -460,13 +463,17 @@ public partial class CombatManager : Node3D
             {
                 if (unit.IsPlayerControlled)
                 {
-                    // Selecting a player unit clears any enemy inspection
                     inspectedEnemyUnit = null;
                     SelectUnit(unit);
                 }
                 else
                 {
-                    // Clicking an enemy inspects it
+                    // If selected unit is a martial, try to attack
+                    if (selectedUnit != null && selectedUnit.IsMartial)
+                    {
+                        TryMartialAttack(selectedUnit, unit);
+                        return;
+                    }
                     InspectEnemy(unit);
                 }
                 return;
@@ -553,12 +560,20 @@ public partial class CombatManager : Node3D
             currentMoveTiles.Add(coord);
         ShowMoveTiles(currentMoveTiles);
 
-        // ── Swap deck to this unit's deck ──
-        if (unit.DeckData != null && deckManager != null)
+        // ── Swap deck / hide hand for martial units ──
+        if (!unit.IsMartial && unit.DeckData != null && deckManager != null)
         {
             deckManager.SetActiveDeck(unit.DeckData);
             deckManager.PrintDeckState();
         }
+        else if (unit.IsMartial)
+        {
+            // Hide the hand UI — martial units use StanceUI instead
+            deckUiManager?.SetVisible(false);
+        }
+
+        if (!unit.IsMartial)
+            deckUiManager?.SetVisible(true);
 
         // ── Swap attunement UI ──
         schoolAttunementUI?.ShowForUnit(selectedUnit);
@@ -578,30 +593,104 @@ public partial class CombatManager : Node3D
     private void TryMoveSelectedUnit(HexTile tileView)
     {
         if (selectedUnit == null || tileView == null) return;
-        if (!currentMoveTiles.Contains(tileView.Axial)) { GD.Print("Tile not in range."); return; }
+        if (!currentMoveTiles.Contains(tileView.Axial))
+        {
+            GD.Print("Tile not in range.");
+            return;
+        }
 
         var tileData = grid.GetTile(tileView.Axial);
         if (tileData == null) return;
 
-        if (selectedUnit != null && !selectedUnit.CanMove())
+        if (!selectedUnit.CanMove())
         {
-            GD.Print($"{selectedUnit.Name} cannot move!");
             combatUI?.AppendActionLog($"{selectedUnit.Name} is immobilized!");
             return;
+        }
+
+        // ── AP cost for martial units ─────────────────────────────────────
+        if (selectedUnit.IsMartial)
+        {
+            // Count tiles in path and sum AP costs
+            int apCost = ComputeMovementAPCost(selectedUnit, tileView.Axial);
+            if (!selectedUnit.CanSpendAP(apCost))
+            {
+                combatUI?.AppendActionLog(
+                    $"{selectedUnit.Name} needs {apCost} AP to move there " +
+                    $"(has {selectedUnit.CurrentActionPoints}).");
+                return;
+            }
+            selectedUnit.TrySpendAP(apCost);
         }
 
         if (selectedUnit.TryMoveTo(grid, tileData))
         {
             GD.Print($"{selectedUnit.Name} moved to {tileData.Axial}");
             ClearMoveTiles();
-            var reachable = grid.GetReachableTiles(selectedUnit);
-            foreach (var coord in reachable)
-                currentMoveTiles.Add(coord);
+
+            // Recalculate reachable tiles based on remaining AP for martials
+            var reachable = ComputeReachableTiles(selectedUnit);
+            foreach (var coord in reachable) currentMoveTiles.Add(coord);
             ShowMoveTiles(currentMoveTiles);
 
             RefreshSelectedUnitUI();
             RefreshPlayerUnitBar();
         }
+    }
+
+    /// <summary>
+    /// Compute AP cost to move to a destination.
+    /// Uses straight-line distance for now — path cost for rubble tiles.
+    /// </summary>
+    private int ComputeMovementAPCost(Unit unit, Vector2I destination)
+    {
+        if (unit.CurrentTile == null) return 999;
+        var destTile = grid.GetTile(destination);
+        if (destTile == null) return 999;
+
+        int dist = grid.Distance(unit.CurrentTile.Axial, destination);
+
+        // Base cost: each tile costs MoveNormal AP
+        // Difficult terrain (MoveCost > 1) costs MoveDifficult AP for that tile
+        // This is approximate — assumes destination terrain represents the path
+        // TODO: walk actual A* path for precise per-tile cost
+        int cost = dist * MartialAPCosts.MoveNormal;
+
+        // Surcharge if destination is difficult terrain
+        if (destTile.MoveCost > 1)
+            cost += MartialAPCosts.MoveDifficult - MartialAPCosts.MoveNormal;
+
+        return cost;
+    }
+
+    /// <summary>
+    /// For martial units: compute reachable tiles based on AP remaining.
+    /// For wizard units: use existing grid pathfinding.
+    /// </summary>
+    private HashSet<Vector2I> ComputeReachableTiles(Unit unit)
+    {
+        if (!unit.IsMartial)
+            return grid.GetReachableTiles(unit);
+
+        // Martials can reach any tile within AP / MoveNormal tiles distance
+        // Difficult terrain tiles cost more AP so they reduce effective range
+        int apRemaining = unit.CurrentActionPoints;
+        // Reserve AP for attack if they haven't attacked yet
+        // Don't reserve — let the player decide how to spend AP
+        int maxTiles = apRemaining / MartialAPCosts.MoveNormal;
+
+        var result = new HashSet<Vector2I>();
+        if (unit.CurrentTile == null) return result;
+
+        foreach (var kvp in grid.Tiles)
+        {
+            if (!kvp.Value.IsWalkable || kvp.Value.IsBlocked || kvp.Value.IsOccupied)
+                continue;
+            int dist = grid.Distance(unit.CurrentTile.Axial, kvp.Key);
+            if (dist <= maxTiles)
+                result.Add(kvp.Key);
+        }
+        return result;
     }
 
     private void ShowMoveTiles(HashSet<Vector2I> coords)
@@ -618,6 +707,264 @@ public partial class CombatManager : Node3D
         currentMoveTiles.Clear();
     }
 
+    private void TryMartialAttack(Unit attacker, Unit target)
+    {
+        if (attacker == null || target == null) return;
+        if (!attacker.IsMartial) return;
+        if (!attacker.CanAct())
+        {
+            combatUI?.AppendActionLog($"{attacker.Name} is frozen!");
+            return;
+        }
+
+        int effectiveRange = attacker.AttackRange;
+        if (attacker.ActiveStance != null)
+            effectiveRange += attacker.ActiveStance.AttackRangeBonus;
+
+        int dist = grid.Distance(attacker.CurrentTile, target.CurrentTile);
+        if (dist > effectiveRange)
+        {
+            combatUI?.AppendActionLog(
+                $"{attacker.Name} — target out of range (dist={dist} range={effectiveRange}).");
+            return;
+        }
+
+        // ── AP cost ───────────────────────────────────────────────────────
+        bool isRanged = effectiveRange > 1;
+        int apCost = isRanged ? MartialAPCosts.AttackRanged : MartialAPCosts.AttackMelee;
+
+        if (!attacker.TrySpendAP(apCost))
+        {
+            combatUI?.AppendActionLog(
+                $"{attacker.Name} needs {apCost} AP to attack " +
+                $"(has {attacker.CurrentActionPoints}).");
+            return;
+        }
+
+        // Aimed: requires no movement
+        if (attacker.ActiveStance?.SpecialTag == StanceSpecialTag.AimedRequiresNoMove
+            && attacker.Stats.HasMoved)
+        {
+            combatUI?.AppendActionLog(
+                $"{attacker.Name} — Aimed requires no movement this turn.");
+            // Refund AP since we're blocking
+            attacker.CurrentActionPoints += apCost;
+            return;
+        }
+
+        ResolveMartialAttack(attacker, target);
+
+        // Refresh move tiles — AP changed so reachable range may shrink
+        ClearMoveTiles();
+        var reachable = ComputeReachableTiles(attacker);
+        foreach (var coord in reachable) currentMoveTiles.Add(coord);
+        ShowMoveTiles(currentMoveTiles);
+    }
+
+    public bool TrySwitchStance(Unit unit, StanceDefinition newStance)
+    {
+        if (unit == null || !unit.IsMartial) return false;
+        if (unit.HasSwitchedStanceThisTurn)
+        {
+            combatUI?.AppendActionLog($"{unit.Name} has already switched stance this turn.");
+            return false;
+        }
+        if (!unit.AvailableStances.Contains(newStance))
+        {
+            combatUI?.AppendActionLog($"{unit.Name} doesn't have access to {newStance.DisplayName}.");
+            return false;
+        }
+        if (!unit.TrySpendAP(MartialAPCosts.SwitchStance))
+        {
+            combatUI?.AppendActionLog(
+                $"{unit.Name} needs {MartialAPCosts.SwitchStance} AP to switch stance.");
+            return false;
+        }
+
+        // Remove previous stance passive armor before switching
+        if (unit.ActiveStance != null)
+            unit.Stats.Armor = Math.Max(0,
+                unit.Stats.Armor - unit.ActiveStance.PassiveArmorBonus);
+
+        unit.ActiveStance = newStance;
+        unit.HasSwitchedStanceThisTurn = true;
+
+        // Apply new stance passives immediately
+        ApplyMartialStancePassives(unit);
+
+        combatUI?.AppendActionLog(
+            $"{unit.Name} switches to {newStance.DisplayName} stance.");
+
+        RefreshSelectedUnitUI();
+        RefreshPlayerUnitBar();
+        return true;
+    }
+
+    private void ResolveMartialAttack(Unit attacker, Unit target)
+    {
+        var stance = attacker.ActiveStance;
+
+        // ── Compute base damage ───────────────────────────────────────────
+        int damage = attacker.AttackDamage;
+
+        // Equipment bonus (from loadout)
+        var loadout = EquipmentLoadout.Get(attacker.CompanionId);
+        if (loadout != null) damage += loadout.BonusAttackDamage;
+
+        // Stance passive damage bonus
+        if (stance != null) damage += stance.AttackDamageBonus;
+
+        // Berserk scaling
+        if (stance?.SpecialTag == StanceSpecialTag.BerserkScaling)
+        {
+            int missingHP = attacker.Stats.MaxHealth - attacker.Stats.Health;
+            int berserkBonus = Math.Min(missingHP / 5, stance.SpecialTagValue);
+            damage += berserkBonus;
+        }
+
+        // Ambush: double damage on first attack of combat
+        if (stance?.SpecialTag == StanceSpecialTag.AmbushFirstStrike
+            && !attacker.HasAttackedThisCombat)
+        {
+            damage *= 2;
+        }
+
+        // Aimed: only apply bonus if unit hasn't moved
+        if (stance?.SpecialTag == StanceSpecialTag.AimedRequiresNoMove
+            && attacker.Stats.HasMoved)
+        {
+            damage -= stance.AttackDamageBonus; // remove the bonus
+        }
+
+        // Armor-piercing
+        bool ignoresArmor = stance?.AttackIgnoresArmor ?? false;
+
+        // Marked target bonus
+        int markedBonus = 0;
+        if (target.HasStatus("marked"))
+        {
+            // Find the SpecialTagValue from whichever unit applied the mark
+            // Simplified: use a fixed +3 for now
+            markedBonus = 3;
+            target.RemoveStatus("marked");
+            combatUI?.AppendActionLog($"[Mark] {target.Name} was marked — +{markedBonus} damage!");
+        }
+
+        damage = Math.Max(1, damage + markedBonus);
+
+        // ── Log and apply damage ──────────────────────────────────────────
+        string stanceName = stance != null ? $" [{stance.DisplayName}]" : "";
+        string dmgMsg = $"{attacker.Name}{stanceName} attacks {target.Name} for {damage} damage.";
+        GD.Print(dmgMsg);
+        combatUI?.AppendActionLog(dmgMsg);
+
+        if (ignoresArmor)
+        {
+            // Bypass armor — apply directly to health
+            int savedArmor = target.Stats.Armor;
+            target.Stats.Armor = 0;
+            target.ApplyDamage(damage);
+            if (target.Stats.IsAlive) target.Stats.Armor = savedArmor;
+            combatUI?.AppendActionLog($"[Aimed] Armor ignored.");
+        }
+        else
+        {
+            target.ApplyDamage(damage);
+        }
+
+        // ── AoE: Reckless hits all adjacent enemies ────────────────────────
+        if (stance?.SpecialTag == StanceSpecialTag.AoeAdjacent
+            && attacker.CurrentTile != null)
+        {
+            foreach (var neighbor in grid.GetNeighbors(attacker.CurrentTile.Axial))
+            {
+                var nTile = grid.GetTile(neighbor);
+                if (nTile?.Occupant == null) continue;
+                if (nTile.Occupant == target) continue;        // already hit
+                if (nTile.Occupant.TeamId == attacker.TeamId) continue; // skip allies
+                nTile.Occupant.ApplyDamage(damage);
+                combatUI?.AppendActionLog($"[Reckless] {nTile.Occupant.Name} takes {damage} damage.");
+            }
+        }
+
+        // ── On-hit effects ────────────────────────────────────────────────
+        if (target.Stats.IsAlive && stance?.OnHitStatusName != null)
+        {
+            target.ApplyStatus(stance.OnHitStatusName, stance.OnHitStatusDuration);
+            combatUI?.AppendActionLog($"[{stance.DisplayName}] {target.Name} is " +
+                                      $"{stance.OnHitStatusName}.");
+        }
+
+        // Shield gain on hit
+        if (stance?.OnHitSelfShieldGain > 0)
+        {
+            attacker.Stats.Shield += stance.OnHitSelfShieldGain;
+            attacker.RefreshHealthBar();
+            combatUI?.AppendActionLog($"[{stance.DisplayName}] {attacker.Name} " +
+                                      $"gains {stance.OnHitSelfShieldGain} shield.");
+        }
+
+        // Self-damage (Reckless)
+        if (stance?.OnHitSelfDamage > 0)
+        {
+            attacker.ApplyDamage(stance.OnHitSelfDamage);
+            combatUI?.AppendActionLog($"[{stance.DisplayName}] {attacker.Name} " +
+                                      $"takes {stance.OnHitSelfDamage} recoil damage.");
+        }
+
+        // Push target
+        if (stance?.AttackPushTiles > 0 && target.Stats.IsAlive)
+        {
+            // Reuse existing push logic via PushEffect direction
+            // Simple version: find tile furthest from attacker within 1 step
+            if (attacker.CurrentTile != null && target.CurrentTile != null)
+            {
+                var casterPos = attacker.CurrentTile.Axial;
+                TileData bestTile = null;
+                int bestDist = -1;
+                foreach (var neighbor in grid.GetNeighbors(target.CurrentTile.Axial))
+                {
+                    var td = grid.GetTile(neighbor);
+                    if (td == null || !td.CanEnter(target)) continue;
+                    int d = grid.Distance(casterPos, neighbor);
+                    if (d > bestDist) { bestDist = d; bestTile = td; }
+                }
+                if (bestTile != null)
+                {
+                    target.CurrentTile.ClearOccupant(target);
+                    target.PlaceOnTile(bestTile);
+                    combatUI?.AppendActionLog($"[{stance.DisplayName}] {target.Name} pushed.");
+                }
+            }
+        }
+
+        // ── Skirmish: free move after attack ──────────────────────────────
+        if (stance?.SpecialTag == StanceSpecialTag.SkirmishDash)
+        {
+            attacker.Stats.MovePoints += stance.SpecialTagValue;
+            combatUI?.AppendActionLog($"[Skirmish] {attacker.Name} gains " +
+                                      $"{stance.SpecialTagValue} free move points.");
+            // Recalculate reachable tiles
+            ClearMoveTiles();
+            var reachable = grid.GetReachableTiles(attacker);
+            foreach (var coord in reachable) currentMoveTiles.Add(coord);
+            ShowMoveTiles(currentMoveTiles);
+        }
+
+        // ── Guardian: aura applied at stance start, not on attack ─────────
+        // (handled in ApplyMartialStancePassives)
+
+        // ── Mark attack tracking ──────────────────────────────────────────
+        attacker.HasAttackedThisCombat = true;
+
+        RefreshSelectedUnitUI();
+        RefreshEnemyRoster();
+        RefreshPlayerUnitBar();
+
+        // Check combat end — attack may have killed the target
+        _pruneNeeded = true;
+    }
+
     // ═══════════════════════════════════════════════════════════════════════
     // Turn flow
     // ═══════════════════════════════════════════════════════════════════════
@@ -631,6 +978,11 @@ public partial class CombatManager : Node3D
         {
             if (unit == null || !IsInstanceValid(unit) || !unit.Stats.IsAlive) continue;
             unit.StartTurn();
+
+            // Apply martial stance passives
+            if (unit.IsMartial && unit.ActiveStance != null)
+                ApplyMartialStancePassives(unit);
+
             unit.TickStatuses();
             unit.Attunement?.Decay();
 
@@ -741,6 +1093,51 @@ public partial class CombatManager : Node3D
 
         // Refresh UI and clear all discard flags
         deckManager?.DrawCards(0);
+    }
+
+    private void ApplyMartialStancePassives(Unit unit)
+    {
+        var stance = unit.ActiveStance;
+        if (stance == null) return;
+
+        // Speed bonus
+        if (stance.PassiveSpeedBonus != 0)
+            unit.Stats.MovePoints += stance.PassiveSpeedBonus;
+
+        // Armor bonus/penalty — temporary for this turn
+        // We track the net stance armor separately to avoid double-applying
+        // Simple: add directly; it resets next turn via StartTurn → stats rebuilt
+        // For now store in a temp variable approach:
+        if (stance.PassiveArmorBonus > 0)
+        {
+            unit.Stats.Armor += stance.PassiveArmorBonus;
+            combatUI?.AppendActionLog($"[{stance.DisplayName}] {unit.Name} " +
+                                      $"+{stance.PassiveArmorBonus} armor this turn.");
+        }
+        if (stance.PassiveArmorPenalty > 0)
+        {
+            unit.Stats.Armor = Math.Max(0, unit.Stats.Armor - stance.PassiveArmorPenalty);
+        }
+
+        // Guardian aura: give adjacent allies armor
+        if (stance.SpecialTag == StanceSpecialTag.GuardianAura
+            && unit.CurrentTile != null)
+        {
+            int auraArmor = stance.SpecialTagValue;
+            foreach (var neighbor in grid.GetNeighbors(unit.CurrentTile.Axial))
+            {
+                var td = grid.GetTile(neighbor);
+                if (td?.Occupant == null) continue;
+                if (td.Occupant.TeamId != unit.TeamId) continue;
+                if (td.Occupant == unit) continue;
+                td.Occupant.Stats.Armor += auraArmor;
+                td.Occupant.RefreshHealthBar();
+                combatUI?.AppendActionLog($"[Guardian] {td.Occupant.Name} " +
+                                          $"gains {auraArmor} armor from {unit.Name}.");
+            }
+        }
+
+        unit.RefreshHealthBar();
     }
 
     private async void StartEnemyTurn()
@@ -1559,12 +1956,102 @@ public partial class CombatManager : Node3D
         playerUnits.Clear();
         enemyUnits.Clear();
 
-        for (int i = 0; i < TestPlayerCount; i++)
+        // ── Spawn wizard (always first) ───────────────────────────────────
+        var wizard = SpawnUnitFromSide(HexGridManager.SpawnSide.Player, PlayerUnitScene,
+            teamId: 0, isPlayerControlled: true, namePrefix: "Wizard",
+            maxHealth: 20, health: 20, baseSpeed: 3, maxMana: 3, mana: 3, armor: 0, shield: 0);
+        if (wizard != null)
         {
+            wizard.IsMartial = false;
+            wizard.CompanionId = "wizard";
+            playerUnits.Add(wizard);
+        }
+
+        // ── Spawn active party companions ─────────────────────────────────
+        var party = CompanionRoster.GetActiveParty();
+        int trainingTier = SaveManager.ActiveSave?.TrainingGroundsTier ?? 0;
+
+        foreach (var companion in party)
+        {
+            bool isMartial = companion.UnitClass == "Fighter" ||
+                             companion.UnitClass == "Ranger";
+
             var unit = SpawnUnitFromSide(HexGridManager.SpawnSide.Player, PlayerUnitScene,
+                teamId: 0, isPlayerControlled: true, namePrefix: companion.Name,
+                maxHealth: companion.BaseHP,
+                health: companion.BaseHP,
+                baseSpeed: companion.BaseSpeed,
+                maxMana: isMartial ? 0 : companion.BaseMana,
+                mana: isMartial ? 0 : companion.BaseMana,
+                armor: companion.BaseArmor,
+                shield: 0);
+
+            if (unit == null) continue;
+
+            unit.CompanionId = companion.Id;
+            unit.IsMartial = isMartial;
+
+            if (isMartial)
+            {
+                unit.AttackDamage = companion.BaseAttackDamage;
+                unit.AttackRange = companion.BaseAttackRange;
+
+                unit.MartialClass = companion.UnitClass switch
+                {
+                    "Fighter" => MartialClass.Fighter,
+                    "Ranger" => MartialClass.Ranger,
+                    _ => MartialClass.None,
+                };
+
+                // ── Set AP from Training Grounds tier ─────────────────────
+                var save = SaveManager.ActiveSave;
+                unit.MaxActionPoints = unit.MartialClass == MartialClass.Ranger
+                    ? (save?.RangerBaseAP ?? 3)
+                    : (save?.FighterBaseAP ?? 3);
+                unit.CurrentActionPoints = unit.MaxActionPoints;
+
+                // Training Grounds stat bonuses
+                int tgTier = save?.TrainingGroundsTier ?? 0;
+                unit.AttackDamage += tgTier >= 2 ? 1 : 0;
+                unit.Stats.MaxHealth += tgTier >= 3 ? 4 : 0;
+                unit.Stats.Health = unit.Stats.MaxHealth;
+
+                // ── Load trained stances up to slot count ─────────────────
+                int stanceSlots = save?.MartialStanceSlots ?? 0;
+                unit.AvailableStances.Clear();
+
+                for (int s = 0; s < Math.Min(stanceSlots,
+                                             companion.TrainedStanceIds.Count); s++)
+                {
+                    var stance = StanceRegistry.Get(companion.TrainedStanceIds[s]);
+                    if (stance != null) unit.AvailableStances.Add(stance);
+                }
+
+                // Default to first trained stance
+                if (unit.AvailableStances.Count > 0)
+                    unit.ActiveStance = unit.AvailableStances[0];
+
+                GD.Print($"[Spawn] {companion.Name} ({companion.UnitClass}) " +
+                         $"AP:{unit.MaxActionPoints} ATK:{unit.AttackDamage} " +
+                         $"RNG:{unit.AttackRange} Stances:{unit.AvailableStances.Count}");
+            }
+            else
+            {
+                // Arcane companion — school deck gets added in InitializeUnitDecks
+                unit.School = System.Enum.TryParse<CardSchool>(companion.School,
+                    out var cs) ? cs : CardSchool.Generic;
+            }
+
+            playerUnits.Add(unit);
+        }
+
+        // Fallback: if no save / no party, spawn a second dummy wizard for testing
+        if (playerUnits.Count < 2 && SaveManager.ActiveSave == null)
+        {
+            var dummy = SpawnUnitFromSide(HexGridManager.SpawnSide.Player, PlayerUnitScene,
                 teamId: 0, isPlayerControlled: true, namePrefix: "Player",
                 maxHealth: 20, health: 20, baseSpeed: 3, maxMana: 3, mana: 3, armor: 0, shield: 0);
-            if (unit != null) playerUnits.Add(unit);
+            if (dummy != null) playerUnits.Add(dummy);
         }
 
         // Apply equipment loadouts to player units
@@ -1613,10 +2100,18 @@ public partial class CombatManager : Node3D
         playerUnit.School = PlayerSession.SelectedSchool;
         playerUnit.InitializeAttunement();
 
-        // Do the same for Player_2 if they should also be an Elementalist:
-        foreach (var unit in playerUnits)
+        // Wizard gets the selected school + attunement
+        if (playerUnits.Count > 0)
         {
-            unit.School = PlayerSession.SelectedSchool;
+            playerUnits[0].School = PlayerSession.SelectedSchool;
+            playerUnits[0].InitializeAttunement();
+        }
+
+        // Arcane companions initialize their own attunement
+        // Martial companions skip this entirely
+        foreach (var unit in playerUnits.Skip(1))
+        {
+            if (unit.IsMartial) continue;
             unit.InitializeAttunement();
         }
 

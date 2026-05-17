@@ -57,6 +57,29 @@ public partial class Unit : Node3D
     public int AttackRange = 1;   // 1 = melee; >1 = ranged
     public int AttackDamage = 5;   // base damage per attack
 
+    // ── Martial companion fields ─────────────────────────────────────────────
+    public bool IsMartial = false;
+    public MartialClass MartialClass = MartialClass.None;
+    public string CompanionId = "";
+
+    // ── Stance system ─────────────────────────────────────────────────────────
+    public List<StanceDefinition> AvailableStances = new();
+    public StanceDefinition ActiveStance = null;
+    public bool HasSwitchedStanceThisTurn = false;
+    public bool HasAttackedThisCombat = false; // Ambush tracking
+
+    // ── Action Points ─────────────────────────────────────────────────────────
+    public int MaxActionPoints = 0;  // set at spawn from TG tier
+    public int CurrentActionPoints = 0;
+
+    public bool CanSpendAP(int cost) => CurrentActionPoints >= cost;
+
+    public bool TrySpendAP(int cost)
+    {
+        if (CurrentActionPoints < cost) return false;
+        CurrentActionPoints -= cost;
+        return true;
+    }
 
     // Runtime stats
     public Stats Stats = new Stats();
@@ -118,6 +141,13 @@ public partial class Unit : Node3D
         Stats.HasMoved = false;
         Stats.HasActed = false;
         Stats.HasPlayedCardThisTurn = false;
+
+        // Martial AP reset
+        if (IsMartial)
+        {
+            CurrentActionPoints = MaxActionPoints;
+            HasSwitchedStanceThisTurn = false;
+        }
 
         Stats.Mana = Stats.MaxMana;
         _healthBar?.SetMana(Stats.Mana, Stats.MaxMana);

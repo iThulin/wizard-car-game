@@ -36,6 +36,46 @@ public class GuildSaveData
     public List<string> ActivePartyCompanionIds = new();
     public int MaxPartySize = 2;
 
+    // ── Training Grounds helpers ──────────────────────────────────────────
+    public int TrainingGroundsTier => GetBuildingTier("training_grounds");
+
+    /// <summary>
+    /// How many stance slots a companion has based on Training Grounds tier.
+    /// Slot count gates how many trained stances can be active at once.
+    /// </summary>
+    public int MartialStanceSlots => TrainingGroundsTier; // 0/1/2/3
+
+    /// <summary>
+    /// Base AP for a Fighter at current Training Grounds tier.
+    /// </summary>
+    public int FighterBaseAP => TrainingGroundsTier switch
+    {
+        0 => 3,  // levy
+        1 => 4,
+        2 => 4,
+        3 => 5,
+        _ => 3,
+    };
+
+    /// <summary>
+    /// Base AP for a Ranger at current Training Grounds tier.
+    /// </summary>
+    public int RangerBaseAP => TrainingGroundsTier switch
+    {
+        0 => 3,  // levy
+        1 => 5,
+        2 => 5,
+        3 => 6,
+        _ => 3,
+    };
+
+    private int GetBuildingTier(string buildingId)
+    {
+        foreach (var b in Buildings)
+            if (b.Id == buildingId) return b.Tier;
+        return 0;
+    }
+
     // ── Equipment armory ─────────────────────────────────────────────────
     public ArmoryData Armory = new();
 

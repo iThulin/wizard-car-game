@@ -1,11 +1,22 @@
 {
-    "id": "torrin_ironward",
-    "name": "Torrin Ironward",
-    "school": "Elementalist",
-    "personalityTrait": "Stoic",
-    "backstory": "A former temple guardian whose order was destroyed in the last war. He fights with the deliberate patience of someone who has nothing left to lose and nothing he wishes to gain.",
-    "isAvailable": true,
-    "recruitmentCost": 80,
-    "unlockCondition": "Available from the start.",
-    "contributedCardIds": ["Ember Bolt", "Tectonic Shatter", "Boulder Hurl"]
-  }
+	"id": "torrin_ironward",
+	"name": "Torrin Ironward",
+	"school": "None",
+	"unitClass": "Fighter",
+	"personalityTrait": "Stoic",
+	"backstory": "A farmer who picked up a spear when bandits burned his village. He never put it down.",
+	"recruitmentCost": 60,
+	"isAvailable": true,
+	"unlockCondition": "",
+	"contributedCardIds": [],
+	"baseHP": 20,
+	"baseSpeed": 2,
+	"baseArmor": 2,
+	"baseAttackDamage": 5,
+	"baseAttackRange": 1,
+	"baseMana": 0,
+	"availableStanceIds": [
+		"defensive",
+		"guardian"
+	]
+}

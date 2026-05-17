@@ -1,11 +1,22 @@
 {
-    "id": "elara_stormcaller",
-    "name": "Elara Stormcaller",
-    "school": "Elementalist",
-    "personalityTrait": "Reckless",
-    "backstory": "Lightning runs in her family — literally. Her grandmother was struck three times and walked away each time. Elara channels storms with the casual disregard of someone who doesn't quite believe in her own mortality.",
-    "isAvailable": true,
-    "recruitmentCost": 50,
-    "unlockCondition": "Available from the start.",
-    "contributedCardIds": ["Chain Lightning", "Static Field", "Storm Lord"]
-  }
+	"id": "elara_stormcaller",
+	"name": "Elara Stormcaller",
+	"school": "Elementalist",
+	"unitClass": "Arcane",
+	"personalityTrait": "Reckless",
+	"backstory": "A former guild enforcer who burned her charter after a mission gone wrong.",
+	"recruitmentCost": 120,
+	"isAvailable": true,
+	"unlockCondition": "",
+	"contributedCardIds": [
+		"generic_chain_lightning",
+		"generic_frost_nova"
+	],
+	"baseHP": 15,
+	"baseSpeed": 2,
+	"baseArmor": 0,
+	"baseAttackDamage": 0,
+	"baseAttackRange": 0,
+	"baseMana": 3,
+	"availableStanceIds": []
+}
