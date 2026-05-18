@@ -1,12 +1,22 @@
 using System.Collections.Generic;
 
-/// <summary>
-/// Defines all parameters for an overworld region.
-/// Loaded from Data/Regions/*.json and consumed by OverworldHexGrid + POIGenerator + RunManager.
-/// 
-/// Region defines the STRUCTURE (which biomes, which features, how many POIs).
-/// The run seed determines the RANDOMIZATION within that structure.
-/// </summary>
+// ============================================================
+// RegionDefinition.cs
+//
+// Purpose:        Overworld region data — grid dimensions, POI
+//                 counts, biome zones, feature toggles (rivers,
+//                 mountains, roads), difficulty multipliers.
+//                 The region defines STRUCTURE; the run seed
+//                 drives randomisation within that structure.
+// Layer:          Data
+// Collaborators:  RegionLoader.cs (JSON parser),
+//                 OverworldHexGrid.cs (consumes grid + biomes),
+//                 POIGenerator.cs (consumes POI counts),
+//                 OverworldRunManager.cs (consumes difficulty)
+// See:            README §4.2 (Adding a Region)
+// ============================================================
+
+/// <summary>All parameters defining one overworld region: grid size, biome layout, POI distribution, feature toggles, and difficulty multipliers. Defines structure only; run randomisation comes from the seed at run start.</summary>
 public class RegionDefinition
 {
     // ── Identity ────────────────────────────────────────────────────────

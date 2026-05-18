@@ -2,15 +2,32 @@ using System;
 using System.Collections.Generic;
 
 // ============================================================
-// Base class for all effects. This is the ONLY EffectBase in the
-// project — the scripting system extends it rather than replacing it.
+// Effect.cs
 //
-// Leaf effects (DealDamage, Move, etc.) inherit from this and
-// override Resolve. They may ALSO override ResolveWithResult if
-// they want to report data back to downstream conditionals
-// (e.g. DealDamageEffect reports WasLethal).
+// Purpose:        EffectBase abstract class plus all leaf
+//                 (non-composite) effects — damage, heal, push,
+//                 imbue, summon, transform, status, etc. Each
+//                 leaf is paired with a registry entry in
+//                 JsonCardLoader.RegisterBuiltins.
+// Layer:          Effects
+// Collaborators:  ScriptingInterfaces.cs (IEffect, EffectResult),
+//                 JsonCardLoader.cs (RegisterBuiltins maps JSON
+//                 type strings to these classes),
+//                 GameState.cs, Entity.cs, Unit.cs, TileData.cs,
+//                 PersistentEffect.cs (some leaf effects spawn
+//                 persistent effects, e.g. AvatarTransformEffect)
+// See:            README §5.4 (Effect Types — JSON contract),
+//                 README §7 — "Effect Types Must Be Registered"
 // ============================================================
 
+/// <summary>
+/// Abstract base for every leaf and composite effect in the project. Leaf effects
+/// override <see cref="Resolve"/>; effects that need to report data back to a
+/// downstream <c>ConditionalEffect</c> (lethal damage, targets hit, spawned entities)
+/// also override <see cref="ResolveWithResult"/>. Provides shared helpers for
+/// resolving casters and targets across the Unit/TileData/HexTile shapes the runtime
+/// passes around.
+/// </summary>
 public abstract class EffectBase : IEffect
 {
 	protected string[] _tags = Array.Empty<string>();
@@ -66,10 +83,9 @@ public abstract class EffectBase : IEffect
 	}
 }
 
-// ============================================================
-// Leaf effects
-// ============================================================
+// ── Leaf effects ────────────────────────────────────────────────────────
 
+/// <summary>Deals a flat amount of damage to every target in the target set. Also handles caster-side modifiers (empowered status, avatar aura bonus, equipment spell-damage), arcane-mark consumption, and chain bounce propagation when the caster has the "chaining" status.</summary>
 public sealed class DealDamageEffect : EffectBase
 {
 	public int Amount;
@@ -270,6 +286,7 @@ public sealed class DealDamageEffect : EffectBase
 	}
 }
 
+/// <summary>Deals damage scaled by hex distance from caster to each target. Damage = clamp(distance × BonusPerTile, MinDamage, MaxDamage) + spell-damage bonus.</summary>
 public sealed class DistanceDamageEffect : EffectBase
 {
 	public int MinDamage;
@@ -310,9 +327,9 @@ public sealed class DistanceDamageEffect : EffectBase
 	}
 }
 
-// ── AoE All Effect ──────────────────────────────────────────────
-// Deals damage to ALL units within radius, including allies and
-// the caster. Used for high-risk board-wipe effects like Cataclysm.
+// ── AoE All Effect ──────────────────────────────────────────────────────
+
+/// <summary>Deals damage to ALL units within radius of the caster, including allies and the caster itself. High-risk board-wipe primitive.</summary>
 public sealed class AoeAllEffect : EffectBase
 {
 	public int Radius;
@@ -351,9 +368,9 @@ public sealed class AoeAllEffect : EffectBase
 	}
 }
 
-// ── Damage By Hand Size ─────────────────────────────────────────
-// Deals damage equal to the caster's current hand size multiplied
-// by a scalar. Default scalar is 2.
+// ── Damage By Hand Size ─────────────────────────────────────────────────
+
+/// <summary>Deals damage equal to the caster's current hand size × <see cref="Multiplier"/>. Plus the caster's spell-damage bonus. Hand of 0 deals 0 (no-op).</summary>
 public sealed class DamageByHandSizeEffect : EffectBase
 {
 	public int Multiplier;
@@ -384,6 +401,7 @@ public sealed class DamageByHandSizeEffect : EffectBase
 	}
 }
 
+/// <summary>Dual-purpose movement primitive: when targets is empty/self, grants the caster N move points; when targets contains units, pushes each target N tiles away from the caster.</summary>
 public sealed class DashEffect : EffectBase
 {
 	public int Tiles;
@@ -461,8 +479,9 @@ public sealed class DashEffect : EffectBase
 	}
 }
 
-// ── Teleport Effect ─────────────────────────────────────────────
-// Instantly moves the caster to a target tile, ignoring movement costs and pathing.
+// ── Teleport Effect ─────────────────────────────────────────────────────
+
+/// <summary>Instantly moves the caster to a target tile, bypassing movement points, pathing, and reaction triggers along the way. First valid empty target wins.</summary>
 public sealed class TeleportEffect : EffectBase
 {
 	public override void Resolve(GameState s, Entity caster, TargetSet targets, EffectSnapshot snap)
@@ -490,7 +509,9 @@ public sealed class TeleportEffect : EffectBase
 	}
 }
 
-// ── Push Effect ───────────────────────────────────────────
+// ── Push Effect ─────────────────────────────────────────────────────────
+
+/// <summary>Pushes each target N tiles directly away from the caster. When a push is blocked by an obstacle, optionally deals <see cref="CollisionDamage"/> to the obstructed unit. See README §5.4 — the JSON key is `tiles` not `amount`, a common typo source.</summary>
 public sealed class PushEffect : EffectBase
 {
 	public int Tiles;
@@ -562,8 +583,9 @@ public sealed class PushEffect : EffectBase
 	}
 }
 
-// ── Shield / Armor Effect ───────────────────────────────────────
+// ── Shield / Armor Effects ──────────────────────────────────────────────
 
+/// <summary>Grants the caster temporary shield (consumed before HP, cleared at end of turn).</summary>
 public sealed class GiveShieldEffect : EffectBase
 {
 	public int Shield;
@@ -585,6 +607,7 @@ public sealed class GiveShieldEffect : EffectBase
 	}
 }
 
+/// <summary>Grants the caster persistent armor (reduces incoming damage, does NOT decay at end of turn).</summary>
 public sealed class GiveArmorEffect : EffectBase
 {
 	public int Armor;
@@ -606,6 +629,7 @@ public sealed class GiveArmorEffect : EffectBase
 	}
 }
 
+/// <summary>Grants armor to each ally target. Filters out non-allies via TeamId match against the caster.</summary>
 public sealed class GiveTargetArmorEffect : EffectBase
 {
 	public int Amount;
@@ -631,9 +655,9 @@ public sealed class GiveTargetArmorEffect : EffectBase
 	}
 }
 
-// ── Remove Status Effect ────────────────────────────────────────
-// Removes all negative status effects from the target.
-// Pass specific = true and StatusName to remove only one named status.
+// ── Remove Status Effect ────────────────────────────────────────────────
+
+/// <summary>Removes status effects from each target. When <see cref="StatusName"/> is null, strips every entry in the built-in negative-status set; when set, removes only that named status.</summary>
 public sealed class RemoveStatusEffect : EffectBase
 {
 	public string StatusName; // null = remove all negative statuses
@@ -671,8 +695,9 @@ public sealed class RemoveStatusEffect : EffectBase
 	}
 }
 
-// ── Draw Cards Effect ───────────────────────────────────────────
+// ── Draw / Mana / Heal / Self-Damage Effects ────────────────────────────
 
+/// <summary>Draws <see cref="Count"/> cards into the caster's hand. Fires <c>GameState.OnDrawCards</c> for UI refreshes.</summary>
 public sealed class DrawCardsEffect : EffectBase
 {
 	public int Count;
@@ -701,8 +726,7 @@ public sealed class DrawCardsEffect : EffectBase
 	}
 }
 
-// ── Mana Gain Effect ────────────────────────────────────────────
-
+/// <summary>Grants <see cref="Amount"/> mana to the caster and syncs <c>GameState.Mana</c> so the cost-check path sees the updated pool immediately.</summary>
 public sealed class ManaGainEffect : EffectBase
 {
 	public int Amount;
@@ -722,8 +746,7 @@ public sealed class ManaGainEffect : EffectBase
 	}
 }
 
-// ── Self-Damage Effect ──────────────────────────────────────────
-
+/// <summary>Caster takes <see cref="Amount"/> damage. Used for life-cost spells.</summary>
 public sealed class SelfDamageEffect : EffectBase
 {
 	public int Amount;
@@ -739,8 +762,7 @@ public sealed class SelfDamageEffect : EffectBase
 	}
 }
 
-// ── Heal Effect ─────────────────────────────────────────────────
-
+/// <summary>Heals the caster for <see cref="Amount"/>, clamped to <c>MaxHealth</c>.</summary>
 public sealed class HealEffect : EffectBase
 {
 	public int Amount;
@@ -760,7 +782,9 @@ public sealed class HealEffect : EffectBase
 	}
 }
 
-// ── Imbue Tile Effect ─────────────────────────────────────────
+// ── Tile / Terrain Effects ──────────────────────────────────────────────
+
+/// <summary>Imbues each target tile with an element. Fire tiles become hazardous. When <see cref="BonusDamage"/> > 0 and the tile is occupied by an enemy, deals additional spell-modified damage on imbuement.</summary>
 public sealed class ImbueTileEffect : EffectBase
 {
 	public string Element;
@@ -820,9 +844,7 @@ public sealed class ImbueTileEffect : EffectBase
 	}
 }
 
-// ── Place Glyph Effect ──────────────────────────────────────────
-// Places a triggered glyph on the target tile.
-// The glyph fires when an enemy enters the tile, then is consumed.
+/// <summary>Places a triggered glyph on the target tile. Glyph fires when an enemy steps on the tile and is consumed by the trigger. Optionally applies a named status on trigger. One glyph per cast; tile must be unblocked and not already glyphed.</summary>
 public sealed class PlaceGlyphEffect : EffectBase
 {
 	public int Damage;
@@ -884,8 +906,9 @@ public sealed class PlaceGlyphEffect : EffectBase
 	}
 }
 
-// ── Apply Status Effect ─────────────────────────────────────────
+// ── Status / Summon / Misc Effects ──────────────────────────────────────
 
+/// <summary>Applies a named status to each target for a given duration. The runtime does not enforce a closed status enum here — any string is accepted and the consumer is responsible for handling it.</summary>
 public sealed class ApplyStatusEffect : EffectBase
 {
 	public string StatusName; // "frozen", "slowed", "burning", etc.
@@ -910,7 +933,7 @@ public sealed class ApplyStatusEffect : EffectBase
 	}
 }
 
-// ── Summon Effect ───────────────────────────────────────────────
+/// <summary>Spawns <see cref="Count"/> instances of a named unit kind on the player's side. Requires <c>GameState.OnSummonRequested</c> to be wired by the combat scene; without it, the effect logs an error and no-ops. Uses targeted tile when provided, otherwise falls back to the first empty neighbour of the caster.</summary>
 public sealed class SummonEffect : EffectBase
 {
 	public string UnitKind;
@@ -991,6 +1014,7 @@ public sealed class SummonEffect : EffectBase
 	}
 }
 
+/// <summary>Strips armor from each target. <see cref="Amount"/> == 0 removes all armor; positive values cap at the target's current armor pool.</summary>
 public sealed class RemoveArmorEffect : EffectBase
 {
 	public int Amount; // 0 = remove all armor
@@ -1030,6 +1054,7 @@ public sealed class RemoveArmorEffect : EffectBase
 	}
 }
 
+/// <summary>Converts each target tile to "rubble" (difficult terrain). Skips already-blocked tiles.</summary>
 public sealed class CreateRubbleEffect : EffectBase
 {
 	public override void Resolve(GameState s, Entity caster, TargetSet targets, EffectSnapshot snap)
@@ -1052,6 +1077,7 @@ public sealed class CreateRubbleEffect : EffectBase
 	}
 }
 
+/// <summary>Raises the target tile by <see cref="HeightIncrease"/> units, imbues it with Earth, applies rubble, and crushes any unit standing on it for <c>HeightIncrease × 2</c> damage.</summary>
 public sealed class RaiseTerrainEffect : EffectBase
 {
 	public int HeightIncrease;
@@ -1096,7 +1122,9 @@ public sealed class RaiseTerrainEffect : EffectBase
 	}
 }
 
-// ── No-Op Effect ────────────────────────────────────────────────
+// ── No-Op Effect ────────────────────────────────────────────────────────
+
+/// <summary>Logs <see cref="Text"/> and does nothing else. Useful as a debug placeholder while authoring card data.</summary>
 public sealed class NoOpEffect : EffectBase
 {
 	public string Text;

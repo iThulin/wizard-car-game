@@ -1,5 +1,19 @@
 using Godot;
 
+// ============================================================
+// HealthBarRoot.cs
+//
+// Purpose:        World-space (3D) health/mana/armor/shield bar
+//                 hovering above a unit. Auto-billboards to the
+//                 camera. Bars are scaled/positioned non-uniformly
+//                 so the fill grows from the left edge.
+// Layer:          UI
+// Collaborators:  Unit.cs (each combat unit instances one),
+//                 UITheme.cs (bar dimensions and colours)
+// See:            (none — leaf type)
+// ============================================================
+
+/// <summary>3D world-space health bar pinned above a unit. Hosts four fills (health, mana, armor, shield) plus three text labels. <see cref="_Process"/> billboards the entire root toward the active camera each frame. Caches each fill's origin X at <see cref="_Ready"/> so the resize math is stable.</summary>
 public partial class HealthBarRoot : Node3D
 {
     [Export] public NodePath HealthFillPath = "HealthFill";
@@ -62,7 +76,9 @@ public partial class HealthBarRoot : Node3D
         );
     }
 
-    // ── Public setters ──────────────────────────────────────────
+    // ── Public setters ──────────────────────────────────────────────────
+
+    /// <summary>Updates the health fill plus the text label. Armor and shield are appended in brackets/parens when nonzero, so a single label can carry HP + extra defensive buffers without a layout change.</summary>
     public void SetHealth(int current, int max, int armor, int shield)
     {
         if (!IsInstanceValid(this)) return;
@@ -78,6 +94,7 @@ public partial class HealthBarRoot : Node3D
         }
     }
 
+    /// <summary>Updates the mana fill plus the text. Bar is clamped to [0..1] but the label flags overflow ("MP X/Y!") for cases where temporary mana grants push current above max.</summary>
     public void SetMana(int current, int max)
     {
         if (!IsInstanceValid(this)) return;
@@ -91,6 +108,7 @@ public partial class HealthBarRoot : Node3D
             _manaText.Text = current > max ? $"MP {current}/{max}!" : $"MP {current}/{max}";
     }
 
+    /// <summary>Updates the armor fill. Hidden entirely when armor is 0.</summary>
     public void SetArmor(int current, int max)
     {
         if (!IsInstanceValid(this) || _armorFill == null) return;
@@ -103,6 +121,7 @@ public partial class HealthBarRoot : Node3D
         }
     }
 
+    /// <summary>Updates the shield fill. Hidden entirely when shield is 0.</summary>
     public void SetShield(int current, int max)
     {
         if (!IsInstanceValid(this) || _shieldFill == null) return;
@@ -115,6 +134,7 @@ public partial class HealthBarRoot : Node3D
         }
     }
 
+    /// <summary>Updates the speed text label. Hidden entirely when current is 0.</summary>
     public void SetSpeed(int current)
     {
         if (!IsInstanceValid(this) || _speedText == null) return;

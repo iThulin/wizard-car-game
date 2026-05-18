@@ -3,12 +3,24 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-/// <summary>
-/// Full-screen negotiation encounter scene.
-/// Reads NegotiationContext (set by EncounterRouter before scene swap).
-/// Drives NegotiationState state machine.
-/// Writes results back to EncounterRouter on completion.
-/// </summary>
+// ============================================================
+// NegotiationManager.cs
+//
+// Purpose:        Full-screen negotiation scene controller.
+//                 Reads NegotiationContext input, drives a
+//                 NegotiationState state machine, renders the
+//                 tension meter / term cards / token buttons,
+//                 and writes results back to the context for
+//                 EncounterRouter to pick up post-scene.
+// Layer:          UI
+// Collaborators:  NegotiationContext.cs (I/O),
+//                 NegotiationState.cs (state machine),
+//                 NegotiationEncounterLoader.cs (data source),
+//                 UITheme.cs (negotiation panel styling)
+// See:            README §6 — Negotiation
+// ============================================================
+
+/// <summary>Full-screen negotiation scene controller. Owns the on-screen widgets, delegates rules to <see cref="NegotiationState"/>, and writes the outcome back to <see cref="NegotiationContext"/> for the run manager.</summary>
 public partial class NegotiationManager : Control
 {
     private NegotiationState _state;

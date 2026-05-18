@@ -1,17 +1,22 @@
 using System.Collections.Generic;
 
-// ══════════════════════════════════════════════════════════════════════════════
-// Item System — Data Model
+// ============================================================
+// ItemDefinition.cs
 //
-// ItemDefinition  — blueprint loaded from Data/Items/*.json
-// ItemInstance    — a runtime copy owned by the armory or equipped to a unit
-// EquipmentSlot   — Weapon / Armor / Trinket
-// ItemPassiveTag  — data-driven passive behaviours checked at the right moment
-// ══════════════════════════════════════════════════════════════════════════════
+// Purpose:        Item system data model. ItemDefinition is the
+//                 blueprint loaded from JSON; ItemInstance is the
+//                 runtime owned-by-armory copy; UnitLoadout is
+//                 the three equipped slots on one unit;
+//                 ItemPassiveTag enumerates data-driven passives.
+// Layer:          Data
+// Collaborators:  ItemDatabase.cs (blueprint registry),
+//                 CompanionDefinition.cs (each Companion has a
+//                 UnitLoadout), Unit.cs (combat-side equipped
+//                 items), GuildSaveData.cs (persists instances)
+// See:            README §3 (Architecture — item pipeline)
+// ============================================================
 
-/// <summary>
-/// The three equipment slots available to every unit (wizard and companion alike).
-/// </summary>
+/// <summary>The three equipment slots every unit (wizard or companion) has.</summary>
 public enum EquipmentSlot
 {
     Weapon,

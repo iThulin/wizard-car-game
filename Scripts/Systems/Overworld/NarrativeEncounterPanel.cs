@@ -1,11 +1,23 @@
 using Godot;
 using System;
 
-/// <summary>
-/// Modal panel for narrative encounters, displayed over the overworld.
-/// Shows flavor text, choice buttons, then result text on choice.
-/// Fires OnCompleted callback after the player dismisses the result.
-/// </summary>
+// ============================================================
+// NarrativeEncounterPanel.cs
+//
+// Purpose:        Modal panel rendered over the overworld when
+//                 a narrative POI is triggered. Shows title +
+//                 body, a list of choice buttons, then the
+//                 chosen result text and a Continue button.
+//                 Outcomes resolved by OverworldRunManager via
+//                 the OnCompleted callback.
+// Layer:          UI
+// Collaborators:  NarrativeEncounterData.cs (input schema),
+//                 OverworldRunManager.cs (callback owner),
+//                 UITheme.cs (narrative panel styling)
+// See:            README §4.3 (Adding a Narrative Encounter)
+// ============================================================
+
+/// <summary>Modal narrative encounter panel. Built in code from an <see cref="NarrativeEncounterData"/>. Two-stage flow: choice → result → Continue. Fires <see cref="OnCompleted"/> with the chosen <see cref="EncounterChoice"/> on dismiss.</summary>
 public partial class NarrativeEncounterPanel : Control
 {
     public Action<EncounterChoice> OnCompleted;

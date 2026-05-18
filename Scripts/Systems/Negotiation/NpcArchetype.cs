@@ -1,8 +1,20 @@
 using System.Collections.Generic;
 
-/// <summary>
-/// Token types available in negotiation.
-/// </summary>
+// ============================================================
+// NpcArchetype.cs
+//
+// Purpose:        Negotiation enums + small data classes —
+//                 LeverageToken, NpcArchetypeType, TensionZone,
+//                 DealTerm, NegotiationEncounterData. The full
+//                 negotiation system's data model lives here.
+// Layer:          Data
+// Collaborators:  NegotiationState.cs (consumer),
+//                 NegotiationManager.cs (UI),
+//                 NegotiationEncounterLoader.cs (parser)
+// See:            README §6 — Negotiation
+// ============================================================
+
+/// <summary>Token types the player can spend during a negotiation. Mapped to player actions ("Charm the merchant", "Intimidate the commander") and matched against the NPC archetype's preferred-token profile.</summary>
 public enum LeverageToken
 {
     Charm,

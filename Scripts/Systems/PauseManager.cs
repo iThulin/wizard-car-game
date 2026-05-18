@@ -1,16 +1,27 @@
 using Godot;
 
-/// <summary>
-/// Global pause menu controller. Listens for ESC, instantiates the pause overlay
-/// on a CanvasLayer (so it ignores camera transforms and always renders on top
-/// of any 2D/3D viewport), and provides context-aware menu options.
-/// </summary>
+// ============================================================
+// PauseManager.cs
+//
+// Purpose:        Autoload singleton that listens for ESC, opens
+//                 the pause overlay on a high-layer CanvasLayer,
+//                 and infers the right context (MainMenu /
+//                 Overworld / InCombat) from the current scene
+//                 path so the menu shows the right buttons.
+// Layer:          System
+// Collaborators:  PauseMenu.cs (the overlay scene),
+//                 PauseButton.cs (alternate entry point)
+// See:            (none)
+// ============================================================
+
+/// <summary>Process-wide autoload that owns the pause overlay lifecycle. ESC toggles open/close, scene changes auto-update <see cref="CurrentContext"/>, and the overlay is hosted on a CanvasLayer at depth 100 so it renders over any 2D camera-driven scene.</summary>
 public partial class PauseManager : Node
 {
     public static PauseManager Instance { get; private set; }
 
     [Export] public string PauseMenuScenePath = "res://Scenes/UI/PauseMenu.tscn";
 
+    /// <summary>Scene-class tag used by <see cref="PauseMenu"/> to decide which optional buttons to show (Return to Campus vs Forfeit Combat).</summary>
     public enum PauseContext
     {
         MainMenu,

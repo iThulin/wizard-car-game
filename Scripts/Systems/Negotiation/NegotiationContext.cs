@@ -1,9 +1,20 @@
-/// <summary>
-/// Static context carrier for negotiation encounters.
-/// Set by RunManager before swapping to the negotiation scene.
-/// Read by NegotiationScene to know what encounter to run.
-/// Results written back here and read by RunManager on return.
-/// </summary>
+// ============================================================
+// NegotiationContext.cs
+//
+// Purpose:        Static context carrier for negotiation scene
+//                 swaps. Mirrors the pattern of PlayerSession /
+//                 EquipmentLoadout — set before scene change,
+//                 read on entry, results written back, run
+//                 manager reads results after return.
+// Layer:          Data
+// Collaborators:  OverworldRunManager.cs / EncounterRouter.cs
+//                 (input writers + result readers),
+//                 NegotiationManager.cs (consumes input + writes
+//                 results)
+// See:            README §6 — Negotiation
+// ============================================================
+
+/// <summary>Static scratchpad threaded through the scene swap between overworld and negotiation. Input fields set by the run manager before swap; output fields populated by the negotiation scene on completion.</summary>
 public static class NegotiationContext
 {
     // ── Input (set before scene swap) ───────────────────────────────────

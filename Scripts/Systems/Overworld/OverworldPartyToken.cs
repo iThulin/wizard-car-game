@@ -1,10 +1,22 @@
 using Godot;
 using System.Collections.Generic;
 
-/// <summary>
-/// The player's party token on the overworld map.
-/// Handles movement input, step spending, and movement animation.
-/// </summary>
+// ============================================================
+// OverworldPartyToken.cs
+//
+// Purpose:        Player party token on the 2D overworld.
+//                 Handles click-to-move input, animates movement
+//                 between hex centres, fires Moved/Arrived
+//                 signals, and renders the move-highlight overlay.
+// Layer:          UI
+// Collaborators:  OverworldHexGrid.cs (host grid),
+//                 FogOfWarManager.cs (visibility updates on move),
+//                 OverworldRunManager.cs (consumes signals,
+//                 spends steps)
+// See:            (none)
+// ============================================================
+
+/// <summary>The player's 2D party token. Owns its current coord, handles tween-animated moves between hex centres, and emits signals on move start and arrival.</summary>
 public partial class OverworldPartyToken : Node2D
 {
     public Vector2I CurrentCoord { get; private set; }

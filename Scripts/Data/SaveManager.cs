@@ -4,11 +4,23 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-/// <summary>
-/// Manages save/load for GuildSaveData.
-/// Saves as JSON to user://saves/slot_0.json, slot_1.json, slot_2.json.
-/// Handles schema versioning and migration.
-/// </summary>
+// ============================================================
+// SaveManager.cs
+//
+// Purpose:        Save / load engine for GuildSaveData. Owns the
+//                 active save and active slot, writes JSON to
+//                 user://saves/slot_N.json, applies migrations on
+//                 load, and surfaces slot metadata for the
+//                 slot-selection UI.
+// Layer:          System
+// Collaborators:  GuildSaveData.cs (the schema),
+//                 CompanionRoster.cs, CampusScreen.cs (callers of
+//                 Load / Save / NewGame)
+// See:            README §6 — Save System,
+//                 README §7 — schema bump procedure
+// ============================================================
+
+/// <summary>Process-wide save / load orchestrator. Holds the active <see cref="GuildSaveData"/> in memory, persists it to <c>user://saves/slot_N.json</c>, applies schema migrations on load, and exposes slot-listing helpers for the menu UI.</summary>
 public static class SaveManager
 {
     private const string SAVE_DIR = "user://saves/";

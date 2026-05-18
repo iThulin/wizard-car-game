@@ -1,9 +1,20 @@
 using System.Collections.Generic;
 
-/// <summary>
-/// Schema for a single narrative encounter event.
-/// Loaded from Data/Encounters/*.json.
-/// </summary>
+// ============================================================
+// NarrativeEncounterData.cs
+//
+// Purpose:        Narrative encounter model — title, body text,
+//                 terrain/region filter tags, list of player
+//                 choices each with their own outcome deltas
+//                 (gold, HP, steps) and Phase-3 gating fields.
+// Layer:          Data
+// Collaborators:  NarrativeEncounterLoader.cs (JSON parser),
+//                 NarrativeEncounterPanel.cs (UI display),
+//                 EncounterRouter.cs
+// See:            README §4.3 (Adding a Narrative Encounter)
+// ============================================================
+
+/// <summary>One narrative encounter: title, body text, optional terrain/region filters, and the list of player choices. Loaded from Data/Encounters/*.json.</summary>
 public class NarrativeEncounterData
 {
     // ── Identity ────────────────────────────────────────────────────────

@@ -1,11 +1,22 @@
 using Godot;
 
-/// <summary>
-/// Data passed from the overworld to the combat scene.
-/// EncounterRouter sets Current before the scene transition.
-/// CombatManager reads it at spawn time.
-/// Follows the same static-carrier pattern as NegotiationContext.
-/// </summary>
+// ============================================================
+// EncounterContext.cs
+//
+// Purpose:        Data passed from overworld → combat scene via
+//                 the static carrier pattern (mirrors
+//                 NegotiationContext). Holds POI/terrain inputs,
+//                 result fields, and a separate
+//                 EncounterContextCarrier static singleton for
+//                 the full EncounterDefinition.
+// Layer:          Data
+// Collaborators:  EncounterRouter.cs (writes), CombatManager.cs
+//                 (reads inputs, writes results),
+//                 EncounterDefinition.cs (carried separately)
+// See:            README §3 — scene swap pattern
+// ============================================================
+
+/// <summary>Per-scene-swap carrier mirroring <see cref="NegotiationContext"/>. Input fields (terrain, POI) set by the router; result fields set by combat on completion.</summary>
 public class EncounterContext
 {
     // ── Overworld source context ─────────────────────────────────────────

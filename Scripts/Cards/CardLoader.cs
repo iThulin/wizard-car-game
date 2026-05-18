@@ -2,28 +2,38 @@ using Godot;
 using System.Collections.Generic;
 
 // ============================================================
-// CardLoaderV2 — PHASE 3 UPDATE
+// CardLoader.cs
 //
-// Added: DevMode flag. When true, cards with status "wip" are
-// loaded in addition to "ready" cards. Stubs are always skipped.
-//
-// Toggle DevMode by setting the exported property in the editor,
-// or flip the constant below for a build-wide default.
+// Purpose:        Startup glue between JsonCardLoader (which
+//                 parses card JSON) and CardDatabase (which
+//                 holds the runtime registry). Ensures the
+//                 script registry is initialised exactly once
+//                 and gates "wip" cards behind a DevMode flag.
+// Layer:          Loader
+// Collaborators:  JsonCardLoader.cs (the actual JSON parser),
+//                 CardScriptRegistry (effects/predicates/
+//                 targeters factories — registered on first
+//                 call), CardDatabase.cs (target of every
+//                 successful load), GameBootstrap.cs (caller)
+// See:            README §3 (Architecture — card pipeline),
+//                 README §4.1 (Adding a Card)
 // ============================================================
 
+/// <summary>Process-wide loader that wires the JSON parser into the database. Idempotent: first call registers the script factories and loads cards; subsequent calls no-op unless cleared via <see cref="Reload"/>.</summary>
 public static class CardLoaderV2
 {
     private static bool _registered = false;
 
-    // ── Dev mode ────────────────────────────────────────────────────
-    // Set to true locally while testing unfinished cards.
-    // Should be false in any build you hand to a playtester.
+    // ── Dev mode ────────────────────────────────────────────────────────
+
+    /// <summary>When true, cards with status "wip" load alongside "ready" cards. Defaults to true in debug builds, false in release. Stubs are always skipped regardless. Set false for any build given to playtesters.</summary>
 #if DEBUG
     public static bool DevMode = true;
 #else
             public static bool DevMode = false;
 #endif
 
+    /// <summary>Loads every card JSON in the directory into <see cref="CardDatabase"/>. No-op when the database is already populated. Registers the script-registry built-ins on first call.</summary>
     public static void LoadCardsFromJson(string directoryPath)
     {
         if (CardDatabase.Blueprints.Count > 0)
@@ -48,7 +58,7 @@ public static class CardLoaderV2
                  $"Total blueprints: {CardDatabase.Blueprints.Count}");
     }
 
-    // Force-reload — use from dev tools only, not gameplay code.
+    /// <summary>Clears the database and re-runs the load. Intended for dev-tool hot-reload only; do not call from gameplay code.</summary>
     public static void Reload(string directoryPath)
     {
         CardDatabase.Blueprints.Clear();

@@ -3,10 +3,21 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 
-/// <summary>
-/// Loads RegionDefinition objects from Data/Regions/*.json.
-/// Caches loaded definitions so each file is only read once per session.
-/// </summary>
+// ============================================================
+// RegionLoader.cs
+//
+// Purpose:        Lazy loader and cache for RegionDefinition
+//                 JSON files. <see cref="LoadOrDefault"/> falls
+//                 back to "frontier_wilds" if the requested
+//                 region is missing.
+// Layer:          Loader
+// Collaborators:  RegionDefinition.cs (the schema),
+//                 OverworldHexGrid.cs, POIGenerator.cs,
+//                 OverworldRunManager.cs (consumers)
+// See:            README §4.2 (Adding a Region)
+// ============================================================
+
+/// <summary>Lazy loader + per-session cache for region JSON. Each region file is read at most once per process.</summary>
 public static class RegionLoader
 {
     private const string REGIONS_DIR = "res://Data/Regions/";

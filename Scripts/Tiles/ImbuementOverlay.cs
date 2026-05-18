@@ -1,22 +1,50 @@
 using Godot;
 using System.Collections.Generic;
 
+// ============================================================
+// ImbuementOverlay.cs
+//
+// Purpose:        Visual child of HexTile that renders the
+//                 elemental imbuement effect — a coloured aura
+//                 column rising from the tile plus a bobbing
+//                 glyph hovering above it. Driven by element
+//                 enum, tinted via shader parameters.
+// Layer:          Tiles
+// Collaborators:  HexTile.cs (parent; lazy-instantiates this),
+//                 UITheme.cs (per-element tint colours),
+//                 TileData.cs (TileElementType enum)
+// See:            README §6 — Elemental Attunement (for the
+//                 element-to-gameplay mapping this visualises)
+// ============================================================
+
+/// <summary>
+/// Visual overlay rendered as a child of <see cref="HexTile"/>. Combines a coloured aura
+/// column with a bobbing glyph mesh to indicate the tile's elemental imbuement. The two
+/// meshes share a per-instance ShaderMaterial duplicate so each tile can carry its own
+/// tint and element ID; <see cref="AutoFitToTile"/> measures the parent tile's mesh AABB
+/// to anchor heights correctly regardless of tile scale or terrain height changes.
+/// </summary>
 public partial class ImbuementOverlay : Node3D
 {
+    /// <summary>Aura column mesh. Resolved from the "Aura" child node when not set in the inspector.</summary>
     [Export] public MeshInstance3D AuraMesh;
+
+    /// <summary>Bobbing glyph mesh. Resolved from the "Glyph" child node when not set in the inspector.</summary>
     [Export] public MeshInstance3D GlyphMesh;
 
-    // How tall the aura column is (rises from tile top).
+    /// <summary>Vertical height of the aura column in world units (measured from the tile top).</summary>
     [Export] public float AuraHeight = 0.9f;
 
-    // How high above the tile top the glyph hovers, and how far it bobs.
+    /// <summary>Height above the tile top where the glyph's neutral position sits.</summary>
     [Export] public float GlyphBaseHeight = 0.55f;
+
+    /// <summary>Vertical bob amplitude in world units.</summary>
     [Export] public float GlyphBobAmount = 0.08f;
+
+    /// <summary>Bob frequency in radians per second.</summary>
     [Export] public float GlyphBobSpeed = 1.4f;
 
-    // If true (default), at startup we measure the parent HexTile's actual
-    // mesh top and reposition the aura/glyph accordingly. Set false in the
-    // inspector to use the scene's hardcoded transforms instead.
+    /// <summary>When true (default), measure the parent HexTile's actual mesh AABB at startup and reposition the aura/glyph to match. Set false to use the scene's hardcoded transforms verbatim.</summary>
     [Export] public bool AutoFitToTile = true;
 
     // Cached after auto-fit: the local-space Y of the parent tile's top surface.
@@ -166,6 +194,7 @@ public partial class ImbuementOverlay : Node3D
         GlyphMesh.Position = pos;
     }
 
+    /// <summary>Sets the displayed elemental imbuement. Pass <see cref="TileElementType.None"/> to hide the overlay. Updates both shader tint and element_id parameters so the shader can pick the right glyph/visual.</summary>
     public void SetElement(TileElementType element)
     {
         _current = element;
@@ -190,5 +219,6 @@ public partial class ImbuementOverlay : Node3D
         Visible = true;
     }
 
+    /// <summary>Currently displayed elemental imbuement. <see cref="TileElementType.None"/> when the overlay is hidden.</summary>
     public TileElementType CurrentElement => _current;
 }

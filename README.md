@@ -29,6 +29,7 @@ One school (Elementalist) is fully playable. Core systems (save/load, overworld,
 7. [Known Gotchas & Recurring Bugs](#7-known-gotchas--recurring-bugs)
 8. [Godot 4.6 Compatibility Rules](#8-godot-46-compatibility-rules)
 9. [Git Conventions](#9-git-conventions)
+10. [Code Style & Comment Conventions](#10-code-style--comment-conventions)
 
 ---
 
@@ -678,3 +679,143 @@ Phase 3 parallel work splits cleanly by layer:
 - **Content work** (`Data/Cards/`, `Data/Regions/`, `Data/Encounters/`) — near-zero merge conflict risk; each card and region is an independent file.
 - **Systems/code work** — low conflict risk if you're in different script files.
 - **High-traffic files** (coordinate before touching both at once): `GameRunner.cs`, `JsonCardLoader.cs`, `GameState.cs`, `CardRuntime.cs`.
+
+---
+
+## 10. Code Style & Comment Conventions
+
+Adopted at the start of Phase 3 — Horizontal Content, as the codebase opens up to additional contributors. The convention applies to all project-owned C# under `Scripts/` and to JSON Schemas under `Schemas/`. Existing files are being migrated; any file that lacks the file header (§10.1) is either third-party / generated or has not yet been migrated.
+
+### Guiding principle
+
+Comments earn their space by carrying information the code itself cannot. A reader fluent in C# can already see what a method does from its identifiers and call shape — what they can't see is *why* it exists, *where it sits* in the larger system, and *which other files it talks to*. That is the information this convention captures.
+
+The convention does NOT require commenting every member, every body, or every line. Auto-generated narration on obvious code adds visual noise, balloons the diff for every refactor, drifts out of sync with the code, and trains readers to ignore comments because most of them are useless. We comment the public API surface, the file-level orientation, and the genuinely non-obvious internals — nothing else.
+
+### Excluded paths
+
+The convention does NOT apply to:
+
+- `addons/` — third-party Godot plugins. Leave untouched.
+- `.godot/` — engine cache. Never edit.
+- `*.uid` files — Godot-generated. Never edit.
+- Anything under `.godot/mono/temp/`.
+- `.tscn` scene files — editor-authored; rely on the editor's node naming.
+
+If you find yourself wanting to comment generated or third-party code, wrap it in your own type and comment that wrapper instead.
+
+### 10.1 File Header Block
+
+Every `.cs` file in `Scripts/` begins with this banner, placed below the `using` directives:
+
+```csharp
+// ============================================================
+// <FileName.cs>
+//
+// Purpose:        One sentence on what this file owns.
+// Layer:          UI | Data | Runtime | System | Loader | Targeting | Effects | Predicates | Tiles | Style
+// Collaborators:  <FileA.cs>, <FileB.cs>          (files this one talks to directly)
+// See:            README §<N>.<M>                 (optional — link to relevant doc section)
+// ============================================================
+```
+
+Rules:
+
+- The `=` separators are 60 columns wide so the banner is greppable: `grep -rn "^// ===" Scripts/` lists every file's header.
+- `Purpose` is one sentence. If you can't compress it, the file is doing too much — split it.
+- `Layer` is one of the values listed above. If your file genuinely doesn't fit, propose a new layer in PR review rather than inventing one.
+- `Collaborators` lists *direct* collaborators only. Indirect dependencies (e.g., everything under `Cards/Effects/` because you're a card-related file) do not belong here.
+- `See` is optional but encouraged whenever the README has a section that frames this file's purpose.
+
+### 10.2 XML Doc Comments — Public API Only
+
+C# XML doc comments (`/// <summary>`) appear on:
+
+- Every `public` type (class, struct, enum, interface, delegate) in `Scripts/`.
+- Every `public` member of those types: properties, fields, methods, events, signals.
+- Every `public` enum value whose meaning is not self-evident from the name.
+
+They do NOT appear on:
+
+- `private`, `internal`, or `protected` members.
+- Trivial property getters/setters that wrap a backing field with no extra meaning.
+- Godot lifecycle overrides (`_Ready()`, `_Process()`, `_PhysicsProcess()`, etc.) — the framework already defines what they do.
+- Unity-style implementation details that the consumer should never need to know about.
+
+Format:
+
+```csharp
+/// <summary>One-sentence description of what this represents or does.</summary>
+/// <param name="x">Only when the parameter's meaning isn't obvious from name and type.</param>
+/// <returns>Only when the return value's meaning isn't obvious.</returns>
+/// <remarks>Multi-paragraph context. Use sparingly.</remarks>
+```
+
+Bad — restates the code, adds no information:
+
+```csharp
+/// <summary>Gets or sets the card name.</summary>
+public string CardName { get; set; }
+```
+
+Good — carries information that isn't in the signature:
+
+```csharp
+/// <summary>
+/// Stable identifier shown in the UI and used by save data. Distinct from
+/// <see cref="InstanceId"/>, which is unique per shuffled-into-deck instance.
+/// </summary>
+public string CardName { get; set; }
+```
+
+### 10.3 Inline `//` Comments
+
+Use inline `//` only when at least one of these is true:
+
+- The next few lines do something the reader cannot infer from identifiers and call shape.
+- A specific Godot or .NET quirk forces an unusual idiom (cross-reference §8 when applicable).
+- You're tagging a deliberate compromise: `// HACK:`, `// TODO(name):`, `// FIXME:`, `// NOTE:`.
+
+Tag prefixes are case-insensitive but greppable. The `(name)` on `TODO` is the person who owns it.
+
+```csharp
+// TODO(magos): replace with proper status duration system once it lands
+// HACK: CallDeferred required — see README §8 (Godot 4.6 compat rules)
+// FIXME: this loses precision for elements with > 4 attunement counters
+// NOTE: order matters — Conditions must run before Costs (see Ability.CanPlay)
+```
+
+Do not narrate obvious flow. `// loop through cards` above a `foreach (var c in cards)` adds no information.
+
+### 10.4 Region Separators
+
+For files over ~150 lines (typically large UI classes like `CombatUI.cs`, manager classes like `DeckManager.cs`, factory classes like `JsonCardLoader.cs`), group related members with a region separator:
+
+```csharp
+// ── Selected Unit Panel ─────────────────────────────────────────────────
+```
+
+Rules:
+
+- Use `──` (U+2500 box-drawing horizontal) — not `--` — so the separator is visually distinct from inline `//` comments.
+- Pad each separator out to roughly 72 columns. Consistent length makes the file scan-friendly when you scroll past.
+- Use the same separator for both field groups and method groups; don't introduce a different style for one or the other.
+- Do not use C#'s `#region` / `#endregion`. They collapse in IDEs and hide structure from readers using non-folding editors or `git diff`.
+
+### 10.5 JSON Schemas
+
+JSON itself doesn't support comments. For schemas, use the schema's `description` field — VS Code surfaces it as a tooltip in editors that have the schema bound. `Schemas/card.schema.json` already uses this pattern; new schemas should follow it.
+
+Every property in a schema should have a `description` that explains *why* the property exists or *how* it interacts with other properties — not just what type it is. The type already tells the reader the type.
+
+### 10.6 Quick Reference
+
+| Surface | Convention | Notes |
+|---|---|---|
+| Top of every `.cs` in `Scripts/` | File header banner (§10.1) | Required |
+| `public` types and members | `/// <summary>` XML docs (§10.2) | Required if non-obvious |
+| `private` / `internal` members | Nothing, unless non-obvious | Use `//` if so |
+| Large files | `// ── Section ──` separators (§10.4) | Encouraged > ~150 lines |
+| Compromise / deferred work | `// TODO(name):` / `// HACK:` / `// FIXME:` | Greppable tags |
+| JSON schemas | `description` fields (§10.5) | Required on every property |
+| `addons/`, `.godot/`, `*.uid`, `.tscn` | Leave alone | Not project-owned |

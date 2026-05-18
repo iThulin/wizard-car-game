@@ -1,15 +1,20 @@
 using Godot;
 
-/// <summary>
-/// Drop-in pause/settings button for any screen. Anchors itself to the top-right corner.
-/// Pressing it (or pressing ESC) opens the pause menu.
-/// 
-/// USAGE:
-///   Drop one of these onto any scene root (campus, overworld, combat, card library).
-///   That's it — no wiring, no script edits needed.
-/// 
-/// You can also instance the PauseButton.tscn directly in the editor.
-/// </summary>
+// ============================================================
+// PauseButton.cs
+//
+// Purpose:        Drop-in top-right pause button. Anchors itself
+//                 in code at _Ready, so any scene that adds this
+//                 node gets a working pause button with zero
+//                 additional wiring. Routes presses to the
+//                 PauseManager autoload.
+// Layer:          UI
+// Collaborators:  PauseManager.cs (singleton it talks to),
+//                 UITheme.cs (font size)
+// See:            (none)
+// ============================================================
+
+/// <summary>Drop-in top-right pause button. Anchors itself to the parent's top-right corner at <see cref="_Ready"/> so any scene gets a working pause button by adding this node alone. Routes presses to <see cref="PauseManager"/>.</summary>
 public partial class PauseButton : Button
 {
     [Export] public bool AnchorTopRight = true;

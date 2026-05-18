@@ -2,6 +2,23 @@ using Godot;
 using System;
 using System.Collections.Generic;
 
+// ============================================================
+// GameStateManager.cs
+//
+// Purpose:        The central GameState class plus its
+//                 companions — EventBus, GameStack,
+//                 PriorityManager, Resolver. The full combat
+//                 state machine and stack-based card resolution
+//                 lives here. Every effect, predicate, and
+//                 targeter receives a GameState reference.
+// Layer:          Runtime
+// Collaborators:  RulesManager.cs (the top-level driver),
+//                 Unit.cs, HexGridManager.cs, every IEffect /
+//                 IPredicate / ITargetSelector implementation
+// See:            README §3 — Architecture (combat stack model)
+// ============================================================
+
+/// <summary>Top-level mutable combat state. Owns the hex grid, the unit list, the active caster reference, the event bus / stack / priority manager / resolver, and persistent effects. Every card-scripting interface receives this so effects can read and mutate the world.</summary>
 public sealed class GameState
 {
     public EventBus Bus = new();

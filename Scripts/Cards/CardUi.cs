@@ -1,11 +1,41 @@
 using Godot;
 using System;
 
+// ============================================================
+// CardUi.cs
+//
+// Purpose:        Control node that renders one Card in the hand —
+//                 split-view labels, full-card hover state, mana
+//                 affordability tint, lift/drag animations, and the
+//                 drag-and-drop payload for play.
+// Layer:          UI
+// Collaborators:  DeckUiManager.cs (instantiates these into the hand
+//                 and drives layout / hover propagation),
+//                 CombatManager.cs (consumes CardHalfHovered /
+//                 CardHalfSelected / CardDropped signals),
+//                 CardDropHandler.cs, DragPayloadManager.cs (drag state)
+// See:            README §3 (Architecture Overview),
+//                 README §8 (Godot 4.6 compat — CallDeferred on exits)
+// ============================================================
+
+/// <summary>
+/// Visual representation of a single <see cref="Card"/> in the player's hand. Owns the
+/// split-view panels, the hover-triggered full-card view, mana affordability tinting,
+/// the lift/breathe animations, and the drag-and-drop payload. Holds no game state of
+/// its own — the underlying <see cref="Card"/> is set via <see cref="SetCard(Card)"/>
+/// and any rules logic lives elsewhere (CombatManager, DeckManager).
+/// </summary>
 public partial class CardUi : Control
 {
+    /// <summary>The runtime <see cref="Card"/> this UI is currently displaying. Null until <see cref="SetCard(Card)"/> is called.</summary>
     public Card CardInstance { get; private set; }
+
+    /// <summary>Top half of <see cref="CardInstance"/>. Cached on <see cref="SetCard(Card)"/> so the hover/drag code can read it without re-walking the Card.</summary>
     public CardHalf TopHalf { get; private set; }
+
+    /// <summary>Bottom half of <see cref="CardInstance"/>. Cached on <see cref="SetCard(Card)"/>.</summary>
     public CardHalf BottomHalf { get; private set; }
+
     private DeckUiManager _deckUiManager;
 
     private Control _visualNode;
@@ -91,9 +121,7 @@ public partial class CardUi : Control
     private bool _isReady = false;
     private Card _pendingCard = null;
 
-    // ═════════════════════════════════════════════════════════════════════
-    //  Node paths (centralized for easy maintenance)
-    // ═════════════════════════════════════════════════════════════════════
+    // ── Node paths (centralized for easy maintenance) ──────────────────────
 
     private const string SplitTop = "CardVisual/SplitView/TopPanel/TopControl/TopContainer";
     private const string SplitBot = "CardVisual/SplitView/BottomPanel/BottomControl/BottomContainer";
@@ -231,12 +259,15 @@ public partial class CardUi : Control
         }
     }
 
-    // ═════════════════════════════════════════════════════════════════════
-    //  Card data — populate both split halves and prepare full card view
-    // ═════════════════════════════════════════════════════════════════════
+    // ── Card data — populate split halves and prepare full card view ───────
 
+    /// <summary>Wire the parent <see cref="DeckUiManager"/> so this card can notify it on hover (used to slide neighbour cards aside).</summary>
     public void SetDeckUiManager(DeckUiManager manager) => _deckUiManager = manager;
 
+    /// <summary>
+    /// Bind a runtime <see cref="Card"/> to this UI. Safe to call before <c>_Ready</c> —
+    /// the card data is stashed in <c>_pendingCard</c> and applied once nodes are cached.
+    /// </summary>
     public void SetCard(Card card)
     {
         CardInstance = card;
@@ -249,6 +280,11 @@ public partial class CardUi : Control
             _pendingCard = card; // Will be applied in _Ready()
     }
 
+    /// <summary>
+    /// Bind raw <see cref="CardHalf"/> halves directly without a parent <see cref="Card"/>.
+    /// Used by the card library / preview screens where there is no shuffled <see cref="Card"/>
+    /// instance. <see cref="CardInstance"/> stays null in this path.
+    /// </summary>
     public void SetCard(CardHalf top, CardHalf bottom)
     {
         TopHalf = top;
@@ -365,9 +401,7 @@ public partial class CardUi : Control
             label.AddThemeColorOverride("default_color", darkCol);
     }
 
-    // ═════════════════════════════════════════════════════════════════════
-    //  Full-card view (hover state — art on top, info on bottom)
-    // ═════════════════════════════════════════════════════════════════════
+    // ── Full-card view (hover state — art on top, info on bottom) ──────────
 
     private void ShowFullCard(CardHalf half, bool isTop)
     {

@@ -1,9 +1,23 @@
 using System.Collections.Generic;
 
-/// <summary>
-/// Runtime + save-state data for a single companion.
-/// Companions persist across runs; their state lives in GuildSaveData.
-/// </summary>
+// ============================================================
+// CompanionDefinition.cs
+//
+// Purpose:        Companion data model. Holds identity, school,
+//                 recruitment/loyalty/arc state, unit class
+//                 (Arcane / Fighter / Ranger / None levy),
+//                 base combat stats, trained stances, and the
+//                 cards contributed to the active wizard's deck.
+//                 Persists across runs in GuildSaveData.
+// Layer:          Data
+// Collaborators:  CompanionLoader.cs (JSON parser),
+//                 CompanionRoster.cs (collection wrapper),
+//                 GuildSaveData.cs (persistence),
+//                 StanceDefinition.cs (ActiveStance), Unit.cs
+// See:            README §4.5 (Adding a Companion)
+// ============================================================
+
+/// <summary>One companion's full data: identity, recruitment status, arc progression, unit class, base combat stats, trained stances, and run-scoped runtime state. Companions persist across runs; arc and loyalty progression lives here.</summary>
 public class Companion
 {
     // ── Identity ────────────────────────────────────────────────────────

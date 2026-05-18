@@ -211,48 +211,58 @@
 				"type": {
 					"type": "string",
 					"minLength": 1,
+					"description": "Targeting strategy. Must match a key registered in CardScriptRegistry.RegisterBuiltins() under RegisterTargeter. Adding a new value requires both a runtime factory and an entry in this enum.",
 					"enum": [
 						"self",
-						"range",
+						"none",
+						"unit",
+						"tile",
 						"aoe",
-						"line",
 						"cone",
 						"ring",
-						"adjacent",
-						"tile",
-						"unit",
+						"line",
+						"by_tag",
 						"nearest_to_target",
 						"adjacent_to_target",
 						"element_tile",
-						"imbued_tile"
+						"empty_tile"
 					]
 				},
 				"range": {
 					"type": "integer",
+					"description": "Maximum tile distance from caster the target may sit at. Used by: unit, tile, cone, nearest_to_target, element_tile, empty_tile.",
 					"minimum": 1
 				},
 				"radius": {
 					"type": "integer",
+					"description": "Radius (in tiles) of the area-of-effect. Used by: aoe, ring.",
 					"minimum": 1
 				},
 				"length": {
 					"type": "integer",
+					"description": "Length (in tiles) of a line target. Used by: line.",
 					"minimum": 1
 				},
 				"enemies_only": {
-					"type": "boolean"
-				},
-				"allies_only": {
-					"type": "boolean"
+					"type": "boolean",
+					"description": "Restrict the selection to enemy-controlled units. Used by: unit, aoe, cone, line, by_tag."
 				},
 				"los": {
-					"type": "boolean"
+					"type": "boolean",
+					"description": "Require line of sight from caster to target. Used by: unit."
 				},
 				"include_tiles": {
-					"type": "boolean"
+					"type": "boolean",
+					"description": "Include empty hex tiles (not just units) in the selection. Used by: aoe, ring, line, adjacent_to_target."
 				},
 				"element": {
 					"type": "string",
+					"description": "Element key used to filter tiles. Used by: element_tile.",
+					"minLength": 1
+				},
+				"tag": {
+					"type": "string",
+					"description": "Tag key (e.g. 'fire', 'undead') used to filter units. Used by: by_tag.",
 					"minLength": 1
 				}
 			}
@@ -300,79 +310,138 @@
 				},
 				"amount": {
 					"type": "integer",
+					"description": "Generic magnitude. Used by: damage, heal, shield, armor, grant_armor, mana_gain, self_damage, remove_armor.",
 					"minimum": 0
 				},
 				"radius": {
 					"type": "integer",
+					"description": "Radius (in tiles) of an area effect. Used by: aoe_all, imbue_area, consume_element_tile, terraform, elemental_convergence, primordial_surge, tectonic_shatter, create_maelstrom, cataclysm.",
 					"minimum": 1
 				},
 				"damage": {
 					"type": "integer",
+					"description": "Per-hit damage figure for effects that pair area with a damage value. Used by: aoe_all, consume_element_tile, terraform, create_maelstrom.",
 					"minimum": 0
 				},
 				"damage_per_element": {
 					"type": "integer",
+					"description": "Damage dealt per unique element present. Used by: ragnarok.",
 					"minimum": 0
 				},
 				"damage_per_tile": {
 					"type": "integer",
+					"description": "Damage dealt per affected tile. Used by: tectonic_shatter, cataclysm, push_damage.",
 					"minimum": 0
 				},
 				"bonus_damage": {
 					"type": "integer",
+					"description": "Bonus damage modifier. Used by: imbue_tile, avatar_transform.",
 					"minimum": 0
 				},
 				"element": {
 					"type": "string",
+					"description": "Element key (fire, ice, storm, stone, etc.). Used by: imbue_tile, imbue_area, imbue_path, consume_element_tile.",
 					"minLength": 1
 				},
 				"tiles": {
 					"type": "integer",
-					"minimum": 1,
-					"description": "Tiles to push. NOTE: this is 'tiles' not 'amount' — a common typo source."
+					"description": "Tiles to push or move. NOTE: this is 'tiles' not 'amount' — a common typo source. Used by: move, push, push_damage.",
+					"minimum": 1
 				},
 				"collision_damage": {
 					"type": "integer",
+					"description": "Bonus damage dealt when a pushed unit collides with an obstacle. Used by: push.",
 					"minimum": 0
 				},
 				"turns": {
 					"type": "integer",
+					"description": "Duration in turns. Used by: avatar_transform, create_maelstrom.",
 					"minimum": 1
 				},
 				"bonus_speed": {
 					"type": "integer",
+					"description": "Bonus movement speed. Used by: avatar_transform.",
 					"minimum": 0
 				},
 				"armor": {
 					"type": "integer",
+					"description": "Armor to grant. Used by: avatar_transform.",
 					"minimum": 0
 				},
 				"freezes": {
-					"type": "boolean"
+					"type": "boolean",
+					"description": "When true, the effect also applies the 'frozen' status. Used by: create_maelstrom."
 				},
 				"half_to_allies": {
-					"type": "boolean"
+					"type": "boolean",
+					"description": "When true, allies take half the damage the enemies take. Used by: ragnarok."
+				},
+				"move": {
+					"type": "integer",
+					"description": "Tiles to move during an imbued path. Used by: imbue_path.",
+					"minimum": 0
+				},
+				"armor_per_tile": {
+					"type": "integer",
+					"description": "Armor granted per tile of imbued movement. Used by: imbue_path.",
+					"minimum": 0
+				},
+				"count": {
+					"type": "integer",
+					"description": "Number of items to produce. Used by: draw (cards drawn), summon (units summoned).",
+					"minimum": 1
+				},
+				"unit": {
+					"type": "string",
+					"description": "Identifier of the unit kind to summon. Resolved at runtime against the summon registry. Used by: summon.",
+					"minLength": 1
+				},
+				"min": {
+					"type": "integer",
+					"description": "Minimum damage floor. Used by: damage_by_distance.",
+					"minimum": 0
+				},
+				"max": {
+					"type": "integer",
+					"description": "Maximum damage ceiling. Used by: damage_by_distance.",
+					"minimum": 0
+				},
+				"per_tile": {
+					"type": "integer",
+					"description": "Damage added per tile of distance. Used by: damage_by_distance.",
+					"minimum": 0
+				},
+				"height": {
+					"type": "integer",
+					"description": "Height (in tile units) to raise terrain to. Used by: raise_terrain.",
+					"minimum": 1
+				},
+				"multiplier": {
+					"type": "integer",
+					"description": "Per-card multiplier. Used by: damage_by_hand_size.",
+					"minimum": 1
+				},
+				"attunement_set_to": {
+					"type": "integer",
+					"description": "Target attunement counter value the effect snaps the caster to. Used by: elemental_convergence. See README §7 — distinct from the deprecated 'attunement_counters' field.",
+					"minimum": 0,
+					"maximum": 4
+				},
+				"tiles_per_draw": {
+					"type": "integer",
+					"description": "Tiles affected per card drawn. Used by: cataclysm.",
+					"minimum": 1
 				},
 				"attunement_counters": {
 					"type": "integer",
+					"description": "DEPRECATED — was used by an older form of elemental_convergence. Use 'attunement_set_to' instead. Retained in the schema only because one legacy card still references it; the runtime ignores this field.",
 					"minimum": 0,
 					"maximum": 4
 				},
 				"cards_per_tiles": {
 					"type": "integer",
+					"description": "DEPRECATED — no runtime effect reads this field. Retained only because one legacy card still references it. Likely meant to be 'tiles_per_draw' on cataclysm.",
 					"minimum": 1
-				},
-				"move": {
-					"type": "integer",
-					"minimum": 0
-				},
-				"armor_per_tile": {
-					"type": "integer",
-					"minimum": 0
-				},
-				"unit_id": {
-					"type": "string",
-					"minLength": 1
 				},
 				"status": {
 					"type": "string",
@@ -420,7 +489,7 @@
 		},
 		"Predicate": {
 			"type": "object",
-			"description": "A boolean condition for use in conditional effects.",
+			"description": "A boolean condition for use in conditional effects. The 'type' string must be registered in CardScriptRegistry.RegisterBuiltins() under RegisterPredicate.",
 			"required": [
 				"type"
 			],
@@ -428,22 +497,50 @@
 			"properties": {
 				"type": {
 					"type": "string",
+					"description": "Predicate kind. Registered values include: always_true, was_lethal, target_on_tile, target_adjacent_to_tile, target_adjacent_to_caster, caster_on_terrain, has_elements_near_caster.",
 					"minLength": 1
+				},
+				"tile": {
+					"type": "string",
+					"description": "Tile-type key the predicate checks against. Used by: target_on_tile, target_adjacent_to_tile.",
+					"minLength": 1
+				},
+				"terrain": {
+					"type": "string",
+					"description": "Terrain-type key the predicate checks the caster's footing against. Used by: caster_on_terrain.",
+					"minLength": 1
+				},
+				"elements": {
+					"type": "array",
+					"description": "List of element keys to look for near the caster. Used by: has_elements_near_caster.",
+					"items": {
+						"type": "string",
+						"minLength": 1
+					}
+				},
+				"range": {
+					"type": "integer",
+					"description": "Search radius in tiles. Used by: has_elements_near_caster.",
+					"minimum": 1
 				},
 				"element": {
 					"type": "string",
+					"description": "Reserved for predicates that filter by a single element. Currently unused by any registered predicate; retained for forward compatibility.",
 					"minLength": 1
 				},
 				"status": {
 					"type": "string",
+					"description": "Reserved for predicates that test status presence. Currently unused by any registered predicate; retained for forward compatibility.",
 					"minLength": 1
 				},
 				"element_tag": {
 					"type": "string",
+					"description": "Reserved for predicates that filter by element tag. Currently unused by any registered predicate; retained for forward compatibility.",
 					"minLength": 1
 				},
 				"threshold": {
 					"type": "integer",
+					"description": "Reserved for predicates that compare against a numeric threshold (e.g. attunement >= n). Currently unused by any registered predicate.",
 					"minimum": 1,
 					"maximum": 4
 				}

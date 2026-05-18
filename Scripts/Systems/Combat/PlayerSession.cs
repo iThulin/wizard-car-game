@@ -1,5 +1,21 @@
+// ============================================================
+// PlayerSession.cs
+//
+// Purpose:        Process-wide scratchpad holding the active
+//                 wizard's school choice and debug-mode flags
+//                 for the current run. Lives outside save data
+//                 so toggles can be flipped without writing to
+//                 disk.
+// Layer:          Data
+// Collaborators:  ClassSelectUi.cs / CampusScreen.cs (writers),
+//                 CombatManager.cs, OverworldRunManager.cs (readers)
+// See:            README §6 — Debug flags
+// ============================================================
+
+/// <summary>Per-process active-run scratchpad. Holds school selection plus a set of debug-mode flags that bypass standard rules (no fog, unlimited steps, god-mode HP, etc.). Distinct from save data — these toggles do not persist.</summary>
 public static class PlayerSession
 {
+    /// <summary>Currently selected wizard school. Drives starting deck composition and school-specific systems.</summary>
     public static CardSchool SelectedSchool = CardSchool.Elementalist;
     public static bool DebugMode = false;
     public static int DeckSize = 10;

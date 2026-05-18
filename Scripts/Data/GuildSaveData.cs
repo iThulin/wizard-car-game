@@ -1,12 +1,23 @@
 using System.Collections.Generic;
 
-/// <summary>
-/// Central save data for one guild. Serialized to JSON.
-/// Every field that persists between runs lives here.
-/// 
-/// VERSION HISTORY:
-/// 1 - Initial schema (Phase 2)
-/// </summary>
+// ============================================================
+// GuildSaveData.cs
+//
+// Purpose:        The full save schema for one guild — everything
+//                 that persists between runs (wizard choice, gold,
+//                 companions, armory, buildings, faction rep,
+//                 region memory, lore unlocks). Sister classes
+//                 BuildingSaveData / RegionMemorySaveData /
+//                 RevealedHexData / SaveVersion live here too.
+// Layer:          Data
+// Collaborators:  SaveManager.cs (serializes this),
+//                 CompanionDefinition.cs (Companion list),
+//                 BuildingDatabase.cs (Buildings list),
+//                 ItemDatabase.cs (Armory field), CampusScreen.cs
+// See:            README §6 — Save System
+// ============================================================
+
+/// <summary>Top-level save model. One instance per guild slot. Serialised to JSON by <see cref="SaveManager"/>. Bump <see cref="SaveVersion"/> whenever the schema changes and add a migration in <c>SaveManager.MigrateIfNeeded</c>.</summary>
 public class GuildSaveData
 {
     // ── Meta ────────────────────────────────────────────────────────────

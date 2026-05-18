@@ -1,10 +1,17 @@
-/// <summary>
-/// Action point costs for all martial unit actions.
-/// Single source of truth — both combat logic and UI read from here.
-///
-/// AP resets each turn. Martials spend AP to move, attack, switch stance, use items.
-/// Wizards do not use AP — mana is their resource.
-/// </summary>
+// ============================================================
+// MartialAPCosts.cs
+//
+// Purpose:        Single source of truth for martial unit action
+//                 point costs. Both combat rules logic and the
+//                 UI consume these constants — hardcoding them
+//                 elsewhere will desync the two.
+// Layer:          Data
+// Collaborators:  Unit.cs (spends AP via these), RulesManager.cs,
+//                 CombatUI.cs (display)
+// See:            README §6 — Martial system
+// ============================================================
+
+/// <summary>Per-action AP cost table for martial units. AP resets each turn; martials spend it on movement, attacks, stance switches, and item use. Wizards do not consume AP — mana is their resource.</summary>
 public static class MartialAPCosts
 {
     /// <summary>Cost to move one tile on normal terrain.</summary>

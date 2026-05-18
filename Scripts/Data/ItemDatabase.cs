@@ -5,11 +5,28 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-// ══════════════════════════════════════════════════════════════════════════════
-// ItemDatabase
-// Loads ItemDefinitions from Data/Items/*.json and caches them.
-// ══════════════════════════════════════════════════════════════════════════════
+// ============================================================
+// ItemDatabase.cs
+//
+// Purpose:        Three related classes that together implement
+//                 the item / armory pipeline:
+//                 - ItemDatabase: loads ItemDefinitions from
+//                   Data/Items/*.json and caches them.
+//                 - ArmoryData: per-save inventory of owned
+//                   ItemInstances and per-unit loadouts.
+//                 - EquipmentLoadout: static context populated
+//                   at campus before a run; read by combat at
+//                   spawn time to apply stat deltas + passives.
+// Layer:          Loader (ItemDatabase) / Data (ArmoryData,
+//                 ResolvedLoadout) / System (EquipmentLoadout)
+// Collaborators:  ItemDefinition.cs, GuildSaveData.cs (Armory),
+//                 CampusScreen.cs (calls BuildForRun),
+//                 CombatManager.cs / Unit.cs (read Resolved
+//                 loadouts at spawn)
+// See:            README §3 (Architecture — item pipeline)
+// ============================================================
 
+/// <summary>Process-wide loader and registry for item blueprints. Loads lazily on first <see cref="Get"/> call; cache cleared by re-invoking <see cref="LoadAll"/> after manual reset.</summary>
 public static class ItemDatabase
 {
     private const string ITEMS_DIR = "res://Data/Items/";

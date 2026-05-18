@@ -1,14 +1,29 @@
 using Godot;
 
-/// <summary>
-/// Shared helpers for working with hex direction vectors.
-/// Used by all shape-based targeters (line, cone, ring, etc).
-/// 
-/// Conventions: axial coordinates, flat-top hexes, 6 directions
-/// indexed clockwise starting from "east" (+x, 0).
-/// </summary>
+// ============================================================
+// HexDirection.cs
+//
+// Purpose:        Shared math helpers for hex direction vectors —
+//                 the 6 axial unit vectors plus snap/projection
+//                 routines used by every shape-based targeter
+//                 (line, cone, ring, push, etc.).
+// Layer:          Targeting
+// Collaborators:  TargetSelectors.cs (consumers of All, Pick),
+//                 TargetingHelpers.cs (paired helpers),
+//                 HexGridManager.cs (axial coordinate system)
+// See:            README §3 — hex grid is the spatial substrate
+// ============================================================
+//
+// Conventions: axial coordinates, flat-top hexes, 6 directions
+// indexed clockwise starting from "east" (+x, 0). HexDirection.All
+// is the canonical order — do not reshuffle without updating
+// callers that depend on the indexing (e.g. MaelstromEffect's
+// rotation step).
+
+/// <summary>Static utilities for the 6 axial hex directions and projecting arbitrary aim deltas onto them.</summary>
 public static class HexDirection
 {
+    /// <summary>The 6 unit axial vectors, indexed clockwise starting from east (0). The MaelstromEffect rotation step depends on this ordering.</summary>
     public static readonly Vector2I[] All =
     {
         new( 1,  0),  // 0: east

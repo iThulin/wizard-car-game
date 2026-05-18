@@ -1,13 +1,24 @@
 using Godot;
 using System;
 
-/// <summary>
-/// Manages transitions between the overworld and combat encounters.
-/// Uses full scene swap: saves overworld state, switches to combat scene,
-/// then reloads overworld with restored state when combat ends.
-/// 
-/// This avoids all camera/viewport conflicts from additive loading.
-/// </summary>
+// ============================================================
+// EncounterRouter.cs
+//
+// Purpose:        Orchestrates overworld ↔ combat scene swaps.
+//                 Saves overworld state (HP, gold, party coord,
+//                 RNG seed) before switching to combat; restores
+//                 it after. Full scene swap rather than additive
+//                 loading to avoid camera/viewport conflicts.
+// Layer:          System
+// Collaborators:  EncounterContext.cs (data carrier),
+//                 OverworldRunManager.cs (state source),
+//                 CombatManager.cs (combat-side consumer),
+//                 NegotiationManager.cs (alternate target),
+//                 NarrativeEncounterPanel.cs (alternate target)
+// See:            README §3 — Architecture (scene swap pattern)
+// ============================================================
+
+/// <summary>Process-wide router for transitions between overworld, combat, narrative, and negotiation scenes. Owns the saved overworld state across scene swaps and exposes a deterministic seed so the map regenerates identically on return.</summary>
 public partial class EncounterRouter : Node
 {
     [Export] public string CombatScenePath = "res://Scenes/Combat/Battlefield.tscn";

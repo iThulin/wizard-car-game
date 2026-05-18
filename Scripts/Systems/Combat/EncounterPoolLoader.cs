@@ -4,20 +4,23 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-// ══════════════════════════════════════════════════════════════════════════════
-// EncounterPool
+// ============================================================
+// EncounterPoolLoader.cs
 //
-// Loaded from the "encounterPools" block in a region JSON file.
-// Maps encounter tiers + terrain types to lists of EnemySlot compositions.
-//
-// EncounterRouter calls EncounterPool.Pick() to get an EncounterDefinition
-// before transitioning to the combat scene.
-// ══════════════════════════════════════════════════════════════════════════════
+// Purpose:        Parses the "encounterPools" block of region
+//                 JSON into tier × terrain → enemy-composition
+//                 tables, and exposes a Pick() to materialise
+//                 an EncounterDefinition from the pool given a
+//                 tier and terrain context.
+// Layer:          Loader
+// Collaborators:  RegionDefinition.cs (host JSON file),
+//                 EncounterDefinition.cs (produced output),
+//                 EnemyArchetype.cs (composition string → enum),
+//                 EncounterRouter.cs (caller)
+// See:            README §4.2 (Adding a Region)
+// ============================================================
 
-/// <summary>
-/// Raw JSON representation of one enemy in a composition list.
-/// "archetype" must match EnemyArchetype enum names exactly (case-insensitive).
-/// </summary>
+/// <summary>Raw JSON shape for one enemy slot in a pool's composition list. The <c>archetype</c> string must match an <see cref="EnemyArchetype"/> enum name (case-insensitive).</summary>
 public class EnemySlotData
 {
     [JsonPropertyName("archetype")]

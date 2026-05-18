@@ -3,6 +3,22 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
+// ============================================================
+// DeckUiManager.cs
+//
+// Purpose:        Owns the visible deck UI in the combat scene
+//                 — the hand fan, the draw/discard counter
+//                 labels, the test/debug buttons, and the
+//                 diff-based hand refresh that keeps CardUi
+//                 nodes stable across redraws.
+// Layer:          UI
+// Collaborators:  DeckManager.cs (active deck source),
+//                 CardUi.cs (the per-card visual nodes),
+//                 UITheme.cs (hand-arc layout constants)
+// See:            README §6 — Per-Unit Deck Management
+// ============================================================
+
+/// <summary>Combat-scene UI controller for the hand and deck counters. Diff-driven refresh — existing <see cref="CardUi"/> nodes are kept and rearranged where possible rather than freed and recreated, so card hover/select state survives across draws.</summary>
 public partial class DeckUiManager : Node2D
 {
 	[Export] public PackedScene CardUIPackedScene;

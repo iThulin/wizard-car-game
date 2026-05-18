@@ -2,6 +2,27 @@ using Godot;
 using System;
 using System.Collections.Generic;
 
+// ============================================================
+// Unit.cs
+//
+// Purpose:        The combat unit — Stats (HP, mana, AP, armor,
+//                 shield, statuses), Unit Node3D (visual +
+//                 tile occupancy + facing), and the public API
+//                 every effect/AI/UI uses to interact with it.
+//                 Each player wizard, companion, and enemy in
+//                 combat is one of these.
+// Layer:          System
+// Collaborators:  TileData.cs (occupancy back-pointer),
+//                 HexGridManager.cs (placement), HealthBarRoot.cs
+//                 (visual binding), UnitDeckData.cs (wizard
+//                 decks), ElementalAttunement.cs (Elementalist
+//                 charges), StanceDefinition.cs (martials),
+//                 every IEffect that targets units
+// See:            README §3 — units are the second-most central
+//                 abstraction after Card
+// ============================================================
+
+/// <summary>Combat-side stat block for one unit. Holds HP, mana, AP, armor, shield, speed/move points, and a status-effect dictionary. <see cref="IsAlive"/> is the canonical alive check. Mutated by every effect that does damage / heals / applies statuses.</summary>
 public sealed class Stats
 {
     public int MaxHealth;

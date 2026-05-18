@@ -1,10 +1,22 @@
 using Godot;
 using System.Collections.Generic;
 
-/// <summary>
-/// Places POIs (points of interest) on the overworld hex grid.
-/// Phase 1: random scatter with spacing rules. Phase 2+: terrain affinity, region definitions.
-/// </summary>
+// ============================================================
+// POIGenerator.cs
+//
+// Purpose:        Static helper that scatters points of interest
+//                 (combat / rest / narrative / negotiation)
+//                 across an OverworldHexGrid using region POI
+//                 counts and a seeded RNG. Avoids entry/objective
+//                 tiles and respects spacing rules.
+// Layer:          System
+// Collaborators:  OverworldHexGrid.cs (mutates per-tile POI),
+//                 OverworldHex.cs (POIType enum),
+//                 RegionDefinition.cs (POI count inputs)
+// See:            README §4.2 (Adding a Region)
+// ============================================================
+
+/// <summary>Static seeded POI scatterer. Phase 1 implementation is uniform random over candidate hexes with spacing rules; Phase 2+ will add terrain-affinity weighting and biome-specific POI types.</summary>
 public static class POIGenerator
 {
     /// <summary>

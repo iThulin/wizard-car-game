@@ -3,22 +3,25 @@ using System;
 using System.Collections.Generic;
 
 // ============================================================
-// ElementalAttunement — The Elementalist's class mechanic
+// ElementalAttunement.cs
 //
-// Lives as a property on each Elementalist Unit.
-// Other schools will get their own ISchoolAttunement later.
-//
-// Tracks 4 element counters: Fire, Ice, Storm, Earth
-// Opposition pairs: Fire/Ice, Storm/Earth
-// Casting one element reduces the opposing counter by 1
-// Decay: all counters lose 1 at turn start (min 0)
-// Thresholds:
-//   1 = +1 bonus damage on spells of that element
-//   2 = auto-imbue target tile with that element
-//   3 = enhanced effect (fire=burn, ice=slow, storm=chain, earth=armor)
-//   4 = burst AoE then reset to 0
+// Purpose:        The Elementalist school mechanic — 4 counters
+//                 (Fire, Ice, Storm, Earth) with opposition
+//                 pairs (Fire↔Ice, Storm↔Earth), per-turn decay,
+//                 and four tier thresholds (1: +1 dmg; 2: auto-
+//                 imbue; 3: enhanced effect; 4: burst AoE then
+//                 reset to 0). Other schools will get their own
+//                 ISchoolAttunement implementations later.
+// Layer:          System
+// Collaborators:  Unit.cs (each Elementalist unit owns one),
+//                 AttunementResolver.cs (mutates this),
+//                 SchoolAttunementUI.cs (renders charges),
+//                 CompositeEffects.cs (ElementalConvergence
+//                 sets counters directly)
+// See:            README §6 — Elemental Attunement
 // ============================================================
 
+/// <summary>Element identity tags for the Elementalist attunement system. Mapped to JSON tag strings on cards via aliasing in the predicate/effect code.</summary>
 public enum ElementTag
 {
 	Fire,

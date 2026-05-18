@@ -1,26 +1,38 @@
 using System.Collections.Generic;
 
 // ============================================================
-// Predicate library 
+// CorePredicates.cs
 //
-// These are deliberately simple. They take a PredicateContext,
-// return bool, and don't mutate anything.
-//
-// STUBBED: several predicates below reference game systems that
-// don't exist yet (corpses, tile types, adjacency). Each one is
-// marked with a TODO showing exactly what you need to wire up.
-// They return 'false' safely until then, so loading a card that
-// uses them won't crash — it'll just never take the 'then' branch.
+// Purpose:        Library of IPredicate implementations consumed
+//                 by ConditionalEffect. Each predicate takes a
+//                 PredicateContext, returns bool, and never
+//                 mutates state.
+// Layer:          Predicates
+// Collaborators:  ScriptingInterfaces.cs (IPredicate),
+//                 CompositeEffects.cs (ConditionalEffect calls
+//                 these), JsonCardLoader.cs (RegisterBuiltins
+//                 maps JSON type strings to these classes),
+//                 GameState.cs, ElementalAttunement.cs
+// See:            README §5.5 (Predicate Types)
 // ============================================================
+//
+// NOTE: Several predicates below (TargetOnTile, TargetAdjacentToTile,
+// CountOfTileAtLeast, IsChanneled) are STUBBED — they reference
+// game systems that don't yet exist (per-tile TileType keys,
+// corpse counting, channel-flag in PredicateContext). They return
+// `false` safely so cards that use them never take the THEN
+// branch, but they need to be wired up before those cards work
+// as designed. Each stub has a TODO showing exactly what to wire.
 
-// Always true. Useful default and for testing.
+/// <summary>Always returns true. Useful default for the predicate slot and as a sentinel during card authoring.</summary>
 public sealed class AlwaysTrue : IPredicate
 {
     public bool Evaluate(PredicateContext ctx) => true;
 }
 
-// Logical combinators. With these you can build any boolean
-// expression from simpler predicates.
+// ── Logical combinators ─────────────────────────────────────────────────
+
+/// <summary>Logical AND across multiple predicates. Empty array is vacuously true. Short-circuits on first false.</summary>
 public sealed class AndPredicate : IPredicate
 {
     public IPredicate[] Parts;
@@ -32,6 +44,7 @@ public sealed class AndPredicate : IPredicate
     }
 }
 
+/// <summary>Logical OR across multiple predicates. Empty array is vacuously false. Short-circuits on first true.</summary>
 public sealed class OrPredicate : IPredicate
 {
     public IPredicate[] Parts;
@@ -43,6 +56,7 @@ public sealed class OrPredicate : IPredicate
     }
 }
 
+/// <summary>Logical NOT — inverts the wrapped predicate's result.</summary>
 public sealed class NotPredicate : IPredicate
 {
     public IPredicate Inner;
@@ -50,18 +64,17 @@ public sealed class NotPredicate : IPredicate
     public bool Evaluate(PredicateContext ctx) => !Inner.Evaluate(ctx);
 }
 
-// "Was the last effect's damage lethal?"
+// ── Result-inspection predicates ────────────────────────────────────────
+
+/// <summary>True when the previous sibling effect in a SequenceEffect reported a lethal hit via its <see cref="EffectResult"/>.</summary>
 public sealed class LastEffectWasLethal : IPredicate
 {
     public bool Evaluate(PredicateContext ctx) => ctx.LastResult?.WasLethal ?? false;
 }
 
-// "Is the first target adjacent to a tile of the given type?"
-// Used by Bone Bolt, Soul Rend ("If target is standing on shadow terrain..."),
-// and many others.
-//
-// TODO: wire GameState.Grid.GetAdjacentTiles(pos) and read tile.TileType
-//       or tile.HasImbue(kind) depending on how you model corpses/shadow/fire.
+// ── Tile / position predicates ──────────────────────────────────────────
+
+/// <summary>STUB. Intended: true when the first target is adjacent to a tile of the given type. Currently always returns false — wire up grid lookup before relying on it. TODO: read tile.TileType or tile.HasImbue(kind) once the per-tile classification system lands.</summary>
 public sealed class TargetAdjacentToTile : IPredicate
 {
     public string TileType;
@@ -79,7 +92,7 @@ public sealed class TargetAdjacentToTile : IPredicate
     }
 }
 
-// "Is the first target standing ON a tile of the given type?"
+/// <summary>STUB. Intended: true when the first target is standing on a tile of the given type. Currently always returns false — wire up grid lookup before relying on it.</summary>
 public sealed class TargetOnTile : IPredicate
 {
     public string TileType;
@@ -96,7 +109,7 @@ public sealed class TargetOnTile : IPredicate
     }
 }
 
-// "Is the primary target adjacent to the caster?"
+/// <summary>True when the first target is within hex distance 1 of the caster's current tile.</summary>
 public sealed class TargetAdjacentToCaster : IPredicate
 {
     public bool Evaluate(PredicateContext ctx)
@@ -119,8 +132,7 @@ public sealed class TargetAdjacentToCaster : IPredicate
     }
 }
 
-// "How many tiles of this type exist on the board, compared to N?"
-// Used by Marrow Shield ("Gain armor equal to corpses on the board").
+/// <summary>STUB. Intended: true when at least <see cref="AtLeast"/> tiles of the given type exist on the board. Targets cards like Marrow Shield ("gain armor equal to corpses"). Currently always returns false — wire up <c>GameState.Grid.CountTilesOfType</c>.</summary>
 public sealed class CountOfTileAtLeast : IPredicate
 {
     public string TileType;
@@ -137,8 +149,7 @@ public sealed class CountOfTileAtLeast : IPredicate
     }
 }
 
-// "Is this being cast as a Channel?" Replaces your separate
-// ChannelVariant system if you want — or keep both.
+/// <summary>STUB. Intended: true when the current cast is the channel variant of its parent half. Currently always returns false — wire up a channel flag in <see cref="PredicateContext"/> before relying on this. Could replace the standalone ChannelVariant system, or coexist with it.</summary>
 public sealed class IsChanneled : IPredicate
 {
     public bool Evaluate(PredicateContext ctx)
@@ -148,11 +159,7 @@ public sealed class IsChanneled : IPredicate
     }
 }
 
-// "Is the caster standing on a specific terrain or element type?"
-// Checks both TerrainType and ElementType so it works for:
-//   "stone" -> TerrainType.Stone OR ElementType.Earth
-//   "fire"  -> ElementType.Fire
-//   "ice"   -> TerrainType.Ice OR ElementType.Frost
+/// <summary>True when the caster's current tile matches the named terrain or element type. Checks both <c>TerrainType</c> and <c>ElementType</c> with aliases — "stone" matches Stone terrain or Earth imbuement, "ice" matches Ice terrain or Frost imbuement, "fire"/"storm"/"arcane" match the corresponding imbuements.</summary>
 public sealed class CasterOnTerrain : IPredicate
 {
     public string TileType;
@@ -200,7 +207,7 @@ public sealed class CasterOnTerrain : IPredicate
     }
 }
 
-// "Is the caster adjacent to at least one tile with any of these elements?"
+/// <summary>True when every element in <see cref="RequiredElements"/> is present on at least one tile within <see cref="Range"/> hexes of the caster. ALL must be present — partial matches return false. Element name aliases match those of CasterOnTerrain.</summary>
 public sealed class HasElementsNearCaster : IPredicate
 {
     public string[] RequiredElements;

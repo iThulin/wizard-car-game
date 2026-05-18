@@ -1,10 +1,21 @@
 using Godot;
 using System;
 
-/// <summary>
-/// A single hex tile on the overworld exploration map.
-/// Renders as a flat-top hexagon polygon. Handles its own click input.
-/// </summary>
+// ============================================================
+// OverworldHex.cs
+//
+// Purpose:        One tile on the 2D overworld exploration map.
+//                 Renders the hex polygon + fog overlay + POI
+//                 marker + debug label, and forwards click input
+//                 to its grid via a Godot signal.
+// Layer:          UI
+// Collaborators:  OverworldHexGrid.cs (parent grid),
+//                 FogOfWarManager.cs (sets Fog),
+//                 POIGenerator.cs (sets POI), UITheme.cs (colours)
+// See:            README §3 — overworld layer
+// ============================================================
+
+/// <summary>One 2D hex on the overworld exploration map. Holds its axial coord, terrain type, fog state, and POI assignment, and renders itself as a flat-top hex polygon with optional fog overlay and POI marker child.</summary>
 public partial class OverworldHex : Node2D
 {
     // ── Data ────────────────────────────────────────────────────────────

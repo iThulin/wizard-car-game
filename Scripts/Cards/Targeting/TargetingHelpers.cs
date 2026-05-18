@@ -1,10 +1,23 @@
 using Godot;
 
-/// <summary>
-/// Shared helpers for ITargetSelector implementations.
-/// Centralizes caster lookup, target object resolution, and aim point detection
-/// so individual selectors can focus on their unique shape/filter logic.
-/// </summary>
+// ============================================================
+// TargetingHelpers.cs
+//
+// Purpose:        Shared utilities for ITargetSelector
+//                 implementations — caster lookup, target-object
+//                 to coord/unit resolution, aim-point detection,
+//                 and the standard team filter. Centralised so
+//                 each selector only writes its unique shape
+//                 logic, not the bookkeeping.
+// Layer:          Targeting
+// Collaborators:  TargetSelectors.cs (every selector calls in
+//                 here), HexDirection.cs (paired helpers),
+//                 GameState.cs (ActiveCasterUnit,
+//                 RetargetOrigin), Unit.cs, TileData.cs
+// See:            README §5.3 (Targeting Types)
+// ============================================================
+
+/// <summary>Static utilities used by every <see cref="ITargetSelector"/> implementation in <see cref="TargetSelectors"/>. Centralises bookkeeping (resolve a target reference to its coord/unit, find the caster, locate the player's aim point) so selectors stay focused on shape and filter logic.</summary>
 public static class TargetingHelpers
 {
     /// <summary>

@@ -3,10 +3,21 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 
-/// <summary>
-/// Loads companion definitions from Data/Companions/*.json.
-/// Each file defines one companion. Caches results.
-/// </summary>
+// ============================================================
+// CompanionLoader.cs
+//
+// Purpose:        Loads companion templates from
+//                 Data/Companions/*.json. One file per companion.
+//                 Pure read-only template fetch; runtime state
+//                 (recruitment, arc, loyalty) lives in save data.
+// Layer:          Loader
+// Collaborators:  CompanionDefinition.cs (Companion model),
+//                 CompanionRoster.cs (backfills templates into
+//                 the save), CampusScreen.cs
+// See:            README §4.5 (Adding a Companion)
+// ============================================================
+
+/// <summary>Loader and cache for companion JSON templates. Templates are read-only blueprints; runtime state lives in <c>GuildSaveData.Companions</c>.</summary>
 public static class CompanionLoader
 {
     private const string COMPANIONS_DIR = "res://Data/Companions/";

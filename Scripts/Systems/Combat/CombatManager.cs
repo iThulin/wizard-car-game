@@ -3,6 +3,26 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+// ============================================================
+// CombatManager.cs
+//
+// Purpose:        Top-level scene-graph controller for one
+//                 combat encounter. Spawns the player and enemy
+//                 units from the EncounterDefinition, drives the
+//                 deployment → combat → resolution flow, wires
+//                 every signal between CombatUI / CardDropHandler
+//                 / DeckManager / RulesManager, and reports
+//                 results back via EncounterContext.
+// Layer:          System
+// Collaborators:  RulesManager.cs (stack/priority/resolution),
+//                 GameState.cs (state container),
+//                 Unit.cs (spawned), CardDropHandler.cs (input),
+//                 DeckManager.cs (active deck), CombatUI.cs (HUD),
+//                 EncounterContextCarrier.cs (input encounter)
+// See:            README §3 — combat orchestration layer
+// ============================================================
+
+/// <summary>Top-level controller for a single combat encounter. Builds the GameState, spawns both teams from the encounter definition, runs the deployment phase, then hands off to RulesManager-driven turn cycles. Reports the result via <see cref="EncounterContext"/> on combat end. Massive file — see internal section banners for the deployment/turn-flow/spawning/end-condition split.</summary>
 public partial class CombatManager : Node3D
 {
     // ── Scene references ────────────────────────────────────────────────────

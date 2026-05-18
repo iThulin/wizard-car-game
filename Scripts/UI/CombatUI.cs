@@ -1,11 +1,39 @@
 using Godot;
 using System.Collections.Generic;
 
+// ============================================================
+// CombatUI.cs
+//
+// Purpose:        CanvasLayer hosting all in-combat HUD widgets —
+//                 selected-unit panel, enemy roster, action log,
+//                 deck/grave counters, and the bottom unit bar.
+// Layer:          UI
+// Collaborators:  CombatScene.cs (instantiates this and wires signals),
+//                 Unit.cs, GameState.cs, UITheme.cs,
+//                 CardRuntime.cs (Card list passed to RefreshDeckCounts)
+// See:            README §3 (Architecture Overview),
+//                 README §8 (Godot 4.6 compat — CallDeferred rules apply
+//                 to children built in code here)
+// ============================================================
+
+/// <summary>
+/// CanvasLayer for the combat HUD. Holds all the bound nodes for the in-combat panels,
+/// rebuilds the dynamic enemy roster and player unit bar each tick, and surfaces button
+/// presses as Godot signals. Holds no game state — purely a view layer driven by
+/// <c>CombatScene</c> and friends.
+/// </summary>
 public partial class CombatUI : CanvasLayer
 {
+	/// <summary>Emitted when the player clicks the "Confirm Deployment" button during the deployment phase.</summary>
 	[Signal] public delegate void ConfirmDeploymentPressedEventHandler();
+
+	/// <summary>Emitted when the player clicks "End Turn" during their turn.</summary>
 	[Signal] public delegate void EndTurnPressedEventHandler();
+
+	/// <summary>Emitted when the player clicks a unit button in the bottom unit bar. <paramref name="unitIndex"/> is the index into the player unit list passed to <see cref="RefreshPlayerUnitBar"/>.</summary>
 	[Signal] public delegate void UnitButtonPressedEventHandler(int unitIndex);
+
+	/// <summary>Emitted when the player clicks an enemy button in the enemy roster. <paramref name="unitIndex"/> is the index into the enemy list passed to <see cref="RefreshEnemyRoster"/>.</summary>
 	[Signal] public delegate void EnemyButtonPressedEventHandler(int unitIndex);
 
 	// ── Selected Unit Panel (top-left) ──────────────────────────────────────
@@ -145,6 +173,7 @@ public partial class CombatUI : CanvasLayer
 
 	// ── Phase / hint text ────────────────────────────────────────────────────
 
+	/// <summary>Sets the phase indicator label in the top-left (e.g. "Deployment", "Player Turn"). No-op if the label node is missing.</summary>
 	public void SetPhaseText(string text)
 	{
 		CacheNodes();
@@ -152,6 +181,7 @@ public partial class CombatUI : CanvasLayer
 			_phaseLabel.Text = text;
 	}
 
+	/// <summary>Sets the contextual hint label (e.g. "Click a tile to deploy", "Select a target"). No-op if the label node is missing.</summary>
 	public void SetHintText(string text)
 	{
 		CacheNodes();
@@ -161,6 +191,11 @@ public partial class CombatUI : CanvasLayer
 
 	// ── Selected unit panel ──────────────────────────────────────────────────
 
+	/// <summary>
+	/// Populates the top-left selected-unit panel. Pass <paramref name="unit"/> as null
+	/// to show the "No Unit Selected" empty state. <paramref name="mana"/> is the current
+	/// mana pool; pass -1 to hide the mana row entirely.
+	/// </summary>
 	public void ShowSelectedUnit(Unit unit, int mana)
 	{
 		CacheNodes();
@@ -201,6 +236,7 @@ public partial class CombatUI : CanvasLayer
 
 	// ── Deployment mode ──────────────────────────────────────────────────────
 
+	/// <summary>Toggles the action-button panel between deployment mode (Confirm Deployment visible) and combat mode (End Turn visible). The two buttons are mutually exclusive.</summary>
 	public void SetDeploymentMode(bool isDeployment)
 	{
 		CacheNodes();
@@ -212,6 +248,11 @@ public partial class CombatUI : CanvasLayer
 
 	// ── Enemy Roster ─────────────────────────────────────────────────────────
 
+	/// <summary>
+	/// Rebuilds the top-right enemy roster from the live enemy list. Dead enemies render as
+	/// disabled "[dead]" rows. Index in <paramref name="enemies"/> is the value emitted by
+	/// <see cref="EnemyButtonPressed"/>. Call after any enemy death or HP change.
+	/// </summary>
 	public void RefreshEnemyRoster(List<Unit> enemies)
 	{
 		CacheNodes();
@@ -312,6 +353,13 @@ public partial class CombatUI : CanvasLayer
 
 	// ── Player Unit Bar ──────────────────────────────────────────────────────
 
+	/// <summary>
+	/// Rebuilds the bottom-left player unit bar from the player's roster. The
+	/// <paramref name="selectedUnit"/> argument (which must be a reference held in
+	/// <paramref name="playerUnits"/>) receives a highlighted border. Dead units render
+	/// as disabled "[dead]" buttons. Index in <paramref name="playerUnits"/> is the
+	/// value emitted by <see cref="UnitButtonPressed"/>.
+	/// </summary>
 	public void RefreshPlayerUnitBar(List<Unit> playerUnits, Unit selectedUnit)
 	{
 		CacheNodes();
@@ -384,6 +432,11 @@ public partial class CombatUI : CanvasLayer
 
 	// ── Action Log ───────────────────────────────────────────────────────────
 
+	/// <summary>
+	/// Appends a single line to the action log. Lines older than
+	/// <see cref="UITheme.MaxActionLogLines"/> are dropped from the visible buffer.
+	/// Every appended line is also echoed to the Godot console with an `[ActionLog]` prefix.
+	/// </summary>
 	public void AppendActionLog(string message)
 	{
 		CacheNodes();
@@ -398,6 +451,7 @@ public partial class CombatUI : CanvasLayer
 		GD.Print($"[ActionLog] {message}");
 	}
 
+	/// <summary>Clears the action log buffer and blanks the visible label. Use between combat encounters.</summary>
 	public void ClearActionLog()
 	{
 		_logLines.Clear();
@@ -407,6 +461,10 @@ public partial class CombatUI : CanvasLayer
 
 	// ── Deck / Graveyard counters ────────────────────────────────────────────
 
+	/// <summary>
+	/// Refreshes the deck/grave counter buttons and rebuilds the popup lists shown when
+	/// either is clicked. Null lists are treated as empty.
+	/// </summary>
 	public void RefreshDeckCounts(List<Card> library, List<Card> graveyard)
 	{
 		CacheNodes();

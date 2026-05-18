@@ -2,6 +2,27 @@ using Godot;
 using System;
 using System.Collections.Generic;
 
+// ============================================================
+// HexGridManager.cs
+//
+// Purpose:        The combat hex grid. Node3D parent that owns
+//                 every HexTile + TileData pair, exposes axial
+//                 coord lookup / neighbours / distance helpers,
+//                 manages tile highlight state machines (move /
+//                 range / target / deployment), and applies
+//                 visual updates after terrain modifier changes.
+//                 Axial coordinate convention shared with
+//                 OverworldHexGrid (2D).
+// Layer:          System
+// Collaborators:  HexTile.cs / TileData.cs (children),
+//                 Unit.cs (PlaceOnTile / ClearOccupant),
+//                 CombatManager.cs (spawns + queries),
+//                 every IEffect that touches tiles
+// See:            README §3 — combat hex grid is the spatial
+//                 substrate for every other combat system
+// ============================================================
+
+/// <summary>3D combat hex grid manager. Generates the grid procedurally, exposes axial-coord helpers (GetTile, GetNeighbors, Distance), and drives the highlight state machine across every <see cref="HexTile"/>. Each Tile is paired 1:1 with a <see cref="TileData"/> that holds the game-state side of the grid.</summary>
 public partial class HexGridManager : Node3D
 {
 

@@ -4,34 +4,60 @@ using System.Collections.Generic;
 using System.Text.Json;
 
 // ============================================================
-// JSON Card Loader — PHASE 3 UPDATE
+// JsonCardLoader.cs
 //
-// Added: card status gate.
-//
-//   "status": "ready"  → always loads
-//   "status": "wip"    → loads only when DevMode = true
-//   "status": "stub"   → never loads
-//
-// Cards with a missing status field are treated as stubs and
-// skipped with a warning, so old stub files don't sneak in
-// during Phase 3 content authoring.
+// Purpose:        Parses card JSON from Data/Cards/ into runtime
+//                 Card / CardHalf instances, and hosts the registry
+//                 that maps JSON "type" strings to IEffect /
+//                 IPredicate / ITargetSelector factories.
+// Layer:          Loader
+// Collaborators:  CardRuntime.cs (Card, CardHalf, PlaySpeed),
+//                 ScriptingInterfaces.cs (IEffect, IPredicate, ITargetSelector),
+//                 CardDatabase.cs (consumer of LoadAll),
+//                 Schemas/card.schema.json (the JSON contract)
+// See:            README §5 (Card Schema Reference),
+//                 README §7 — "Effect Types Must Be Registered" gotcha,
+//                 README §4.1 (Adding a Card)
 // ============================================================
+//
+// Status gate (Phase 3): every card JSON declares a `status` field.
+//   "ready" → always loaded into the CardDatabase
+//   "wip"   → loaded only when devMode = true (passed to LoadAll)
+//   "stub"  → never loaded
+// Missing status is treated as "stub" with a printed warning, so old
+// placeholder cards cannot sneak into a release build.
 
+/// <summary>
+/// Process-wide registry mapping JSON `type` keys to factory delegates that
+/// construct the corresponding <see cref="IEffect"/>, <see cref="IPredicate"/>, or
+/// <see cref="ITargetSelector"/>. Populate via <see cref="RegisterBuiltins"/> once
+/// at startup; cards loaded by <see cref="JsonCardLoader"/> resolve their type strings
+/// through these tables. Adding a new effect/predicate/targeter requires a
+/// corresponding <c>Register*</c> call here — see README §7.
+/// </summary>
 public static class CardScriptRegistry
 {
     private static readonly Dictionary<string, Func<JsonElement, IEffect>> _effects = new();
     private static readonly Dictionary<string, Func<JsonElement, IPredicate>> _predicates = new();
     private static readonly Dictionary<string, Func<JsonElement, ITargetSelector>> _targeters = new();
 
+    /// <summary>Registers a factory that builds an <see cref="IEffect"/> from a JSON node. Keys are normalised to lowercase so JSON casing does not matter.</summary>
     public static void RegisterEffect(string key, Func<JsonElement, IEffect> factory)
         => _effects[key.ToLowerInvariant()] = factory;
 
+    /// <summary>Registers a factory that builds an <see cref="IPredicate"/> from a JSON node. Keys are normalised to lowercase.</summary>
     public static void RegisterPredicate(string key, Func<JsonElement, IPredicate> factory)
         => _predicates[key.ToLowerInvariant()] = factory;
 
+    /// <summary>Registers a factory that builds an <see cref="ITargetSelector"/> from a JSON node. Keys are normalised to lowercase.</summary>
     public static void RegisterTargeter(string key, Func<JsonElement, ITargetSelector> factory)
         => _targeters[key.ToLowerInvariant()] = factory;
 
+    /// <summary>
+    /// Resolves a JSON effect node to a concrete <see cref="IEffect"/>. Unknown or
+    /// missing `type` values fall back to <see cref="EmptyEffect"/> with an error
+    /// logged to the Godot console — cards never crash the loader, they just no-op.
+    /// </summary>
     public static IEffect BuildEffect(JsonElement node)
     {
         if (node.ValueKind == JsonValueKind.Null) return new EmptyEffect();
@@ -44,6 +70,11 @@ public static class CardScriptRegistry
         return factory(node);
     }
 
+    /// <summary>
+    /// Resolves a JSON predicate node to a concrete <see cref="IPredicate"/>. Unknown
+    /// or missing `type` values fall back to <see cref="AlwaysTrue"/> with an error
+    /// logged — a missing predicate is safer than a hard failure.
+    /// </summary>
     public static IPredicate BuildPredicate(JsonElement node)
     {
         if (node.ValueKind == JsonValueKind.Null) return new AlwaysTrue();
@@ -56,6 +87,11 @@ public static class CardScriptRegistry
         return factory(node);
     }
 
+    /// <summary>
+    /// Resolves a JSON targeting node to a concrete <see cref="ITargetSelector"/>.
+    /// Returns null (no targeting) for missing or unknown types — the caller is
+    /// expected to handle a null targeter as "global / no target".
+    /// </summary>
     public static ITargetSelector BuildTargeter(JsonElement node)
     {
         if (node.ValueKind == JsonValueKind.Null) return null;
@@ -68,6 +104,14 @@ public static class CardScriptRegistry
         return factory(node);
     }
 
+    /// <summary>
+    /// Registers every built-in effect, predicate, and targeter factory. Call exactly
+    /// once at startup before <see cref="JsonCardLoader.LoadAll"/> runs. When adding a
+    /// new effect type, you must (a) implement the <see cref="IEffect"/> class,
+    /// (b) add a <c>RegisterEffect</c> call here, and (c) add the type to
+    /// <c>Schemas/card.schema.json</c>'s examples list. Skipping (b) is the most common
+    /// "card silently no-ops" bug — see README §7.
+    /// </summary>
     public static void RegisterBuiltins()
     {
         // ═══════════════════════════════════════════════════════════
@@ -486,10 +530,15 @@ public static class CardScriptRegistry
     }
 }
 
-// ============================================================
-// JsonCardLoader
-// ============================================================
+// ── JsonCardLoader ───────────────────────────────────────────────────
 
+/// <summary>
+/// Scans a directory of card JSON files and returns the runtime
+/// <see cref="Card"/> instances that pass the status gate. The loader is
+/// crash-tolerant: malformed files log an error and are skipped, so a single
+/// bad card never blocks the rest of the database from loading. Always call
+/// <see cref="CardScriptRegistry.RegisterBuiltins"/> before invoking this.
+/// </summary>
 public static class JsonCardLoader
 {
     // ── Status constants ────────────────────────────────────────────
@@ -498,7 +547,16 @@ public static class JsonCardLoader
     private const string STATUS_STUB = "stub";
 
     // ── LoadAll ─────────────────────────────────────────────────────
-    // devMode: if true, "wip" cards are loaded in addition to "ready".
+
+    /// <summary>
+    /// Loads every <c>*.json</c> card from <paramref name="directory"/> that passes the
+    /// status gate. "ready" cards always load; "wip" cards load only when
+    /// <paramref name="devMode"/> is true; "stub" (or missing status) cards are skipped.
+    /// Counts of skipped stubs and wip cards are written to the Godot console.
+    /// </summary>
+    /// <param name="directory">Godot resource-path style directory, e.g. "res://Data/Cards".</param>
+    /// <param name="devMode">When true, "wip" cards are loaded alongside "ready" cards. Off in shipping builds.</param>
+    /// <returns>The list of successfully built cards. Never null; may be empty if the directory is missing.</returns>
     public static List<Card> LoadAll(string directory, bool devMode = false)
     {
         var cards = new List<Card>();

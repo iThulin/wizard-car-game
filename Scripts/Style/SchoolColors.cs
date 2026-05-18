@@ -1,10 +1,27 @@
 using Godot;
 
+// ============================================================
+// SchoolColors.cs
+//
+// Purpose:        Maps each CardSchool to its visual identity:
+//                 card border colour, mana pip colour, and the
+//                 short text badge shown in the corner.
+// Layer:          Style
+// Collaborators:  CardUi.cs (card border + pip colours),
+//                 CardLibraryUi.cs, CampusScreen.cs, ClassSelectUi.cs
+//                 (anywhere a school's identity is rendered)
+// See:            README §3 — six-school identity is one of the
+//                 game's core design pillars
+// ============================================================
+
 /// <summary>
-/// Maps each CardSchool to its visual identity: border color, badge text, mana pip color.
+/// Static lookup table mapping <see cref="CardSchool"/> values to their visual identity.
+/// Three accessors: a bright border colour, a darker variant for pips and badges, and a
+/// 1–2 character badge label. Unknown / Generic schools fall back to neutral greys.
 /// </summary>
 public static class SchoolColors
 {
+    /// <summary>Bright accent colour used as the card border and primary school highlight.</summary>
     public static Color GetBorderColor(CardSchool school) => school switch
     {
         CardSchool.Elementalist  => new Color("#D85A30"),
@@ -16,7 +33,7 @@ public static class SchoolColors
         _                        => new Color("#888780"),  // Generic
     };
 
-    /// <summary>Darker variant for mana pips and badges.</summary>
+    /// <summary>Darker variant of the school colour used for mana pips and badge backgrounds.</summary>
     public static Color GetDarkColor(CardSchool school) => school switch
     {
         CardSchool.Elementalist  => new Color("#993C1D"),
@@ -28,6 +45,7 @@ public static class SchoolColors
         _                        => new Color("#5F5E5A"),
     };
 
+    /// <summary>Short 1–2 character label shown in the school badge corner of a card.</summary>
     public static string GetBadgeText(CardSchool school) => school switch
     {
         CardSchool.Elementalist  => "El",

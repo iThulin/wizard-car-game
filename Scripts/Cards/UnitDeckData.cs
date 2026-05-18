@@ -3,12 +3,21 @@ using System;
 using System.Collections.Generic;
 
 // ============================================================
-// UnitDeckData — Per-unit deck state (draw pile, hand, discard)
+// UnitDeckData.cs
 //
-// This is a pure data class — no Godot nodes, no UI. It holds
-// the cards and provides draw/discard/shuffle logic.
+// Purpose:        Per-unit deck state — draw pile, hand, discard
+//                 pile, max hand size, and the standard
+//                 draw/discard/shuffle/reshuffle operations.
+//                 Pure data; no Godot nodes, no UI.
+// Layer:          Data
+// Collaborators:  CardRuntime.cs (Card), CardDatabase.cs
+//                 (builds the starting deck), Unit.cs (each unit
+//                 holds one of these), DeckManager.cs,
+//                 Effect.cs (DrawCardsEffect calls Draw)
+// See:            README §6 — Per-Unit Deck Management
 // ============================================================
 
+/// <summary>One unit's deck state — draw pile, hand, discard pile — with the standard card-game operations (draw, discard, shuffle, reshuffle). Each combat unit owns exactly one of these.</summary>
 public class UnitDeckData
 {
 	public List<Card> DrawPile = new();
@@ -43,6 +52,7 @@ public class UnitDeckData
 		Shuffle();
 	}
 
+	/// <summary>Fisher-Yates shuffle of the draw pile in place.</summary>
 	public void Shuffle()
 	{
 		for (int i = DrawPile.Count - 1; i > 0; i--)
@@ -89,12 +99,14 @@ public class UnitDeckData
 		return Draw(need);
 	}
 
+	/// <summary>Moves a card from hand to discard pile. No-op if the card isn't in hand.</summary>
 	public void Discard(Card card)
 	{
 		if (Hand.Remove(card))
 			DiscardPile.Add(card);
 	}
 
+	/// <summary>Empties the discard pile back into the draw pile and shuffles. Called automatically by <see cref="Draw"/> when the draw pile runs dry.</summary>
 	public void Reshuffle()
 	{
 		DrawPile.AddRange(DiscardPile);
@@ -102,5 +114,6 @@ public class UnitDeckData
 		Shuffle();
 	}
 
+	/// <summary>Sum of all cards across the three zones. Used by save / sanity checks.</summary>
 	public int TotalCards => DrawPile.Count + Hand.Count + DiscardPile.Count;
 }

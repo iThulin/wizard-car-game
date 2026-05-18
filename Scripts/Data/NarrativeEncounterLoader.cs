@@ -3,10 +3,23 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 
-/// <summary>
-/// Loads narrative encounter definitions from JSON files.
-/// Each region has its own pool file, plus a generic fallback.
-/// </summary>
+// ============================================================
+// NarrativeEncounterLoader.cs
+//
+// Purpose:        Loads narrative encounter pools from JSON.
+//                 Each region has its own pool file
+//                 (<regionId>_encounters.json) which is merged
+//                 with a "generic_encounters" fallback pool.
+//                 Provides a terrain-aware random picker that
+//                 excludes already-completed encounter IDs.
+// Layer:          Loader
+// Collaborators:  NarrativeEncounterData.cs (schema),
+//                 EncounterRouter.cs (caller),
+//                 NarrativeEncounterPanel.cs (display)
+// See:            README §4.3 (Adding a Narrative Encounter)
+// ============================================================
+
+/// <summary>Pool loader + random picker for narrative encounters. Combines per-region and generic pools, filters out completed one-shots, and prefers terrain-matched entries when available.</summary>
 public static class NarrativeEncounterLoader
 {
     private const string ENCOUNTERS_DIR = "res://Data/Encounters/";

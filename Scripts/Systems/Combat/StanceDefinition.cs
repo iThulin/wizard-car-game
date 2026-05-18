@@ -1,16 +1,21 @@
 using System.Collections.Generic;
 
-// ══════════════════════════════════════════════════════════════════════════════
-// Stance System
+// ============================================================
+// StanceDefinition.cs
 //
-// Stances are the martial companion's action system — replacing cards entirely.
-// Each stance persists between turns until manually switched (once per turn).
-// Passives apply at turn start; attack modifiers apply when the unit attacks.
-// ══════════════════════════════════════════════════════════════════════════════
+// Purpose:        Martial-companion stance system. Stances are
+//                 the martial alternative to cards — each stance
+//                 persists between turns until manually switched
+//                 (once per turn). Passives apply at turn start;
+//                 attack modifiers apply when the unit attacks.
+// Layer:          Data
+// Collaborators:  CompanionDefinition.cs (trained stances list),
+//                 Unit.cs (ActiveStance), RulesManager.cs (drives
+//                 stance effects), CampusScreen.cs (Training tab)
+// See:            README §6 — Martial system
+// ============================================================
 
-/// <summary>
-/// Which martial class this stance belongs to.
-/// </summary>
+/// <summary>Martial class identifying which stance bucket a stance belongs to. Wizards do not use stances; "None" is the unclassed levy default.</summary>
 public enum MartialClass
 {
     None,       // unclassed levy — no stances

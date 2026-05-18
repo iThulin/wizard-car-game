@@ -2,6 +2,27 @@ using Godot;
 using System;
 using System.Collections.Generic;
 
+// ============================================================
+// RulesManager.cs
+//
+// Purpose:        The combat rules engine. Hosts the GameEvent /
+//                 EventBus, the stack-based card resolution
+//                 (GameStack, StackItem), the priority manager,
+//                 and the Resolver that pops the stack, applies
+//                 effects, fires attunement bonuses, and routes
+//                 cards into discard or exile.
+// Layer:          System
+// Collaborators:  GameStateManager.cs (the state these mutate),
+//                 ScriptingInterfaces.cs (IEffect / IPredicate
+//                 contracts), AttunementResolver.cs (called
+//                 post-resolve), Effect.cs / CompositeEffects.cs
+//                 (the effects this drives), CombatManager.cs
+//                 (top-level caller)
+// See:            README §3 — Architecture (stack-based resolution
+//                 model is MTG-derived)
+// ============================================================
+
+/// <summary>One event published on the combat <see cref="EventBus"/>. Free-form Type string + arbitrary payload. Used for animation triggers, log routing, and UI refresh hooks rather than rules-critical signalling.</summary>
 public sealed class GameEvent
 {
     public string Type;

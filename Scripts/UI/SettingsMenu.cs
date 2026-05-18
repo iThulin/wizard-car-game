@@ -1,12 +1,22 @@
 using Godot;
 
-/// <summary>
-/// Controller for the settings menu UI.
-/// 
-/// FIX vs first version: uses FindChild() by name rather than fragile NodePath
-/// strings, so it works regardless of how the scene tree is nested (which it is
-/// — there's a SettingsPanelWrapper CenterContainer between VBox and Settings).
-/// </summary>
+// ============================================================
+// SettingsMenu.cs
+//
+// Purpose:        Settings overlay controller — resolution, window
+//                 mode, vsync, UI scale, master volume. Reads
+//                 current values from SettingsManager and pushes
+//                 changes back to it. Uses FindChild() instead of
+//                 hardcoded NodePath strings so scene-tree nesting
+//                 changes don't break it.
+// Layer:          UI
+// Collaborators:  SettingsManager.cs (state + persistence),
+//                 PauseMenu.cs (hosts this inline when opened
+//                 from pause)
+// See:            (none)
+// ============================================================
+
+/// <summary>Settings overlay controller. Two-way binds the visible widgets to <see cref="SettingsManager"/>. <see cref="ReturnScenePath"/> controls back-button behaviour — empty string or the inline sentinel means "QueueFree self", otherwise change scene.</summary>
 public partial class SettingsMenu : Control
 {
     /// <summary>Optional: scene to return to when Back is pressed. If empty, hides the menu.</summary>

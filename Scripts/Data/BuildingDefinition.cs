@@ -1,9 +1,21 @@
 using System.Collections.Generic;
 
-/// <summary>
-/// Defines a campus building — its identity, tier, requirements, and effects.
-/// Loaded from Data/Buildings/*.json. Runtime state lives in GuildSaveData.
-/// </summary>
+// ============================================================
+// BuildingDefinition.cs
+//
+// Purpose:        Campus building model — identity, tier ladder,
+//                 per-tier costs and effect bonuses. Loaded from
+//                 Data/Buildings/*.json; runtime upgrade state
+//                 lives in GuildSaveData.
+// Layer:          Data
+// Collaborators:  BuildingDatabase.cs (registry),
+//                 BuildingEffectApplier.cs (consumes Tiers
+//                 at run-start), CampusScreen.cs (UI),
+//                 GuildSaveData.cs (CurrentTier persisted here)
+// See:            README §4.4 (Adding a Building)
+// ============================================================
+
+/// <summary>Defines a campus building — its identity, tier ladder, and current upgrade state. Loaded from Data/Buildings/*.json. Runtime state (CurrentTier, IsUnlocked) lives in GuildSaveData.</summary>
 public class Building
 {
     // ── Identity ────────────────────────────────────────────────────────

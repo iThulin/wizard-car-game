@@ -1,19 +1,42 @@
 using Godot;
 
+// ============================================================
+// CardDropHandler.cs
+//
+// Purpose:        Bridges the 2D card-drag UI with the 3D hex
+//                 grid. Each frame raycasts under the mouse
+//                 while a drag is active, tracks the hovered
+//                 HexTile, and emits signals on drag-start,
+//                 drag-end, and successful drop.
+// Layer:          UI
+// Collaborators:  CardUi.cs (the card being dragged),
+//                 DragPayloadManager.cs (drag state singleton),
+//                 HexTile.cs (hover highlight, axial coord),
+//                 CombatManager.cs / RulesManager.cs (consumers
+//                 of the CardDroppedOnTile signal)
+// See:            README §3 (Architecture — input flow)
+// ============================================================
+
+/// <summary>3D-space drag/drop bridge. Watches <see cref="DragPayloadManager"/> for an active drag, raycasts under the mouse each frame to find the hovered <see cref="HexTile"/>, and emits signals consumers can subscribe to (drag-start, drag-end, drop-on-tile).</summary>
 public partial class CardDropHandler : Node3D
 {
     private Camera3D camera;
+
+    /// <summary>The HexTile under the mouse cursor while a drag is active, or null when no tile is hovered.</summary>
     public HexTile CurrentHoveredTile { get; private set; }
 
     // Tracks last-frame drag state so we can detect transitions
     private bool _wasDragging = false;
 
+    /// <summary>Emitted when the player drops a card half onto a valid HexTile. <paramref name="isTop"/> identifies which half is being played.</summary>
     [Signal]
     public delegate void CardDroppedOnTileEventHandler(CardUi cardUi, bool isTop, HexTile tile);
 
+    /// <summary>Emitted on the frame a drag begins. Consumers typically light up valid drop tiles in response.</summary>
     [Signal]
     public delegate void CardDragStartedEventHandler(CardUi cardUi, bool isTop);
 
+    /// <summary>Emitted when a drag ends without a successful drop (cancelled or out-of-bounds).</summary>
     [Signal]
     public delegate void CardDragEndedEventHandler();
 
@@ -60,6 +83,7 @@ public partial class CardDropHandler : Node3D
         }
     }
 
+    /// <summary>Called by the UI when the player releases the mouse mid-drag. Resolves the currently-hovered tile (if any) and emits <see cref="CardDroppedOnTile"/>. Always clears drag state and snaps the card back; if the drop was valid, the consumer is responsible for animating the card to discard.</summary>
     public void TryDropCardOnTile()
     {
         if (!DragPayloadManager.IsDragging) return;

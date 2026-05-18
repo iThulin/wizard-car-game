@@ -1,29 +1,31 @@
 using Godot;
 
-// ================================================================
-// UITheme — Single source of truth for all UI colors, sizes, and
-// spacing. Every UI class reads from here.
+// ============================================================
+// UITheme.cs
 //
-// DO NOT hardcode colors, font sizes, or animation durations
-// anywhere else in the project. Add new tokens here instead.
+// Purpose:        Single source of truth for every UI colour,
+//                 font size, padding value, animation duration,
+//                 and panel-style helper used in the project.
+//                 Anywhere else in the codebase: read from here,
+//                 don't hardcode.
+// Layer:          UI
+// Collaborators:  Read by every file under Scripts/UI/, Scripts/
+//                 Tiles/, Scripts/Systems/Overworld/,
+//                 Scripts/Systems/Campus/, Scripts/Systems/
+//                 Negotiation/, and CombatUI/CardUi
+// See:            README §3 — visual identity is one of the
+//                 game's three design pillars
+// ============================================================
 //
-// Visual identity:
-//   Dark Arcane Field + Dark Slate UI Chrome
-//
-//   3D world (tiles, units, overworld map) — deep purple-black,
-//   atmospheric and arcane.
-//
-//   UI chrome (panels, campus, modals, negotiation) — dark blue-
-//   grey slate. Dark enough to feel at home over the world layer,
-//   distinct enough to read clearly as UI. Near-white text on
-//   all panel surfaces.
-//
-//   Card faces — warm light parchment (SurfaceLight) as a
-//   deliberate contrast surface. Cards should feel like physical
-//   objects on top of the slate UI.
-//
-//   Accents — violet borders, gold titles, arcane blue for mana.
-// ================================================================
+// Visual identity reminders for new contributors:
+//   - 3D world (tiles, units, overworld map) — deep purple-black.
+//   - UI chrome (panels, campus, modals, negotiation) — dark
+//     blue-grey slate. Near-white text on all panel surfaces.
+//   - Card faces — warm light parchment (SurfaceLight). Cards
+//     should read as physical objects on top of the slate UI.
+//   - Accents — violet borders, gold titles, arcane blue mana.
+
+/// <summary>Project-wide theme tokens. Every UI surface, panel, button, label, and animation duration reads from this class. Member-level docs are intentionally omitted for the colour/size constants — the names + the section banners below carry the meaning. If you find yourself hardcoding a colour or padding value in another file, add a token here instead.</summary>
 public static class UITheme
 {
     // ════════════════════════════════════════════════════════════

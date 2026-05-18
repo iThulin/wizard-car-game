@@ -1,19 +1,22 @@
 using System.Collections.Generic;
 
-// ══════════════════════════════════════════════════════════════════════════════
-// EncounterDefinition
+// ============================================================
+// EncounterDefinition.cs
 //
-// Describes a single combat encounter — its size, composition, and any
-// overworld context (terrain, region) that the combat scene should know about.
-//
-// Created by EncounterRouter from region data before scene transition.
-// Read by CombatManager at spawn time to replace QueueDefaultEncounter().
-// ══════════════════════════════════════════════════════════════════════════════
+// Purpose:        Per-combat data model — encounter tier, enemy
+//                 composition list, source terrain/region tags.
+//                 Created by EncounterRouter from region pool
+//                 data before scene swap; read by CombatManager
+//                 at spawn time.
+// Layer:          Data
+// Collaborators:  EncounterRouter.cs (creator),
+//                 EncounterPoolLoader.cs (data source),
+//                 CombatManager.cs (consumer),
+//                 EnemyArchetype.cs (composition refs)
+// See:            README §3 — combat dispatch pipeline
+// ============================================================
 
-/// <summary>
-/// The tier of a combat encounter. Controls battle size and difficulty.
-/// Maps to POI sub-types in the run structure doc.
-/// </summary>
+/// <summary>Difficulty tier of a combat encounter. Drives spawn count, enemy archetype mix, and reward scaling. Maps to overworld POI sub-types.</summary>
 public enum EncounterTier
 {
     Skirmish,  // 2 enemies, easiest

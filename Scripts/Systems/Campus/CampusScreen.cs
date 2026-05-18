@@ -2,6 +2,25 @@ using Godot;
 using System;
 using System.Collections.Generic;
 
+// ============================================================
+// CampusScreen.cs
+//
+// Purpose:        The persistent between-runs campus hub.
+//                 Tabbed UI hosting guild (save slots + school
+//                 picker + start-run), companions, buildings,
+//                 armory, training tabs. Builds every visible
+//                 widget in code (no .tscn UI), reads/writes
+//                 GuildSaveData via SaveManager.
+// Layer:          UI
+// Collaborators:  SaveManager.cs, CompanionRoster.cs,
+//                 BuildingDatabase.cs, ItemDatabase.cs,
+//                 EquipmentLoadout.cs, PlayerSession.cs,
+//                 UITheme.cs (extensive — every panel/button)
+// See:            README §3 — Campus is the persistence layer
+//                 between runs; touches almost every save field
+// ============================================================
+
+/// <summary>Persistent between-runs hub. Hosts five tabs (Guild, Companions, Buildings, Armory, Training) and the start-run button. Reads/writes the active save through <see cref="SaveManager"/>. Massive file — see the section banners inside for the tab-by-tab layout.</summary>
 public partial class CampusScreen : Control
 {
     private int _selectedSlot = -1;

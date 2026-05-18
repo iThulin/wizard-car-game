@@ -1,10 +1,27 @@
 using Godot;
 
-/// <summary>
-/// Pause menu overlay controller.
-/// </summary>
+// ============================================================
+// PauseMenu.cs
+//
+// Purpose:        Pause overlay controller. Hosts the Resume /
+//                 Settings / Card Library / Return to Campus /
+//                 Forfeit Combat / Quit buttons; also manages an
+//                 inline sub-overlay slot (for Settings and Card
+//                 Library) so opening them doesn't unload the
+//                 underlying scene.
+// Layer:          UI
+// Collaborators:  PauseManager.cs (opens/closes this),
+//                 SettingsMenu.cs, CardLibraryUi.cs (inline
+//                 overlay children), EncounterRouter.cs
+//                 (forfeit combat path)
+// See:            README §8 — CallDeferred discipline applies
+//                 to children added at runtime
+// ============================================================
+
+/// <summary>The pause overlay scene. Configures which buttons are visible based on the current <see cref="PauseManager.PauseContext"/> (overworld vs in-combat), and hosts inline sub-overlays for Settings and Card Library so the underlying scene isn't unloaded.</summary>
 public partial class PauseMenu : Control
 {
+    /// <summary>Sentinel value passed to inline sub-overlays' ReturnScenePath so they QueueFree themselves on back instead of triggering a scene change.</summary>
     public const string InlineSentinel = "__INLINE__";
 
     [Export] public string SettingsScenePath    = "res://Scenes/UI/SettingsMenu.tscn";
@@ -52,6 +69,7 @@ public partial class PauseMenu : Control
         RaiseMenuContainer();
     }
 
+    /// <summary>Sets which buttons are visible based on the pause context (overworld shows Return to Campus, combat shows Forfeit Combat). Always called by <see cref="PauseManager"/> before showing the menu.</summary>
     public void Configure(PauseManager.PauseContext ctx)
     {
         bool inOverworld = ctx == PauseManager.PauseContext.Overworld;

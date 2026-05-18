@@ -1,11 +1,24 @@
 using Godot;
 using System.Collections.Generic;
 
-/// <summary>
-/// Manages a single exploration run: step budget, input routing,
-/// POI triggering, and run completion detection.
-/// Attach this to the root of your OverworldScene.
-/// </summary>
+// ============================================================
+// OverworldRunManager.cs
+//
+// Purpose:        Top-level controller for one exploration run.
+//                 Owns step budget, HP, gold, encounters won;
+//                 wires party-token movement to fog updates and
+//                 POI triggering; routes encounters to
+//                 EncounterRouter; detects run-end conditions.
+// Layer:          System
+// Collaborators:  OverworldHexGrid.cs, FogOfWarManager.cs,
+//                 OverworldPartyToken.cs, RegionLoader.cs,
+//                 NarrativeEncounterPanel.cs / Loader.cs,
+//                 EncounterRouter.cs (combat dispatch),
+//                 RunResultData.cs (writes results on end)
+// See:            README §3 — top of the overworld layer
+// ============================================================
+
+/// <summary>Top-level controller for one exploration run. Owns step budget, HP, gold, and encounter counters; routes POI triggers to the appropriate sub-system (combat / negotiation / narrative panel); writes <see cref="RunResultData"/> on run end.</summary>
 public partial class OverworldRunManager : Node2D
 {
     [Export] public int StepBudget = 20;

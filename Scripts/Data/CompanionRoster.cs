@@ -2,12 +2,25 @@ using Godot;
 using System.Collections.Generic;
 using System.Linq;
 
-/// <summary>
-/// Bridges companion templates (loaded from JSON) with runtime state
-/// (stored in GuildSaveData.Companions).
-/// 
-/// On first access for a save, ensures every template has a runtime entry.
-/// </summary>
+// ============================================================
+// CompanionRoster.cs
+//
+// Purpose:        Bridges companion templates (loaded from JSON)
+//                 with the per-save runtime state. Backfills
+//                 missing entries on save load, migrates fields
+//                 added since the save was created, and exposes
+//                 recruit/party/recruitable queries against the
+//                 active save.
+// Layer:          System
+// Collaborators:  CompanionLoader.cs (templates),
+//                 CompanionDefinition.cs (Companion model),
+//                 SaveManager.cs (ActiveSave + Save trigger),
+//                 GuildSaveData.cs (state container)
+// See:            README §4.5 (Adding a Companion),
+//                 README §6 — Save System
+// ============================================================
+
+/// <summary>Bridges companion JSON templates with the per-save runtime state. <see cref="EnsureRoster"/> backfills missing entries and migrates new template fields onto existing saves. The recruit/party query helpers all operate on <c>SaveManager.ActiveSave</c>.</summary>
 public static class CompanionRoster
 {
     /// <summary>

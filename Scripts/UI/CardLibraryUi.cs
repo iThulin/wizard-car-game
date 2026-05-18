@@ -3,6 +3,22 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+// ============================================================
+// CardLibraryUi.cs
+//
+// Purpose:        Browse-all-cards UI. Filterable grid of every
+//                 registered blueprint by school, rarity, mana
+//                 cost, and free-text search. Used as a campus
+//                 sub-screen and as an inline pause overlay.
+// Layer:          UI
+// Collaborators:  CardDatabase.cs (Blueprints source),
+//                 CardLoaderV2.cs (lazy-load trigger),
+//                 CardUi.cs (per-tile scene),
+//                 UITheme.cs (filter tab + grid sizing)
+// See:            README §6 — accessed from campus and from pause
+// ============================================================
+
+/// <summary>Filterable browse-all-cards grid. Loads card JSON on demand if the database is empty. Filters compose (school AND rarity AND mana AND search). <see cref="ReturnScenePath"/> follows the same back-button convention as <see cref="SettingsMenu"/>.</summary>
 public partial class CardLibraryUi : Control
 {
     // ── Exports ──────────────────────────────────────────────────────────

@@ -1,9 +1,21 @@
 using Godot;
 
-/// <summary>
-/// The five enemy archetypes. Each drives distinct stats and AI behaviour.
-/// Add new values here as content grows — everything else keys off this enum.
-/// </summary>
+// ============================================================
+// EnemyArchetype.cs
+//
+// Purpose:        Enemy archetype enum + paired stateless data
+//                 helpers (max HP, speed, armor, attack damage,
+//                 body colour, AI behaviour key). Everything else
+//                 in the combat system keys off this enum.
+// Layer:          Data
+// Collaborators:  CombatManager.cs (spawns from this),
+//                 EncounterPoolLoader.cs (parses archetype names),
+//                 Unit.cs (consumes stat block at spawn),
+//                 RulesManager.cs (drives AI by archetype)
+// See:            README §3 — combat dispatch
+// ============================================================
+
+/// <summary>The five enemy archetypes. Each drives distinct stats and AI behaviour. Extending this enum requires adding stat-block entries in <see cref="EnemyArchetypeData"/>.</summary>
 public enum EnemyArchetype
 {
     Soldier,   // Baseline melee. Move toward nearest, attack adjacent.

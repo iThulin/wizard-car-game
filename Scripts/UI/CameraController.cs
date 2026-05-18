@@ -1,19 +1,50 @@
 using Godot;
 
+// ============================================================
+// CameraController.cs
+//
+// Purpose:        Top-down combat camera rig — handles pan, zoom,
+//                 and orbit on a pivot/camera pair, plus left-click
+//                 drop-on-tile forwarding to CardDropHandler.
+// Layer:          UI
+// Collaborators:  CardDropHandler.cs (forwards left-click drops),
+//                 CombatScene.cs (calls FrameGrid on board build),
+//                 Camera3D / Node3D pivot child in the .tscn.
+// See:            README §8 (Godot 4.6 input + scene-tree quirks)
+// ============================================================
+
+/// <summary>
+/// Combat camera controller. Owns a pivot Node3D + Camera3D pair: panning moves
+/// the controller, rotation/orbit drives the pivot, zoom slides the camera along
+/// its local Z. All motion is smoothed via lerps toward target values so input
+/// feels weighted rather than instant.
+/// </summary>
 public partial class CameraController : Node3D
 {
     // ── Tuning ───────────────────────────────────────────────────────────────
+    /// <summary>Maximum pan speed in world units per second.</summary>
     [Export] public float MoveSpeed        = 12f;
+    /// <summary>Lerp rate used to ease the rig toward its desired pan target. Higher = snappier.</summary>
     [Export] public float MoveLerpSpeed    = 10f;  // how snappy panning feels
+    /// <summary>Distance the zoom target moves per scroll wheel tick.</summary>
     [Export] public float ZoomSpeed        = 4f;   // units per scroll tick
+    /// <summary>Lerp rate used to ease zoom toward its target. Higher = snappier.</summary>
     [Export] public float ZoomLerpSpeed    = 8f;   // how snappy zoom feels
+    /// <summary>Closest the camera can get to the pivot (minimum zoom).</summary>
     [Export] public float MinZoom          = 5f;
+    /// <summary>Farthest the camera can pull out (maximum zoom).</summary>
     [Export] public float MaxZoom          = 30f;  // was 40 — tighter ceiling
+    /// <summary>Distance from screen edge (in pixels) within which edge-scroll pan activates.</summary>
     [Export] public float EdgeScrollMargin = 20f;
+    /// <summary>Speed multiplier for right-click drag pan.</summary>
     [Export] public float DragSpeed        = 0.3f;
+    /// <summary>Mouse-rotation sensitivity. Also used for keyboard orbit (scaled by MouseToKeyboardRotationRatio).</summary>
     [Export] public float RotationSpeed    = 0.3f;
+    /// <summary>Steepest the camera can tilt (looking straight down is -90).</summary>
     [Export] public float MinPitch         = -75f;
+    /// <summary>Shallowest the camera can tilt before clipping into the board plane.</summary>
     [Export] public float MaxPitch         = -15f;
+    /// <summary>Extra slack (world units) added to the clamp bounds so the camera can drift slightly past the arena edge.</summary>
     [Export] public float BoundsPad        = 2f;   // was 4 — less overshoot
 
     // ── State ────────────────────────────────────────────────────────────────

@@ -1,5 +1,21 @@
 using Godot;
 
+// ============================================================
+// ClassSelectUi.cs
+//
+// Purpose:        Pre-run wizard school picker. Shows a dropdown
+//                 + description per school, optional debug
+//                 checkbox, and a confirm button that loads the
+//                 battlefield scene with the selected school.
+// Layer:          UI
+// Collaborators:  CardLoaderV2.cs (lazy-load on entry),
+//                 PlayerSession.cs (selected school sink),
+//                 CardSchool enum
+// See:            README §3 — school identity drives every
+//                 downstream system
+// ============================================================
+
+/// <summary>Pre-run school picker. Lazy-loads the card database on entry, lists the six schools with one-line descriptions, and routes the selected school into the run-start path.</summary>
 public partial class ClassSelectUi : Control
 {
     [Export] public string BattlefieldScenePath = "res://Scenes/Battlefield.tscn";

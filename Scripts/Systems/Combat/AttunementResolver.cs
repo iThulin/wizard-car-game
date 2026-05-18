@@ -3,13 +3,21 @@ using System;
 using System.Collections.Generic;
 
 // ============================================================
-// AttunementResolver — Applies threshold bonuses after a spell
+// AttunementResolver.cs
 //
-// Called from GameRunner after a card resolves.
-// Now takes the casting Unit directly so it works with any
-// wizard in the party, not just the "player".
+// Purpose:        Applies elemental attunement threshold bonuses
+//                 after a spell resolves. Reads the spell's
+//                 element tags, increments matching counters on
+//                 the caster's ElementalAttunement, and fires
+//                 tier 1/2/3/4 bonuses when crossed.
+// Layer:          System
+// Collaborators:  ElementalAttunement.cs (state container),
+//                 Unit.cs (caster ref), GameState.cs,
+//                 RulesManager.cs (calls this post-resolve)
+// See:            README §6 — Elemental Attunement
 // ============================================================
 
+/// <summary>Static resolver invoked after every spell resolution. Updates the caster's elemental attunement counters and applies tier-crossing bonuses (1: bonus damage; 2: auto-imbue; 3: enhanced effect; 4: burst AoE then reset).</summary>
 public static class AttunementResolver
 {
 	/// <summary>

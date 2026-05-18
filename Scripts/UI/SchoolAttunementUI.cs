@@ -3,13 +3,20 @@ using System;
 using System.Collections.Generic;
 
 // ============================================================
-// SchoolAttunementUI — Matches CombatUI visual style
+// SchoolAttunementUI.cs
 //
-// Uses same black StyleBoxFlat with 2px expand margins as
-// SelectedUnitPanel. Sits directly below it at top-left.
-// Uses ProgressBar for charge display (same as HP/mana bars).
+// Purpose:        Top-left HUD panel showing the selected unit's
+//                 elemental attunement charges (per-element bars
+//                 with tier labels). Currently Elementalist-only;
+//                 other schools show a placeholder stub.
+// Layer:          UI
+// Collaborators:  Unit.cs (Attunement member),
+//                 ElementalAttunement.cs (charge data source),
+//                 UITheme.cs (element colours, padding)
+// See:            README §6 — Elemental Attunement
 // ============================================================
 
+/// <summary>HUD panel below the selected-unit panel that renders the current unit's elemental attunement state. Binds to the unit's <see cref="ElementalAttunement"/> instance and updates per-element ProgressBars with the corresponding tier label. Style matches <c>SelectedUnitPanel</c> in CombatUI for visual continuity.</summary>
 public partial class SchoolAttunementUI : PanelContainer
 {
 	// ── State ───────────────────────────────────────────────────────

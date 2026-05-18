@@ -3,9 +3,18 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 
-/// <summary>
-/// Loads NegotiationEncounterData from Data/Negotiations/*.json.
-/// </summary>
+// ============================================================
+// NegotiationEncounterLoader.cs
+//
+// Purpose:        Loads NegotiationEncounterData from
+//                 Data/Negotiations/*.json. Per-session cache.
+// Layer:          Loader
+// Collaborators:  NpcArchetype.cs (NegotiationEncounterData
+//                 schema), NegotiationManager.cs (caller)
+// See:            README §6 — Negotiation
+// ============================================================
+
+/// <summary>Lazy loader + per-session cache for negotiation encounter JSON. Each encounter file is read at most once per process.</summary>
 public static class NegotiationEncounterLoader
 {
     private const string DIR = "res://Data/Negotiations/";

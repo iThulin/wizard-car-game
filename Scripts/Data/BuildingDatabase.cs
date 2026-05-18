@@ -3,10 +3,21 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 
-/// <summary>
-/// Loads building definitions from Data/Buildings/*.json.
-/// Merges static template data with runtime state from GuildSaveData.
-/// </summary>
+// ============================================================
+// BuildingDatabase.cs
+//
+// Purpose:        Loader + registry for Building templates from
+//                 Data/Buildings/*.json. Merges static template
+//                 data with runtime upgrade state stored in
+//                 GuildSaveData.Buildings.
+// Layer:          Loader
+// Collaborators:  BuildingDefinition.cs (Building, BuildingTier),
+//                 GuildSaveData.cs (BuildingSaveData entries),
+//                 CampusScreen.cs, BuildingEffectApplier.cs
+// See:            README §4.4 (Adding a Building)
+// ============================================================
+
+/// <summary>Process-wide loader and registry for campus building templates. Caches templates on first load; <see cref="EnsureBuildings"/> backfills missing entries on the save side so newly-added buildings appear at tier 0.</summary>
 public static class BuildingDatabase
 {
     private const string BUILDINGS_DIR = "res://Data/Buildings/";

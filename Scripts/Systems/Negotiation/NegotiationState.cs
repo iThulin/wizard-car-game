@@ -3,10 +3,23 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-/// <summary>
-/// State machine for a single negotiation encounter.
-/// Driven by NegotiationScene; decoupled from UI.
-/// </summary>
+// ============================================================
+// NegotiationState.cs
+//
+// Purpose:        Pure state machine for one negotiation
+//                 encounter — tension meter, token pool,
+//                 patience, term acceptance, NPC reactions.
+//                 Decoupled from UI; consumed by
+//                 NegotiationManager.
+// Layer:          Data
+// Collaborators:  NegotiationEncounterData (input),
+//                 NpcArchetype.cs (LeverageToken, DealTerm,
+//                 TensionZone enums),
+//                 NegotiationManager.cs (drives this)
+// See:            README §6 — Negotiation
+// ============================================================
+
+/// <summary>State machine for one in-progress negotiation. Holds the live tension meter, token pool, patience counter, and per-term acceptance state. UI-agnostic — <see cref="NegotiationManager"/> wraps this and renders.</summary>
 public class NegotiationState
 {
     // ── Encounter data ──────────────────────────────────────────────────

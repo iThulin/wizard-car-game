@@ -1,10 +1,21 @@
 using Godot;
 
-/// <summary>
-/// Reads the player's built buildings and applies their effects to a run.
-/// Called by RunManager at the start of each run.
-/// Stateless — just reads GuildSaveData and modifies RunManager values.
-/// </summary>
+// ============================================================
+// BuildingEffectApplier.cs
+//
+// Purpose:        Reads the guild's built buildings (current tier
+//                 per building) and aggregates their effect
+//                 bonuses into a RunBonuses struct that the run
+//                 manager consumes at run start.
+// Layer:          System
+// Collaborators:  GuildSaveData.cs (Buildings list),
+//                 BuildingDatabase.cs (tier data lookup),
+//                 OverworldRunManager.cs (caller)
+// See:            README §4.4 (Adding a Building) for tier
+//                 effect fields
+// ============================================================
+
+/// <summary>Stateless aggregator that walks the guild's built buildings, looks up each one's current-tier effect bonuses, and rolls them up into a <see cref="RunBonuses"/> struct for the run manager to apply at run start.</summary>
 public static class BuildingEffectApplier
 {
     public struct RunBonuses

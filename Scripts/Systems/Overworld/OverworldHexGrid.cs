@@ -2,10 +2,25 @@ using Godot;
 using System;
 using System.Collections.Generic;
 
-/// <summary>
-/// Generates and manages the overworld hex exploration map.
-/// 2D flat-top hex grid using axial coordinates, same convention as HexGridManager.
-/// </summary>
+// ============================================================
+// OverworldHexGrid.cs
+//
+// Purpose:        Generates and owns the 2D overworld hex map.
+//                 Procedurally lays out terrain, designates
+//                 entry/objective tiles, instantiates one
+//                 OverworldHex per cell, and exposes axial-coord
+//                 lookup + neighbour/distance helpers. Same
+//                 axial coordinate convention as HexGridManager
+//                 (combat grid).
+// Layer:          System
+// Collaborators:  OverworldHex.cs (child tiles),
+//                 RegionDefinition.cs (input parameters),
+//                 FogOfWarManager.cs, POIGenerator.cs (modify the
+//                 grid post-construction)
+// See:            README §3 — overworld layer
+// ============================================================
+
+/// <summary>2D flat-top hex grid for the overworld map. Owns the per-tile <see cref="OverworldHex"/> children and exposes axial-coord helpers. Seeded RNG ensures the same map regenerates on return from combat.</summary>
 public partial class OverworldHexGrid : Node2D
 {
     [Export] public int Seed = 0;  // 0 = random

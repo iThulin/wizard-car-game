@@ -1,13 +1,40 @@
 using Godot;
 using System;
 
+// ============================================================
+// HexTile.cs
+//
+// Purpose:        Visual Node3D for one hex tile on the combat
+//                 grid. Renders the mesh, handles hover/highlight
+//                 colour blending, manages the imbuement overlay
+//                 and glyph indicator, and shows the debug coord
+//                 label. Pure visual layer — game state lives on
+//                 the paired TileData.
+// Layer:          Tiles
+// Collaborators:  TileData.cs (1:1 data sibling, via TileView),
+//                 ImbuementOverlay.cs (child scene),
+//                 UITheme.cs (highlight colours),
+//                 HexGridManager.cs (instantiates and positions tiles)
+// See:            README §8 — CallDeferred rules apply to glyph
+//                 child addition (see ShowGlyph)
+// ============================================================
+
+/// <summary>
+/// Visual Node3D for one hex tile. Handles mesh duplication for per-tile material,
+/// hover colour blending, the layered highlight state machine
+/// (deployment / movement / range / target / drag), and ownership of the
+/// <see cref="ImbuementOverlay"/> child plus the optional glyph label. All highlight
+/// colours come from <see cref="UITheme"/>.
+/// </summary>
 public partial class HexTile : Node3D
 {
-    // Configurable properties
+    /// <summary>Colour blended onto the tile when the mouse is over it. Defaults to the central UITheme value but is overridable in the inspector for special tiles.</summary>
     [Export] public Color HoverColor = UITheme.TileHover;
+
+    /// <summary>When true, the coord/terrain label is shown in 3D space above the tile (debug only).</summary>
     [Export] public bool ShowDebugInfo = true;
 
-    // Optional override; if not set, the default overlay scene is loaded by path.
+    /// <summary>Optional override for the imbuement overlay scene. If unset, the default at <see cref="DefaultOverlayScenePath"/> is loaded.</summary>
     [Export] public PackedScene ImbuementOverlayScene;
 
     private const string DefaultOverlayScenePath = "res://Scenes/Combat/ImbuementOverlay.tscn";
@@ -21,6 +48,7 @@ public partial class HexTile : Node3D
 
     private ImbuementOverlay imbuementOverlay;
 
+    /// <summary>Axial (q, r) coordinate identifying this tile's grid position.</summary>
     public Vector2I Axial { get; set; }
 
     // Highlighting states
@@ -31,6 +59,7 @@ public partial class HexTile : Node3D
     private bool targetHighlighted = false;
     private bool rangeHighlighted = false;
     private bool rangeBorderHighlighted = false;
+    /// <summary>Colour used when a draggable card is hovered over this tile during targeting.</summary>
     [Export] public Color DragHoverColor = UITheme.TileDragHover;
 
     public override void _Ready()
@@ -100,6 +129,7 @@ public partial class HexTile : Node3D
         }
     }
 
+    /// <summary>Replaces the tile's material with a per-tile duplicate (so AlbedoColor changes don't bleed to siblings). Pass a StandardMaterial3D for the standard hover/highlight path; other material types disable the colour blending features.</summary>
     public void SetMaterial(Material newMaterial)
     {
         if (meshInstance == null || newMaterial == null)
@@ -118,6 +148,7 @@ public partial class HexTile : Node3D
         }
     }
 
+    /// <summary>Lifts the tile vertically by an integer step count. The Y offset multiplier (currently 0.5 units per step) is tuned visually.</summary>
     public void SetHeight(int height)
     {
         var pos = Position;
@@ -127,12 +158,14 @@ public partial class HexTile : Node3D
         //GD.Print($"SetHeight on tile {Axial}: height={height}, new pos={Position}");
     }
 
+    /// <summary>Sets both the <see cref="Axial"/> coordinate and the visible debug label.</summary>
     public void SetCoordinatesLabel(int q, int r)
     {
         Axial = new Vector2I(q, r);
         coordLabel.Text = $"({q}, {r})";
     }
 
+    /// <summary>Sets the tile's resting AlbedoColor (under no hover/highlight). Triggers an immediate visual refresh.</summary>
     public void SetBaseColor(Color color)
     {
         baseColor = color;
@@ -151,6 +184,7 @@ public partial class HexTile : Node3D
         imbuementOverlay?.SetElement(element);
     }
 
+    /// <summary>Lazily creates a billboarded glyph label above the tile and makes it visible. Uses <c>CallDeferred("add_child", ...)</c> to comply with the Godot 4.6 cross-platform safety rule (see README §8).</summary>
     public void ShowGlyph()
     {
         if (_glyphLabel == null)
@@ -170,15 +204,18 @@ public partial class HexTile : Node3D
         }
     }
 
+    /// <summary>Hides the glyph indicator without destroying it. Cheap to re-show via <see cref="ShowGlyph"/>.</summary>
     public void ClearGlyph()
     {
         if (_glyphLabel != null)
             _glyphLabel.Visible = false;
     }
 
+    /// <summary>Current elemental imbuement displayed by the overlay child, or <see cref="TileElementType.None"/> if no overlay is present.</summary>
     public TileElementType CurrentElement =>
         imbuementOverlay?.CurrentElement ?? TileElementType.None;
 
+    /// <summary>Rebuilds the debug coord label text from the paired <see cref="TileData"/>. No-op when <see cref="ShowDebugInfo"/> is false.</summary>
     public void RefreshLabel(TileData tileData)
     {
         if (coordLabel == null || tileData == null)
@@ -206,12 +243,14 @@ public partial class HexTile : Node3D
             $"H: {tileData.Height}";
     }
 
+    /// <summary>Toggles the soft deployment-zone tint blended onto the resting colour.</summary>
     public void SetDeploymentHighlight(bool enabled)
     {
         deploymentHighlighted = enabled;
         RefreshVisualState();
     }
 
+    /// <summary>Sets a custom colour for the movement highlight overlay, then enables it. Used to distinguish player vs ally vs reachable-via-dash highlights at the gameplay level.</summary>
     public void SetMoveHighlightColored(Color color)
     {
         // Apply the color directly to whatever mesh/material drives move highlight
@@ -222,6 +261,7 @@ public partial class HexTile : Node3D
         SetMoveHighlight(true); // keep the existing visibility logic
     }
 
+    /// <summary>Toggles the targeting highlight (used when a card is being aimed at this tile). Saves and restores the prior colour so the highlight is non-destructive.</summary>
     public void SetTargetHighlight(bool enabled)
     {
         targetHighlighted = enabled;
@@ -242,6 +282,7 @@ public partial class HexTile : Node3D
             material.AlbedoColor = UITheme.TileTargetHighlight;
     }
 
+    /// <summary>Toggles the range-preview highlight. Pass <paramref name="border"/> true for the edge of the area, <paramref name="interior"/> true for tiles inside the area. Both false clears the highlight.</summary>
     public void SetRangeHighlight(bool interior, bool border)
     {
         rangeHighlighted = interior;
@@ -267,6 +308,7 @@ public partial class HexTile : Node3D
             material.AlbedoColor = UITheme.TileRangeInterior;
     }
 
+    /// <summary>Applies the drag-hover colour when a card is being dragged over this tile. Restores the prior state when <paramref name="on"/> is false.</summary>
     public void SetDragHoverHighlight(bool on)
     {
         if (material == null) return;
@@ -276,6 +318,7 @@ public partial class HexTile : Node3D
             RefreshVisualState(); // restore base/range/target state
     }
 
+    /// <summary>Recomputes the current AlbedoColor from the layered highlight flags (base → deployment → move). No-op while a target/range highlight is active — those override.</summary>
     public void RefreshVisualState()
     {
         if (material == null) return;

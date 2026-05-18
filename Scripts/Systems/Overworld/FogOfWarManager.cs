@@ -1,11 +1,22 @@
 using Godot;
 using System.Collections.Generic;
 
-/// <summary>
-/// Manages fog state across the overworld hex grid.
-/// Reveals hexes within vision radius of the party.
-/// Phase 1: simple radius reveal. Phase 2+ adds intel, school abilities, persistence.
-/// </summary>
+// ============================================================
+// FogOfWarManager.cs
+//
+// Purpose:        Owns fog state across the overworld hex grid.
+//                 Reveals tiles within vision radius of the
+//                 party, marks the fringe as silhouettes, leaves
+//                 the rest hidden. Persists revealed state into
+//                 RegionMemorySaveData via save manager.
+// Layer:          System
+// Collaborators:  OverworldHexGrid.cs (parent),
+//                 OverworldHex.cs (FogState target),
+//                 GuildSaveData.cs (RegionMemory persistence)
+// See:            README §6 — Fog of War
+// ============================================================
+
+/// <summary>Manages fog-of-war state for the overworld hex grid. Phase 1 implementation is a simple radius reveal — vision range + 1 row of silhouettes. Phase 2+ will add intel-based long-range reveals and per-school abilities.</summary>
 public partial class FogOfWarManager : Node2D
 {
     [Export] public int BaseVisionRadius = 1;

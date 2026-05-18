@@ -3,20 +3,35 @@ using System;
 using System.Collections.Generic;
 
 // ============================================================
-// Target Selectors
+// TargetSelectors.cs
 //
-// All shape-based selectors (line, cone, ring, area, adjacent)
-// share a common pattern:
+// Purpose:        All ITargetSelector implementations. Each
+//                 class corresponds to one registered targeter
+//                 type ("self", "unit", "tile", "aoe", "cone",
+//                 "ring", "line", "by_tag", "nearest_to_target",
+//                 "adjacent_to_target", "element_tile",
+//                 "empty_tile", "none").
+// Layer:          Targeting
+// Collaborators:  ScriptingInterfaces.cs (ITargetSelector,
+//                 TargetSet), TargetingHelpers.cs (shared
+//                 utilities), HexDirection.cs (direction math),
+//                 JsonCardLoader.cs (RegisterBuiltins maps JSON
+//                 type strings to these classes),
+//                 GameState.cs (Grid, UnitsInPlay,
+//                 ActiveCasterUnit, RetargetOrigin)
+// See:            README §5.3 (Targeting Types)
+// ============================================================
+//
+// All shape-based selectors share a common pattern:
 //   1. Find the caster unit and origin
 //   2. Determine an aim point (from RetargetOrigin, or fallback)
 //   3. Build a set of coordinates from that shape
 //   4. Optionally filter to units on those tiles, with team filter
-//
-// Helpers in HexDirection and TargetingHelpers handle the boilerplate.
-// ============================================================
+// Helpers in HexDirection and TargetingHelpers handle steps 1, 2, and 4.
 
-// ── Single-target selectors ─────────────────────────────────────
+// ── Single-target selectors ─────────────────────────────────────────────
 
+/// <summary>Picks the single nearest unit to the caster within <see cref="range"/>, optionally filtered to enemies or friendlies. LOS flag is plumbed through but not yet enforced.</summary>
 public sealed class SelectUnitTarget : ITargetSelector
 {
     public bool enemyOnly;
@@ -62,6 +77,7 @@ public sealed class SelectUnitTarget : ITargetSelector
     }
 }
 
+/// <summary>Picks a single tile — the player's clicked aim point if available, otherwise the caster's own tile.</summary>
 public sealed class SelectTileTarget : ITargetSelector
 {
     public int range;
@@ -92,7 +108,7 @@ public sealed class SelectTileTarget : ITargetSelector
     }
 }
 
-// Selects an empty (unoccupied) tile within range
+/// <summary>Collects every unoccupied, unblocked tile within <see cref="Range"/> of the caster. Used as the candidate set for summon-style spells.</summary>
 public sealed class SelectEmptyTileTarget : ITargetSelector
 {
     public int Range;
@@ -118,6 +134,7 @@ public sealed class SelectEmptyTileTarget : ITargetSelector
     }
 }
 
+/// <summary>Targets the caster itself. Used by self-buff and transform effects.</summary>
 public sealed class SelectSelfTarget : ITargetSelector
 {
     public bool Select(GameState s, Entity caster, out TargetSet targets)
@@ -128,6 +145,7 @@ public sealed class SelectSelfTarget : ITargetSelector
     }
 }
 
+/// <summary>Targets nothing in particular — returns an empty target set that's still considered a successful selection. Used by global effects (board-wipes) that operate on world state directly rather than a target list.</summary>
 public sealed class SelectGlobalTarget : ITargetSelector
 {
     public bool Select(GameState s, Entity caster, out TargetSet targets)
@@ -137,6 +155,7 @@ public sealed class SelectGlobalTarget : ITargetSelector
     }
 }
 
+/// <summary>Packages a tag string into the target set so downstream effects can read it. Does NOT iterate units — that's the effect's responsibility.</summary>
 public sealed class SelectByTagTarget : ITargetSelector
 {
     public string tag;
@@ -156,8 +175,9 @@ public sealed class SelectByTagTarget : ITargetSelector
     }
 }
 
-// ── Shape selectors ─────────────────────────────────────────────
+// ── Shape selectors ─────────────────────────────────────────────────────
 
+/// <summary>Collects every tile and unit within <see cref="Radius"/> hexes of the aim point (or caster if no aim). When <see cref="IncludeTiles"/> is false, only units are returned. Team filter applies to units.</summary>
 public sealed class SelectAreaTarget : ITargetSelector
 {
     public int Radius;
@@ -208,6 +228,7 @@ public sealed class SelectAreaTarget : ITargetSelector
     }
 }
 
+/// <summary>Collects every tile (or its occupant) at exact distance == <see cref="Radius"/> from the aim point. The hollow donut shape; useful for "blast zone surrounds a safe center" effects.</summary>
 public sealed class SelectRingTarget : ITargetSelector
 {
     public int Radius;
@@ -247,6 +268,7 @@ public sealed class SelectRingTarget : ITargetSelector
     }
 }
 
+/// <summary>Projects a straight line from the caster toward the aim point for up to <see cref="Length"/> tiles. Picks direction by axial-snap when the aim lies exactly on an axis, otherwise nearest direction.</summary>
 public sealed class SelectLineTarget : ITargetSelector
 {
     public int Length;
@@ -295,6 +317,7 @@ public sealed class SelectLineTarget : ITargetSelector
     }
 }
 
+/// <summary>Expanding-cone shape: step 1 is the single forward hex, each subsequent step widens by one hex on each side. Picks direction by axial-snap when possible.</summary>
 public sealed class SelectConeTarget : ITargetSelector
 {
     public int Range;
@@ -378,6 +401,7 @@ public sealed class SelectConeTarget : ITargetSelector
     }
 }
 
+/// <summary>Collects the six neighbour tiles (or their occupants) of the aim point. Used by splash and "everyone nearby" effects.</summary>
 public sealed class SelectAdjacentToTarget : ITargetSelector
 {
     public bool IncludeTiles;
@@ -409,6 +433,7 @@ public sealed class SelectAdjacentToTarget : ITargetSelector
     }
 }
 
+/// <summary>Picks the single nearest enemy to the previous target (used by chain-bounce patterns). Excludes the caster and any unit already hit earlier in the chain.</summary>
 public sealed class SelectNearestToTarget : ITargetSelector
 {
     public int Range;
@@ -474,6 +499,7 @@ public sealed class SelectNearestToTarget : ITargetSelector
     }
 }
 
+/// <summary>Picks a single tile of a named element. Prefers the player's aim point when it matches, otherwise falls back to the nearest matching tile within range.</summary>
 public sealed class SelectElementTileTarget : ITargetSelector
 {
     public string Element;

@@ -3,10 +3,32 @@ using System.Collections.Generic;
 using Godot;
 
 // ============================================================
-// Composite effects. With Sequence, Conditional, and ForEach, 
-// every card can be expressed as a tree of primitives.
+// CompositeEffects.cs
+//
+// Purpose:        Composite effects — Sequence, Conditional,
+//                 ForEachTarget, Retarget — and the larger
+//                 school-specific effects (Primordial Surge,
+//                 Cataclysm, Ragnarok, Elemental Convergence,
+//                 Tectonic Shatter, Terraform, Avatar Transform,
+//                 Create Maelstrom, etc.). Together with the
+//                 leaf primitives in Effect.cs, any card's
+//                 behaviour can be expressed as a tree.
+// Layer:          Effects
+// Collaborators:  Effect.cs (EffectBase + leaf effects),
+//                 PersistentEffect.cs (some composites spawn
+//                 persistent zones, e.g. CreateMaelstromEffect →
+//                 MaelstromEffect, AvatarTransformEffect →
+//                 AvatarAuraEffect),
+//                 JsonCardLoader.cs (RegisterBuiltins maps JSON
+//                 type strings to these classes),
+//                 GameState.cs, ElementalAttunement.cs
+// See:            README §5.4 — Composite Effects,
+//                 README §6 — Elementalist (school-specific
+//                 effects in this file are the Elementalist's
+//                 capstone identity)
 // ============================================================
 
+/// <summary>Resolves a list of child effects in order, threading the resulting <see cref="EffectResult"/> from each step into the next via <c>PredicateContext.LastResult</c>. The result of the final step is returned to the parent.</summary>
 public sealed class SequenceEffect : EffectBase
 {
     public IEffect[] Steps;
@@ -42,7 +64,7 @@ public sealed class SequenceEffect : EffectBase
     }
 }
 
-// Branch on a predicate. Then-branch required, else-branch optional.
+/// <summary>Branches on a predicate. <see cref="Then"/> is required; <see cref="Else"/> is optional (no-ops when null). Reads <see cref="PredicateContext.LastResult"/> if the predicate needs it (e.g. <c>was_lethal</c>).</summary>
 public sealed class ConditionalEffect : EffectBase
 {
     public IPredicate If;
@@ -88,7 +110,7 @@ public sealed class ConditionalEffect : EffectBase
     }
 }
 
-// Apply an effect once per target in the current target set.
+/// <summary>Runs the child effect once per target in the current target set, wrapping each target in a single-element <see cref="TargetSet"/> so the child sees exactly one target at a time. Order follows <c>TargetSet.Items</c>.</summary>
 public sealed class ForEachTargetEffect : EffectBase
 {
     public IEffect PerTarget;
@@ -114,7 +136,7 @@ public sealed class ForEachTargetEffect : EffectBase
     }
 }
 
-// Push targets away from caster, dealing damage per tile pushed. Useful for knockback or pull effects (just reverse the direction).
+/// <summary>Pushes each target away from the caster up to <see cref="PushTiles"/> tiles, then deals <c>pushed × DamagePerTile</c> damage (proportional to actual distance moved, not the requested amount).</summary>
 public sealed class PushDamageEffect : EffectBase
 {
     public int PushTiles;
@@ -186,20 +208,14 @@ public sealed class PushDamageEffect : EffectBase
     }
 }
 
-// ============================================================
-// Change the target set for a child effect. This is how we do chaining effects like "damage, then retarget nearest enemy and damage again".
-// Example JSON structure:
-//   {
-//     "type": "sequence",
-//     "steps": [
-//       { "type": "move", "tiles": 3 },          ← targets self
-//       { "type": "retarget",                    ← switches to AoE
-//         "targeting": { "type": "aoe", "radius": 1, "enemies_only": true },
-//         "do": { "type": "move", "tiles": 1 }   ← pushes nearby enemies
-//       }
-//     ]
-//   }
-// ============================================================
+/// <summary>
+/// Replaces the current target set with a freshly computed one from a new
+/// <see cref="ITargetSelector"/>, runs the child effect against it, then restores the
+/// original targets. Enables chaining patterns like "damage initial target, then retarget
+/// nearest enemy and damage again". Stashes the prior targets on
+/// <c>GameState.RetargetOrigin</c> so chain-targeters can compute distances from the
+/// previous hits.
+/// </summary>
 public sealed class RetargetEffect : EffectBase
 {
     public ITargetSelector Targeter;
@@ -267,6 +283,7 @@ public sealed class RetargetEffect : EffectBase
     }
 }
 
+/// <summary>Grants the caster <see cref="MoveTiles"/> extra movement; subscribes a callback that imbues each tile the caster vacates with the chosen element. At end of turn, grants <c>armor_per_tile × tilesImbued</c> armor and unsubscribes.</summary>
 public sealed class ImbuePathEffect : EffectBase
 {
     public string Element;
@@ -345,6 +362,9 @@ public sealed class ImbuePathEffect : EffectBase
     }
 }
 
+// ── Elementalist capstone effects ───────────────────────────────────────
+
+/// <summary>Elementalist capstone. Randomly imbues every tile within radius around the caster, then damages each enemy by <c>uniqueElementsAdjacent × Damage</c>.</summary>
 public sealed class PrimordialSurgeEffect : EffectBase
 {
     public int Radius;
@@ -414,6 +434,7 @@ public sealed class PrimordialSurgeEffect : EffectBase
     }
 }
 
+/// <summary>Elementalist capstone. Destroys all imbued tiles within radius, deals <c>destroyed × DamagePerTile</c> to every enemy in radius, and draws <c>destroyed / TilesPerDraw</c> cards.</summary>
 public sealed class CataclysmEffect : EffectBase
 {
     public int Radius;
@@ -482,6 +503,7 @@ public sealed class CataclysmEffect : EffectBase
     }
 }
 
+/// <summary>Elementalist capstone — board-wipe. Counts unique elements imbued across the entire grid, purges them all, and deals <c>uniqueElements × DamagePerElement</c> to every unit. Allies take half damage when <see cref="HalfToAllies"/>.</summary>
 public sealed class RagnarokEffect : EffectBase
 {
     public int DamagePerElement;
@@ -546,6 +568,7 @@ public sealed class RagnarokEffect : EffectBase
     }
 }
 
+/// <summary>Elementalist capstone. Imbues every tile in radius with a random element, then snaps every elemental attunement counter on the caster to <see cref="AttunementSetTo"/>. See README §7 — JSON key is `attunement_set_to`, NOT `attunement_counters`.</summary>
 public sealed class ElementalConvergenceEffect : EffectBase
 {
     public int Radius;
@@ -603,6 +626,7 @@ public sealed class ElementalConvergenceEffect : EffectBase
     }
 }
 
+/// <summary>Imbues all tiles within radius around the caster with a single named element. Fire imbuements set <c>IsHazardous</c>.</summary>
 public sealed class ImbueAreaEffect : EffectBase
 {
     public string Element;
@@ -650,6 +674,7 @@ public sealed class ImbueAreaEffect : EffectBase
     }
 }
 
+/// <summary>Elementalist capstone. Destroys all stone-typed tiles, earth-imbued tiles, and stone obstacles within radius of the target, replaces them with rubble, and deals <c>destroyed × DamagePerTile</c> to the single nearest enemy.</summary>
 public sealed class TectonicShatterEffect : EffectBase
 {
     public int Radius;
@@ -769,6 +794,7 @@ public sealed class TectonicShatterEffect : EffectBase
     }
 }
 
+/// <summary>Elementalist capstone. Reshapes all tiles within radius into a terrain matching the caster's highest attunement element (Fire→Lava, Ice→Ice, Storm/Earth→Stone), pushes every enemy in the area outward to the edge, then deals <see cref="Damage"/> to each.</summary>
 public sealed class TerraformEffect : EffectBase
 {
     public int Radius;
@@ -897,6 +923,7 @@ public sealed class TerraformEffect : EffectBase
     }
 }
 
+/// <summary>Consumes a single target tile of the matching element, then deals <see cref="Damage"/> to every enemy within radius of it. No-op when the target tile is the wrong element or missing.</summary>
 public sealed class ConsumeElementTileEffect : EffectBase
 {
     public string Element;
@@ -966,6 +993,7 @@ public sealed class ConsumeElementTileEffect : EffectBase
     }
 }
 
+/// <summary>Elementalist legendary capstone. Grants the caster immediate armor and optional bonus speed, hooks up a movement-trail callback that random-imbues every tile the caster vacates, and registers an <see cref="AvatarAuraEffect"/> persistent zone for the duration. Cleanup happens at end of turn after the aura expires.</summary>
 public sealed class AvatarTransformEffect : EffectBase
 {
     public int Turns;
@@ -1041,6 +1069,7 @@ public sealed class AvatarTransformEffect : EffectBase
     }
 }
 
+/// <summary>Spawns a persistent <see cref="MaelstromEffect"/> zone centered on the target tile (or caster if no target). The zone imbues, damages, and rotates pushes each turn for the duration; setting <see cref="Freezes"/> also applies the frozen status on tick.</summary>
 public sealed class CreateMaelstromEffect : EffectBase
 {
     public int Radius;
@@ -1093,7 +1122,7 @@ public sealed class CreateMaelstromEffect : EffectBase
 }
 
 
-// Do nothing. Useful as a placeholder in JSON while you're sketching.
+/// <summary>Does nothing. Used by the registry's `empty` factory as a placeholder while a card is being sketched, and as the fallback for unknown effect types so unknown JSON never crashes the loader.</summary>
 public sealed class EmptyEffect : EffectBase
 {
     public override void Resolve(GameState s, Entity caster, TargetSet targets, EffectSnapshot snap) { }

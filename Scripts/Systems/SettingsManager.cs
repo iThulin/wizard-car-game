@@ -1,9 +1,22 @@
 using Godot;
 using System.Collections.Generic;
 
-/// <summary>
-/// Autoload singleton that loads, saves, and applies display/UI settings.
-/// </summary>
+// ============================================================
+// SettingsManager.cs
+//
+// Purpose:        Autoload singleton owning display, audio, and
+//                 UI scale settings. Persists to user://settings.
+//                 cfg; applies values to DisplayServer /
+//                 AudioServer / Tree on change. Embedded-player
+//                 (editor F5) detection skips window resize ops
+//                 the editor can't honour.
+// Layer:          System
+// Collaborators:  SettingsMenu.cs (UI binding), every viewport
+//                 (indirectly via ContentScaleFactor)
+// See:            (none)
+// ============================================================
+
+/// <summary>Autoload that owns and persists user-facing settings (resolution, window mode, vsync, UI scale, master volume). Skips window-touching operations when running inside the editor's embedded player.</summary>
 public partial class SettingsManager : Node
 {
     public static SettingsManager Instance { get; private set; }

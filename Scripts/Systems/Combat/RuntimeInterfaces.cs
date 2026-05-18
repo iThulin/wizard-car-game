@@ -1,5 +1,23 @@
 using System.Collections.Generic;
 
+// ============================================================
+// RuntimeInterfaces.cs
+//
+// Purpose:        Core runtime interfaces and shared types
+//                 referenced by the card scripting system —
+//                 Entity, ICost (+ ManaCost), ICondition (+
+//                 AlwaysCondition), TargetSet, EffectSnapshot,
+//                 ITargetSelector. Cards' typed cost/condition/
+//                 target arrays use these contracts.
+// Layer:          Runtime
+// Collaborators:  ScriptingInterfaces.cs (companion IEffect /
+//                 IPredicate types), CardRuntime.cs (Ability
+//                 holds ICost[] etc.), Effect.cs, Unit.cs
+//                 (referenced via GameState.ActiveCasterUnit)
+// See:            README §5 — card schema fields map onto these
+// ============================================================
+
+/// <summary>Lightweight identity tag used to distinguish "Player A" vs "Player B" in the rules engine. Real units are <see cref="Unit"/> instances; an Entity is the level above that — the controller.</summary>
 public sealed class Entity { public string Name = "Player"; }
 
 public interface ICost { bool CanPay(GameState s, Entity caster); void Pay(GameState s, Entity caster); }

@@ -3,22 +3,54 @@ using System;
 using System.Collections.Generic;
 
 // ============================================================
-// PersistentEffect — A zone or aura that resolves each turn
+// PersistentEffect.cs
 //
-// Add to GameState.ActiveEffects. GameRunner calls Tick() at
-// the start of each player turn.
+// Purpose:        Persistent effects — zones, auras, and other
+//                 state-machines that live across turns and tick
+//                 at the start of each player turn. Spawned by
+//                 leaf effects (CreateMaelstromEffect,
+//                 AvatarTransformEffect) and tracked on
+//                 GameState.ActiveEffects.
+// Layer:          Effects
+// Collaborators:  GameState.cs (ActiveEffects list, Tick driver),
+//                 CompositeEffects.cs (CreateMaelstromEffect and
+//                 AvatarTransformEffect spawn instances here),
+//                 Effect.cs (DealDamageEffect queries
+//                 AvatarAuraEffect for the bonus damage stack),
+//                 ElementalAttunement.cs (ElementTag mapping)
+// See:            README §6 — Persistent Effects,
+//                 README §6 — Elemental Attunement
 // ============================================================
 
+/// <summary>
+/// Abstract base for any effect that ticks across turns. <see cref="Tick"/> is invoked
+/// once per player turn by the combat loop; the implementation is responsible for
+/// decrementing <see cref="TurnsRemaining"/>. The combat loop garbage-collects entries
+/// where <see cref="IsExpired"/> is true.
+/// </summary>
 public abstract class PersistentEffect
 {
+    /// <summary>Turns this effect has left before it should be culled. Implementations decrement this in <see cref="Tick"/>.</summary>
     public int TurnsRemaining;
+
+    /// <summary>The casting Entity. Used to determine team affiliation for friendly-fire filtering.</summary>
     public Entity Owner;
 
+    /// <summary>Called once per player turn at start-of-turn. Implementation must decrement <see cref="TurnsRemaining"/>.</summary>
     public abstract void Tick(GameState s);
+
+    /// <summary>True once <see cref="TurnsRemaining"/> reaches 0. The combat loop garbage-collects expired entries.</summary>
     public bool IsExpired => TurnsRemaining <= 0;
 }
 
 // ── Maelstrom Zone ──────────────────────────────────────────
+
+/// <summary>
+/// Rotating storm zone. Each tick: imbues every tile in radius with Lightning, deals
+/// <see cref="Damage"/> to every enemy in radius, and pushes each surviving enemy one
+/// tile in the current rotation direction (advances through the 6 hex directions over
+/// successive ticks). When <see cref="Freezes"/> is set, also applies the frozen status.
+/// </summary>
 public class MaelstromEffect : PersistentEffect
 {
     public Vector2I Center;
@@ -116,8 +148,16 @@ public class MaelstromEffect : PersistentEffect
 }
 
 // ── Avatar Aura ─────────────────────────────────────────────
+
+/// <summary>
+/// Spell-cast aura created by <c>AvatarTransformEffect</c>. While active, every spell cast by
+/// the owner gets +<see cref="BonusDamage"/> (queried by <c>DealDamageEffect</c> via
+/// <c>GameState.GetActiveEffect&lt;AvatarAuraEffect&gt;</c>), and <see cref="OnSpellCast"/>
+/// random-imbues each spell's target tile.
+/// </summary>
 public class AvatarAuraEffect : PersistentEffect
 {
+    /// <summary>Bonus damage added to every spell cast while this aura is active.</summary>
     public int BonusDamage;
 
     private static readonly TileElementType[] Elements =
@@ -140,7 +180,7 @@ public class AvatarAuraEffect : PersistentEffect
         s.Log($"[Avatar] Aura ticking. {TurnsRemaining} turns remaining.");
     }
 
-    // Called from GameRunner after every successful cast
+    /// <summary>Hook invoked by the combat runner after every successful spell resolution by the owner. Random-imbues each target tile and logs the bonus damage application.</summary>
     public void OnSpellCast(GameState s, Unit casterUnit, TargetSet targets)
     {
         if (s?.Grid == null || targets == null) return;
