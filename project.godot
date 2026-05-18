@@ -32,12 +32,7 @@ window/stretch/aspect="expand"
 
 [dotnet]
 
-project/assembly_name="Wizard Card Game"
-
-[editor]
-
-version_control/plugin_name="GitPlugin"
-version_control/autoload_on_startup=true
+project/assembly_name="FracturedArcana"
 
 [global]
 
