@@ -211,13 +211,15 @@ public partial class Unit : Node3D
         if (!dest.CanEnter(this))
             return false;
 
-        int dist = grid.Distance(CurrentTile, dest);
-        if (dist <= 0)
-            return false;
-        if (dist > Stats.MovePoints)
+        if (dest.Axial == CurrentTile.Axial)
             return false;
 
-        Stats.MovePoints -= dist;
+        // Compute actual path cost via BFS (same logic as GetReachableTiles)
+        int pathCost = grid.GetMoveCostTo(this, dest);
+        if (pathCost < 0 || pathCost > Stats.MovePoints)
+            return false;
+
+        Stats.MovePoints -= pathCost;
         Stats.HasMoved = true;
         PlaceOnTile(dest);
         return true;

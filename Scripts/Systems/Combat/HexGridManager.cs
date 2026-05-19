@@ -2108,4 +2108,57 @@ public partial class HexGridManager : Node3D
 
         return result;
     }
+
+    /// <summary>
+    /// Returns the minimum movement point cost for the given unit to reach dest,
+    /// respecting tile MoveCost. Returns -1 if unreachable.
+    /// </summary>
+    public int GetMoveCostTo(Unit unit, TileData dest)
+    {
+        if (unit?.CurrentTile == null || dest == null)
+            return -1;
+
+        var start = unit.CurrentTile.Axial;
+        var goal = dest.Axial;
+
+        if (start == goal)
+            return 0;
+
+        var bestCost = new Dictionary<Vector2I, int> { [start] = 0 };
+        var frontier = new Queue<(Vector2I coord, int cost)>();
+        frontier.Enqueue((start, 0));
+
+        while (frontier.Count > 0)
+        {
+            var (current, costSoFar) = frontier.Dequeue();
+
+            foreach (var neighbor in GetNeighbors(current))
+            {
+                if (!Tiles.TryGetValue(neighbor, out var tile))
+                    continue;
+
+                if (!tile.IsWalkable || tile.IsBlocked)
+                    continue;
+
+                // Allow start tile, block other occupied tiles
+                if (tile.IsOccupied && neighbor != start)
+                    continue;
+
+                int stepCost = Mathf.Max(1, tile.MoveCost);
+                int newCost = costSoFar + stepCost;
+
+                if (bestCost.TryGetValue(neighbor, out int oldCost) && oldCost <= newCost)
+                    continue;
+
+                bestCost[neighbor] = newCost;
+
+                if (neighbor == goal)
+                    continue; // found it, don't expand further unnecessarily
+
+                frontier.Enqueue((neighbor, newCost));
+            }
+        }
+
+        return bestCost.TryGetValue(goal, out int finalCost) ? finalCost : -1;
+    }
 }

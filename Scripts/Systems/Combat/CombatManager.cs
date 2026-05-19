@@ -87,6 +87,9 @@ public partial class CombatManager : Node3D
     private bool _isCardBeingDragged = false;
     private CardHalf _draggedHalf = null;
 
+    // ── Movement zone renderer ──────────────────────────────────────────────
+    private MovementZoneRenderer _zoneRenderer;
+
     // ── Phase ───────────────────────────────────────────────────────────────
     public enum CombatPhase { Deployment, PlayerTurn, EnemyTurn, Victory, Defeat }
     private CombatPhase currentPhase = CombatPhase.Deployment;
@@ -169,6 +172,12 @@ public partial class CombatManager : Node3D
             combatUI.EnemyButtonPressed += OnEnemyRosterButtonPressed;
         }
 
+        // Movement zone renderer — child of HexGridManager
+        _zoneRenderer = new MovementZoneRenderer();
+        _zoneRenderer.Name = "MovementZoneRenderer";
+        // HexRadius must match HexGridManager.HexRadius — set after grid is found
+        CallDeferred(nameof(InitZoneRenderer));
+
         // Create the attunement UI as a child of CombatUI
         schoolAttunementUI = new SchoolAttunementUI();
         schoolAttunementUI.SetAnchorsPreset(Control.LayoutPreset.TopLeft);
@@ -235,7 +244,52 @@ public partial class CombatManager : Node3D
             _hoveredUnit?.SetHovered(false);
             _hoveredUnit = hitUnit;
             _hoveredUnit?.SetHovered(true);
+
+            // ── Show/hide threat zone for hovered enemy ──
+            if (hitUnit != null && !hitUnit.IsPlayerControlled
+                && hitUnit.Stats.IsAlive)
+            {
+                ShowEnemyThreatZone(hitUnit);
+            }
+            else if (selectedUnit != null)
+            {
+                // Restore player move zone when no longer hovering enemy
+                ShowMoveTilesWithCost(selectedUnit);
+            }
+            else
+            {
+                _zoneRenderer?.Clear();
+            }
         }
+
+        // ── Cost label on hovered tile ──
+        if (selectedUnit != null && _zoneRenderer != null
+            && currentPhase == CombatPhase.PlayerTurn)
+        {
+            var tileHit = GetHoveredTile();
+
+            if (tileHit.HasValue && currentMoveTiles.Contains(tileHit.Value))
+            {
+                _zoneRenderer.ShowCostLabelForTile(
+                    tileHit.Value,
+                    grid,
+                    selectedUnit.IsMartial,
+                    selectedUnit.IsMartial
+                        ? selectedUnit.CurrentActionPoints
+                        : selectedUnit.Stats.MovePoints);
+            }
+            else
+            {
+                _zoneRenderer.HideCostLabel();
+            }
+        }
+    }
+
+    private void InitZoneRenderer()
+    {
+        if (grid == null || _zoneRenderer == null) return;
+        _zoneRenderer.HexRadius = grid.HexRadius;
+        grid.AddChild(_zoneRenderer);
     }
 
     private void InitializeUnitDecks()
@@ -529,6 +583,43 @@ public partial class CombatManager : Node3D
         GD.Print($"Inspecting enemy: {enemy.Name}  HP={enemy.Stats.Health}/{enemy.Stats.MaxHealth}");
     }
 
+    private void ShowEnemyThreatZone(Unit enemy)
+    {
+        if (_zoneRenderer == null || enemy?.CurrentTile == null) return;
+
+        // Temporarily give enemy full movement for display
+        int saved = enemy.Stats.MovePoints;
+        enemy.Stats.MovePoints = enemy.Stats.BaseSpeed;
+        var reachable = grid.GetReachableTiles(enemy);
+        enemy.Stats.MovePoints = saved;
+
+        _zoneRenderer.ShowEnemyZone(reachable, grid);
+    }
+
+    /// <summary>Returns the axial coord of the tile currently under the mouse, or null.</summary>
+    private Vector2I? GetHoveredTile()
+    {
+        var camera = GetViewport().GetCamera3D();
+        if (camera == null) return null;
+
+        Vector2 mousePos = GetViewport().GetMousePosition();
+        Vector3 from = camera.ProjectRayOrigin(mousePos);
+        Vector3 to = from + camera.ProjectRayNormal(mousePos) * 1000f;
+
+        var result = GetWorld3D().DirectSpaceState
+            .IntersectRay(PhysicsRayQueryParameters3D.Create(from, to));
+        if (result.Count == 0) return null;
+        if (!result.TryGetValue("collider", out var cv)) return null;
+
+        Node current = cv.AsGodotObject() as Node;
+        while (current != null)
+        {
+            if (current is HexTile tile) return tile.Axial;
+            current = current.GetParent();
+        }
+        return null;
+    }
+
     private void TryInspectClick()
     {
         var camera = GetViewport().GetCamera3D();
@@ -610,35 +701,23 @@ public partial class CombatManager : Node3D
 
     private void ShowMoveTilesWithCost(Unit unit)
     {
+        if (_zoneRenderer == null) return;
+
         int budget = unit.IsMartial
             ? unit.CurrentActionPoints / MartialAPCosts.MoveNormal
             : unit.Stats.MovePoints;
 
-        // Temporarily set MovePoints so Dijkstra uses the right budget
         int saved = unit.Stats.MovePoints;
         unit.Stats.MovePoints = budget;
-
-        var tilesWithCost = grid.GetReachableTilesWithCost(unit);
-
+        var costMap = grid.GetReachableTilesWithCost(unit);
         unit.Stats.MovePoints = saved;
 
-        foreach (var kvp in tilesWithCost)
-        {
-            currentMoveTiles.Add(kvp.Key);
-            var tileView = grid.GetTileView(kvp.Key);
-            if (tileView == null) continue;
+        // Track reachable coords for click validation
+        currentMoveTiles.Clear();
+        foreach (var k in costMap.Keys)
+            currentMoveTiles.Add(k);
 
-            // Colour by cost fraction of total budget
-            float fraction = budget > 0 ? (float)kvp.Value / budget : 1f;
-
-            // Green (cheap) → Yellow (moderate) → Orange (expensive)
-            if (fraction <= 0.4f)
-                tileView.SetMoveHighlightColored(UITheme.MoveHighlightCheap);
-            else if (fraction <= 0.75f)
-                tileView.SetMoveHighlightColored(UITheme.MoveHighlightModerate);
-            else
-                tileView.SetMoveHighlightColored(UITheme.MoveHighlightExpensive);
-        }
+        _zoneRenderer.ShowPlayerZone(costMap, grid);
     }
 
     private void TryMoveSelectedUnit(HexTile tileView)
@@ -729,15 +808,10 @@ public partial class CombatManager : Node3D
         return result;
     }
 
-    private void ShowMoveTiles(HashSet<Vector2I> coords)
-    {
-        // Don't call ClearMoveTiles here — just apply highlights
-        foreach (var coord in coords)
-            grid.GetTileView(coord)?.SetMoveHighlight(true);
-    }
-
     private void ClearMoveTiles()
     {
+        _zoneRenderer?.Clear();
+        // Also clear any residual tile color highlights
         foreach (var coord in currentMoveTiles)
             grid.GetTileView(coord)?.SetMoveHighlight(false);
         currentMoveTiles.Clear();
@@ -794,7 +868,7 @@ public partial class CombatManager : Node3D
         ClearMoveTiles();
         var reachable = ComputeReachableTiles(attacker);
         foreach (var coord in reachable) currentMoveTiles.Add(coord);
-        ShowMoveTiles(currentMoveTiles);
+        ShowMoveTilesWithCost(selectedUnit);
     }
 
     public bool TrySwitchStance(Unit unit, StanceDefinition newStance)
@@ -984,7 +1058,7 @@ public partial class CombatManager : Node3D
             ClearMoveTiles();
             var reachable = grid.GetReachableTiles(attacker);
             foreach (var coord in reachable) currentMoveTiles.Add(coord);
-            ShowMoveTiles(currentMoveTiles);
+            ShowMoveTilesWithCost(selectedUnit);
         }
 
         // ── Guardian: aura applied at stance start, not on attack ─────────
@@ -1087,6 +1161,8 @@ public partial class CombatManager : Node3D
 
     private void EndPlayerTurn()
     {
+        _zoneRenderer?.Clear();
+
         foreach (var unit in playerUnits)
             DiscardOverflowCards(unit);
 
@@ -1182,6 +1258,8 @@ public partial class CombatManager : Node3D
 
         currentPhase = CombatPhase.EnemyTurn;
         enemyPhaseRunning = true;
+
+        _zoneRenderer?.Clear();
 
         foreach (var unit in enemyUnits)
         {
