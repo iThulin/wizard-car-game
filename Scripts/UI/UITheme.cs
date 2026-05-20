@@ -3,7 +3,7 @@ using Godot;
 // ============================================================
 // UITheme.cs
 //
-// Purpose:        Single source of truth for every UI colour,
+// Purpose:        Single source of truth for every UI color,
 //                 font size, padding value, animation duration,
 //                 and panel-style helper used in the project.
 //                 Anywhere else in the codebase: read from here,
@@ -25,7 +25,7 @@ using Godot;
 //     should read as physical objects on top of the slate UI.
 //   - Accents — violet borders, gold titles, arcane blue mana.
 
-/// <summary>Project-wide theme tokens. Every UI surface, panel, button, label, and animation duration reads from this class. Member-level docs are intentionally omitted for the colour/size constants — the names + the section banners below carry the meaning. If you find yourself hardcoding a colour or padding value in another file, add a token here instead.</summary>
+/// <summary>Project-wide theme tokens. Every UI surface, panel, button, label, and animation duration reads from this class. Member-level docs are intentionally omitted for the color/size constants — the names + the section banners below carry the meaning. If you find yourself hardcoding a color or padding value in another file, add a token here instead.</summary>
 public static class UITheme
 {
     // ════════════════════════════════════════════════════════════

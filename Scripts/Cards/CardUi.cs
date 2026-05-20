@@ -325,8 +325,9 @@ public partial class CardUi : Control
 
         if (_splitDivider != null)
         {
-            // Rarity color
-            var rarityCol = UITheme.GetRarityColor(CardInstance.Rarity);
+            var rarityCol = CardInstance != null
+                ? UITheme.GetRarityColor(CardInstance.Rarity)
+                : UITheme.RarityCommon;
             _splitDivider.Color = rarityCol;
         }
 

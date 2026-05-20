@@ -308,6 +308,11 @@ public partial class CampusScreen : Control
             GetTree().ChangeSceneToFile("res://Scenes/UI/CardLibrary.tscn");
         layout.AddChild(_cardLibraryButton);
 
+        var deckEditorButton = MakeButton("Manage Deck", 280, 40, 16);
+        deckEditorButton.Pressed += () =>
+            GetTree().ChangeSceneToFile("res://Scenes/UI/DeckEditor.tscn");
+        layout.AddChild(deckEditorButton);
+
         var quitBtn = MakeButton("Quit", 280, 36, 15);
         quitBtn.Pressed += () => GetTree().Quit();
         layout.AddChild(quitBtn);
@@ -518,7 +523,7 @@ public partial class CampusScreen : Control
         var style = new StyleBoxFlat
         {
             BgColor = UITheme.SurfaceLight,
-            BorderColor = item != null ? RarityColor(item.Rarity) : UITheme.Neutral,
+            BorderColor = item != null ? UITheme.RarityColor(item.Rarity) : UITheme.Neutral,
             CornerRadiusTopLeft = UITheme.CornerRadius - 1,
             CornerRadiusTopRight = UITheme.CornerRadius - 1,
             CornerRadiusBottomLeft = UITheme.CornerRadius - 1,
@@ -548,7 +553,7 @@ public partial class CampusScreen : Control
             // Item name
             var nameLbl = new Label { Text = item.Name };
             nameLbl.AddThemeFontSizeOverride("font_size", UITheme.CampusSmallFontSize);
-            nameLbl.AddThemeColorOverride("font_color", RarityColor(item.Rarity));
+            nameLbl.AddThemeColorOverride("font_color", UITheme.RarityColor(item.Rarity));
             nameLbl.AutowrapMode = TextServer.AutowrapMode.WordSmart;
             vbox.AddChild(nameLbl);
 
@@ -661,7 +666,7 @@ public partial class CampusScreen : Control
         var style = new StyleBoxFlat
         {
             BgColor = UITheme.SurfaceLight,
-            BorderColor = RarityColor(item.Rarity),
+            BorderColor = UITheme.RarityColor(item.Rarity),
             CornerRadiusTopLeft = UITheme.CornerRadius - 1,
             CornerRadiusTopRight = UITheme.CornerRadius - 1,
             CornerRadiusBottomLeft = UITheme.CornerRadius - 1,
@@ -693,7 +698,7 @@ public partial class CampusScreen : Control
 
         var nameLbl = new Label { Text = item.Name };
         nameLbl.AddThemeFontSizeOverride("font_size", UITheme.CampusBodyFontSize);
-        nameLbl.AddThemeColorOverride("font_color", RarityColor(item.Rarity));
+        nameLbl.AddThemeColorOverride("font_color", UITheme.RarityColor(item.Rarity));
         nameRow.AddChild(nameLbl);
 
         var slotBadge = new Label { Text = $"[{item.Slot}]" };
@@ -1100,15 +1105,6 @@ public partial class CampusScreen : Control
         "BonusDamageAboveHalfHP" => $"+{value} atk above 50% HP",
         "DamageReductionPerHit" => $"Take -{value} dmg per hit",
         _ => passive,
-    };
-
-    public static Color RarityColor(string rarity) => rarity switch
-    {
-        "Common" => UITheme.RarityCommon,
-        "Uncommon" => UITheme.RarityUncommon,
-        "Rare" => UITheme.RarityRare,
-        "Legendary" => UITheme.RarityLegendary,
-        _ => UITheme.RarityCommon,
     };
 
     // ═══════════════════════════════════════════════════════════════════════

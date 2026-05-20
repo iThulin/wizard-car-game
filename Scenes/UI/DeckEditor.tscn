@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://c7l21st57qknc"]
+
+[ext_resource type="Script" uid="uid://drcivkv2xafkx" path="res://Scripts/UI/DeckEditorUi.cs" id="1_de"]
+[ext_resource type="PackedScene" uid="uid://iuge2orfh1hw" path="res://Scenes/Cards/CardUI.tscn" id="2_card"]
+
+[node name="DeckEditor" type="Control" unique_id=755804508]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_de")
+CardUIScene = ExtResource("2_card")

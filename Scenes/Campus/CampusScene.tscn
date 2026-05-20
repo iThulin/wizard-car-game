@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dlf17diyfxvc"]
 
-[ext_resource type="Script" uid="uid://c0ejql5kqckdl" path="res://Scripts/Overworld/CampusScreen.cs" id="1_y6vfm"]
+[ext_resource type="Script" uid="uid://c0ejql5kqckdl" path="res://Scripts/Systems/Campus/CampusScreen.cs" id="1_y6vfm"]
 
 [node name="CampusScene" type="Control" unique_id=2035046695]
 layout_mode = 3
