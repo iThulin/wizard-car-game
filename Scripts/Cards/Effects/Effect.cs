@@ -933,7 +933,7 @@ public sealed class ApplyStatusEffect : EffectBase
 	}
 }
 
-/// <summary>Spawns <see cref="Count"/> instances of a named unit kind on the player's side. Requires <c>GameState.OnSummonRequested</c> to be wired by the combat scene; without it, the effect logs an error and no-ops. Uses targeted tile when provided, otherwise falls back to the first empty neighbour of the caster.</summary>
+/// <summary>Spawns <see cref="Count"/> instances of a named unit kind on the player's side. Requires <c>GameState.OnSummonRequested</c> to be wired by the combat scene; without it, the effect logs an error and no-ops. Uses targeted tile when provided, otherwise falls back to the first empty neighbor of the caster.</summary>
 public sealed class SummonEffect : EffectBase
 {
 	public string UnitKind;

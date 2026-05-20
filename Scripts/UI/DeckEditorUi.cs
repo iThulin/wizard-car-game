@@ -119,7 +119,42 @@ public partial class DeckEditorUi : Control
         rightCol.AddThemeConstantOverride("separation", 0);
         body.AddChild(rightCol);
 
-        // Stash list (upper right)
+        // ── Preview zone (Upper right, fixed height) ──────────────────────
+        _previewZone = new Control
+        {
+            CustomMinimumSize   = new Vector2(RightColumnWidth, PreviewZoneHeight),
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            SizeFlagsVertical   = SizeFlags.ShrinkBegin,
+            ClipContents        = true,
+        };
+        var previewBg = new StyleBoxFlat
+        {
+            BgColor             = new Color(0.04f, 0.04f, 0.08f, 1f),
+            BorderColor         = UITheme.NeutralDim,
+            BorderWidthBottom   = 1,
+            BorderWidthLeft     = 1,
+        };
+        var previewPanel = new PanelContainer();
+        previewPanel.SetAnchorsPreset(LayoutPreset.FullRect);
+        previewPanel.AddThemeStyleboxOverride("panel", previewBg);
+        previewPanel.MouseFilter = MouseFilterEnum.Ignore;
+        _previewZone.AddChild(previewPanel);
+
+        _previewHint = new Label
+        {
+            Text                = "Hover a card\nto preview",
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment   = VerticalAlignment.Center,
+            Name                = "HintLabel",
+        };
+        _previewHint.SetAnchorsPreset(LayoutPreset.FullRect);
+        _previewHint.AddThemeFontSizeOverride("font_size", UITheme.CampusSmallFontSize);
+        _previewHint.AddThemeColorOverride("font_color", UITheme.TextDim);
+        _previewZone.AddChild(_previewHint);
+
+        rightCol.AddChild(_previewZone);
+
+        // Stash list (Lower right)
         var stashOuter = BuildColumnShell(rightCol,
             UITheme.BgDeep, UITheme.NeutralDim,
             "Stash", ref _stashCountLabel,
@@ -153,40 +188,6 @@ public partial class DeckEditorUi : Control
         _stashList = MakeVBox(4);
         MakeInnerMargin(stashScroll).AddChild(_stashList);
 
-        // ── Preview zone (lower right, fixed height) ──────────────────────
-        _previewZone = new Control
-        {
-            CustomMinimumSize   = new Vector2(RightColumnWidth, PreviewZoneHeight),
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            SizeFlagsVertical   = SizeFlags.ShrinkEnd,
-            ClipContents        = true,
-        };
-        var previewBg = new StyleBoxFlat
-        {
-            BgColor          = new Color(0.04f, 0.04f, 0.08f, 1f),
-            BorderColor      = UITheme.NeutralDim,
-            BorderWidthTop   = 1,
-            BorderWidthLeft  = 1,
-        };
-        var previewPanel = new PanelContainer();
-        previewPanel.SetAnchorsPreset(LayoutPreset.FullRect);
-        previewPanel.AddThemeStyleboxOverride("panel", previewBg);
-        previewPanel.MouseFilter = MouseFilterEnum.Ignore;
-        _previewZone.AddChild(previewPanel);
-
-        _previewHint = new Label
-        {
-            Text                = "Hover a card\nto preview",
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment   = VerticalAlignment.Center,
-            Name                = "HintLabel",
-        };
-        _previewHint.SetAnchorsPreset(LayoutPreset.FullRect);
-        _previewHint.AddThemeFontSizeOverride("font_size", UITheme.CampusSmallFontSize);
-        _previewHint.AddThemeColorOverride("font_color", UITheme.TextDim);
-        _previewZone.AddChild(_previewHint);
-
-        rightCol.AddChild(_previewZone);
 
         // ── Drag ghost label ──────────────────────────────────────────────
         _dragGhost = new Label
@@ -345,7 +346,7 @@ public partial class DeckEditorUi : Control
     {
         var save = SaveManager.ActiveSave;
         if (_dustLabel != null)
-            _dustLabel.Text = save != null ? $"✦ {save.ArcaneDust} Dust" : "";
+            _dustLabel.Text = save != null ? $"✦ {save.ArcaneSplinters} Splinters" : "";
 
         if (save?.PlayerDeck == null)
         {

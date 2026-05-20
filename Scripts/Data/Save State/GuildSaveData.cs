@@ -16,7 +16,7 @@ using System.Collections.Generic;
 // See:            README §6 — Save System
 // Schema version history:
 //   v1 — initial schema
-//   v2 — added PlayerDeck, ArcaneDust, UnlockedCardBlueprintIds
+//   v2 — added PlayerDeck, ArcaneSplinters, UnlockedCardBlueprintIds
 // ============================================================
 
 /// <summary>
@@ -46,7 +46,7 @@ public class GuildSaveData
     /// Upgrade currency. Earned from combat at a low rate; spent at
     /// Training Grounds to upgrade OwnedCard.UpgradeTier.
     /// </summary>
-    public int ArcaneDust = 0;
+    public int ArcaneSplinters = 0;
 
     // ── Run stats ───────────────────────────────────────────────────────
     public int TotalRuns = 0;

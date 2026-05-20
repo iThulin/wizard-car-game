@@ -18,16 +18,19 @@ public static class RunResultData
 
     public static bool ReachedObjective;
     public static int GoldEarned;
+    public static int  ArcaneSplinters;
     public static int EncountersWon;
     public static int HPRemaining;
 
-    public static void Set(bool reachedObjective, int gold, int encounters, int hp)
+    public static void Set(bool reachedObjective, int gold,
+                        int encounters, int hp, int splinters = 0)
     {
         ReachedObjective = reachedObjective;
-        GoldEarned = gold;
-        EncountersWon = encounters;
-        HPRemaining = hp;
-        HasResults = true;
+        GoldEarned       = gold;
+        EncountersWon    = encounters;
+        HPRemaining      = hp;
+        ArcaneSplinters  = splinters;  // ← add this line
+        HasResults       = true;
     }
 
     public static void Clear()

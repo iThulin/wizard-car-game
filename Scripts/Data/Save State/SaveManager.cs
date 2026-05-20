@@ -243,12 +243,12 @@ public static class SaveManager
 
         if (data.SaveVersion < 2)
         {
-            // v1 → v2: added PlayerDeck, ArcaneDust, UnlockedCardBlueprintIds.
+            // v1 → v2: added PlayerDeck, ArcaneSplinters, UnlockedCardBlueprintIds.
             // Existing saves get an empty PlayerDeck; DeckManager.InitializeFromSave
             // detects this and seeds the starter deck on the player's next run.
             data.PlayerDeck ??= new PlayerDeckSave();
             data.UnlockedCardBlueprintIds ??= new List<string>();
-            data.ArcaneDust = 0;
+            data.ArcaneSplinters = 0;
             data.SaveVersion = 2;
         }
 

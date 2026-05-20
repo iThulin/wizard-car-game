@@ -214,6 +214,7 @@ public partial class CombatManager : Node3D
 
     public override void _Process(double delta)
     {
+        if (!IsInsideTree()) return;
         if (_pruneNeeded)
         {
             _pruneNeeded = false;

@@ -11,10 +11,10 @@ using System.Collections.Generic;
 //                 enum, tinted via shader parameters.
 // Layer:          Tiles
 // Collaborators:  HexTile.cs (parent; lazy-instantiates this),
-//                 UITheme.cs (per-element tint colours),
+//                 UITheme.cs (per-element tint colors),
 //                 TileData.cs (TileElementType enum)
 // See:            README §6 — Elemental Attunement (for the
-//                 element-to-gameplay mapping this visualises)
+//                 element-to-gameplay mapping this visualizes)
 // ============================================================
 
 /// <summary>

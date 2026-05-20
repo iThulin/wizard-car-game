@@ -30,6 +30,9 @@ public partial class EncounterRouter : Node
     public bool CombatWon { get; set; }
     public int GoldReward { get; set; }
     public int DamageTaken { get; set; }
+    public int SplinterReward       { get; set; }
+    public int SavedSplinterEarned  { get; set; }
+    private EncounterTier _currentTier = EncounterTier.Battle;
 
     public int SavedStepsRemaining;
     public int SavedCurrentHP;
@@ -66,6 +69,7 @@ public partial class EncounterRouter : Node
         SavedStepsRemaining = runManager.StepsRemaining;
         SavedCurrentHP = runManager.CurrentHP;
         SavedGoldEarned = runManager.GoldEarned;
+        SavedSplinterEarned = runManager.SplinterEarned;
         SavedEncountersWon = runManager.EncountersWon;
         SavedPartyCoord = runManager.GetPartyCoord();
         SavedCombatHexCoord = combatHexCoord;
@@ -94,6 +98,8 @@ public partial class EncounterRouter : Node
 
         GD.Print($"EncounterRouter: Encounter set — {encounterDef.DisplayName} " +
                  $"({encounterDef.Tier}, {encounterDef.Enemies.Count} enemies)");
+
+        _currentTier = tier;
         // ── Swap to combat scene ────────────────────────────────────────
         GetTree().ChangeSceneToFile(CombatScenePath);
     }
@@ -105,18 +111,32 @@ public partial class EncounterRouter : Node
     public void OnCombatFinished(bool playerWon)
     {
         EncounterContextCarrier.Clear();
-        CombatWon = playerWon;
-        GoldReward = playerWon ? 30 + (int)(GD.Randf() * 50) : 0;
-        DamageTaken = playerWon ? (int)(GD.Randf() * 20) : 30;
+        CombatWon      = playerWon;
+        GoldReward     = CalculateGoldRewardForTier(_currentTier);
+        SplinterReward = SplinterDropTable.Combat(_currentTier);
         HasPendingReturn = true;
 
         GD.Print($"EncounterRouter: Combat finished. Won: {playerWon}. " +
-                 $"Returning to overworld in 2s...");
+                $"Gold: {GoldReward}, Splinters: {SplinterReward}.");
 
-        // Brief delay so the player sees Victory/Defeat
-        GetTree().CreateTimer(2.0f).Timeout += () =>
+        if (playerWon)
         {
-            GetTree().ChangeSceneToFile(OverworldScenePath);
-        };
+            // Show card reward screen — it routes to overworld when done
+            GetTree().ChangeSceneToFile("res://Scenes/UI/CardRewardScreen.tscn");
+        }
+        else
+        {
+            // Loss: skip reward, return to overworld after brief delay
+            GetTree().CreateTimer(2.0f).Timeout += () =>
+                GetTree().ChangeSceneToFile(OverworldScenePath);
+        }
     }
+
+    private int CalculateGoldRewardForTier(EncounterTier tier) => tier switch
+    {
+        EncounterTier.Skirmish => (int)GD.RandRange(8,  15),
+        EncounterTier.Battle   => (int)GD.RandRange(18, 30),
+        EncounterTier.Siege    => (int)GD.RandRange(40, 60),
+        _                      => (int)GD.RandRange(15, 25),
+    };
 }

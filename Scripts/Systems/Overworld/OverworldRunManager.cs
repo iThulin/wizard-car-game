@@ -29,6 +29,7 @@ public partial class OverworldRunManager : Node2D
     public int StepsRemaining { get; set; }
     public int CurrentHP { get; set; }
     public int GoldEarned { get; set; }
+    public int SplinterEarned  { get; set; }
     public int EncountersWon { get; set; }
     public bool RunComplete { get; private set; }
 
@@ -150,6 +151,7 @@ public partial class OverworldRunManager : Node2D
         StepsRemaining = StepBudget;
         CurrentHP = MaxHP;
         GoldEarned = 0;
+        SplinterEarned = 0;
         EncountersWon = 0;
         RunComplete = false;
 
@@ -217,6 +219,7 @@ public partial class OverworldRunManager : Node2D
         StepsRemaining = router.SavedStepsRemaining;
         CurrentHP = router.SavedCurrentHP;
         GoldEarned = router.SavedGoldEarned;
+        SplinterEarned = router.SavedSplinterEarned; 
         EncountersWon = router.SavedEncountersWon;
 
         // Restore fog state
@@ -257,6 +260,7 @@ public partial class OverworldRunManager : Node2D
             if (router.CombatWon)
             {
                 GoldEarned += router.GoldReward;
+                SplinterEarned += router.SplinterReward;
                 EncountersWon++;
 
                 if (_grid.Hexes.TryGetValue(resultHex, out var hex))
@@ -265,7 +269,8 @@ public partial class OverworldRunManager : Node2D
                     hex.RefreshVisuals();
                 }
 
-                ShowInfo($"Victory! Earned {router.GoldReward} gold.");
+                    ShowInfo($"Victory! Earned {router.GoldReward} gold, " +
+                            $"{router.SplinterReward} Arcane Splinters.");
             }
             else
             {
@@ -415,7 +420,10 @@ public partial class OverworldRunManager : Node2D
                 CurrentHP = Mathf.Min(CurrentHP + healAmount, MaxHP);
                 hex.POIConsumed = true;
                 hex.RefreshVisuals();
-                ShowInfo($"Rest site. Recovered {healAmount} HP.");
+                int restSplinters = SplinterDropTable.RestSite();
+                SplinterEarned += restSplinters;
+                ShowInfo($"Rest site. Recovered {healAmount} HP. " +
+                        $"+{restSplinters} Arcane Splinters.");
                 GoldEarned += 15;
                 UpdateUI();
                 break;
@@ -564,6 +572,10 @@ public partial class OverworldRunManager : Node2D
         if (choice.StepDelta != 0)
             StepsRemaining = Mathf.Max(0, StepsRemaining + choice.StepDelta);
 
+        int narrativeSplinters = SplinterDropTable.Narrative();
+        SplinterEarned += narrativeSplinters;
+        ShowInfo($"Encounter resolved. +{narrativeSplinters} Arcane Splinters.");
+
         // Track completed unique encounters in save data
         if (SaveManager.ActiveSave != null && !string.IsNullOrEmpty(encounter.Id))
         {
@@ -613,6 +625,7 @@ public partial class OverworldRunManager : Node2D
             router.SavedStepsRemaining = StepsRemaining;
             router.SavedCurrentHP = CurrentHP;
             router.SavedGoldEarned = GoldEarned;
+            router.SavedSplinterEarned  = SplinterEarned;
             router.SavedEncountersWon = EncountersWon;
             router.SavedPartyCoord = _party.CurrentCoord;
             router.SavedCombatHexCoord = coord;     // reuse field for the triggering hex
@@ -667,36 +680,34 @@ public partial class OverworldRunManager : Node2D
     {
         RunComplete = true;
 
-        // Run is over — clear the saved seed so the next run gets a fresh map
         if (EncounterRouter.Instance != null)
         {
-            EncounterRouter.Instance.HasSavedSeed = false;
+            EncounterRouter.Instance.HasSavedSeed    = false;
             EncounterRouter.Instance.HasPendingReturn = false;
         }
 
-        // Store results for the campus screen
-        RunResultData.Set(reachedObjective, GoldEarned, EncountersWon, CurrentHP);
+        RunResultData.Set(reachedObjective, GoldEarned,
+                        EncountersWon, CurrentHP, SplinterEarned);
 
-        // ── Update persistent save data ─────────────────────────────────
         if (SaveManager.ActiveSave != null)
         {
             var save = SaveManager.ActiveSave;
             save.TotalRuns++;
-            save.TotalGoldEarned += GoldEarned;
+            save.TotalGoldEarned    += GoldEarned;
             save.TotalEncountersWon += EncountersWon;
-            save.Gold += GoldEarned;
+            save.Gold               += GoldEarned;
+            save.ArcaneSplinters    += SplinterEarned;
 
-            if (reachedObjective)
-                save.RunsWon++;
-            else
-                save.RunsLost++;
+            if (reachedObjective) save.RunsWon++;
+            else                  save.RunsLost++;
 
             SaveManager.Save();
-            GD.Print($"SaveManager: Run recorded. Gold: {save.Gold}, Runs: {save.TotalRuns}, Won: {save.RunsWon}");
         }
 
         string result = reachedObjective ? "SUCCESS" : "FAILED";
-        ShowInfo($"Run {result} — Gold: {GoldEarned}, Encounters: {EncountersWon}. Press R to return to campus.");
+        ShowInfo($"Run {result} — Gold: {GoldEarned}, " +
+                $"Splinters: {SplinterEarned}, " +
+                $"Encounters: {EncountersWon}. Press R to return.");
         EmitSignal(SignalName.RunEnded, reachedObjective);
     }
 

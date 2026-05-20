@@ -230,9 +230,10 @@ public partial class CampusScreen : Control
         {
             string outcome = RunResultData.ReachedObjective ? "✓ SUCCESS" : "✗ FAILED";
             _summaryLabel.Text = $"Last Run: {outcome}  |  " +
-                                 $"Gold: {RunResultData.GoldEarned}  |  " +
-                                 $"Encounters: {RunResultData.EncountersWon}  |  " +
-                                 $"HP: {RunResultData.HPRemaining}";
+                                $"Gold: {RunResultData.GoldEarned}  |  " +
+                                $"Splinters: {RunResultData.ArcaneSplinters}  |  " +
+                                $"Encounters: {RunResultData.EncountersWon}  |  " +
+                                $"HP: {RunResultData.HPRemaining}";
             _summaryLabel.Modulate = RunResultData.ReachedObjective
                 ? UITheme.CampusRunSuccess : UITheme.CampusRunFail;
             RunResultData.Clear();
@@ -1450,7 +1451,8 @@ public partial class CampusScreen : Control
     {
         if (_goldLabel == null) return;
         var save = SaveManager.ActiveSave;
-        _goldLabel.Text = save != null ? $"Gold: {save.Gold}" : "";
+        if (save == null) { _goldLabel.Text = ""; return; }
+        _goldLabel.Text = $"Gold: {save.Gold}    ✦ {save.ArcaneSplinters} Splinters";
     }
 
     // ═══════════════════════════════════════════════════════════════════════
